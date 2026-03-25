@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 参与</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .vote-option { transition: all 0.2s ease; }
+        .vote-option:hover { background: #F3F4F6; }
+        .vote-option.selected { background: #DBEAFE; border-color: #3B82F6; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-white shadow-sm sticky top-0 z-10">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main class="flex-1 p-4">
+            <div id="loadingState" class="flex flex-col items-center justify-center py-20">
+                <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-gray-500">加载中...</p>
+            </div>
+            
+            <div id="errorState" class="hidden flex flex-col items-center justify-center py-20">
+                <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa fa-times text-red-500 text-3xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 mb-2">出错了</h2>
+                <p class="text-gray-500 mb-4" id="errorMessage">活动不存在或已结束</p>
+                <a href="index.html" class="px-6 py-2 bg-primary text-white rounded-xl font-medium">返回首页</a>
+            </div>
+            
+            <div id="loginPrompt" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa fa-user text-blue-500 text-2xl"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-gray-800" id="activityTitle">参与活动</h2>
+                        <p class="text-gray-500 mt-1" id="activityDesc">请先登录后再参与</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">账号</label>
+                            <input type="text" id="loginUsername" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入账号">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                            <input type="password" id="loginPassword" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入密码">
+                        </div>
+                        <button id="loginSubmitBtn" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                            登录并参与
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="voteContent" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+                    <div class="mb-6">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-medium rounded-full">投票</span>
+                        <h2 class="text-xl font-bold text-gray-800 mt-3" id="voteTitle"></h2>
+                        <p class="text-gray-500 mt-1" id="voteDescription"></p>
+                    </div>
+                    
+                    <form id="voteForm">
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">请选择</label>
+                            <div id="voteOptions" class="space-y-2"></div>
+                        </div>
+                        
+                        <div id="voteExtraFields" class="space-y-4 mb-6"></div>
+                        
+                        <button type="submit" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                            提交投票
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="lotteryContent" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+                    <div class="mb-6">
+                        <span class="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-medium rounded-full">抽奖</span>
+                        <h2 class="text-xl font-bold text-gray-800 mt-3" id="lotteryTitle"></h2>
+                        <p class="text-gray-500 mt-1" id="lotteryDescription"></p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">奖项设置</h4>
+                        <div id="prizeList" class="space-y-2"></div>
+                    </div>
+                    
+                    <form id="lotteryForm">
+                        <div id="lotteryExtraFields" class="space-y-4 mb-6"></div>
+                        
+                        <button type="submit" class="w-full py-3 bg-accent text-white rounded-xl font-medium hover:bg-orange-600 transition-colors">
+                            <i class="fa fa-gift mr-2"></i>开始抽奖
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="resultContent" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+                    <div id="resultIcon" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-5xl"></div>
+                    <h2 class="text-2xl font-bold mb-2" id="resultTitle"></h2>
+                    <p class="text-gray-500 mb-6" id="resultMessage"></p>
+                    <a href="dashboard.html" class="inline-block px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                        返回首页
+                    </a>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="bg-white border-t p-4 text-center text-sm text-gray-500">
+            <p>班级管理系统 © 2026</p>
+        </footer>
+    </div>
+    
+    <div id="toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-lg hidden z-50">
+        <span id="toastMessage"></span>
+    </div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        let currentUser = null;
+        let activityType = null;
+        let activityId = null;
+        let currentActivity = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            activityType = params.get('type');
+            activityId = parseInt(params.get('id'));
+            
+            currentUser = DataStore.getCurrentUser();
+            
+            if (!activityType || !activityId) {
+                showError('缺少活动参数');
+                return;
+            }
+            
+            loadActivity();
+            bindEvents();
+        });
+        
+        function loadActivity() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            
+            setTimeout(() => {
+                document.getElementById('loadingState').classList.add('hidden');
+                
+                if (activityType === 'vote') {
+                    loadVote();
+                } else if (activityType === 'lottery') {
+                    loadLottery();
+                } else {
+                    showError('未知的活动类型');
+                }
+            }, 500);
+        }
+        
+        function loadVote() {
+            const votes = DataStore.getVotes();
+            const vote = votes.find(v => v.id === activityId);
+            
+            if (!vote) {
+                showError('投票不存在');
+                return;
+            }
+            
+            const now = new Date();
+            const start = new Date(vote.startTime);
+            const end = new Date(vote.endTime);
+            
+            if (now < start) {
+                showError('投票尚未开始');
+                return;
+            }
+            
+            if (now > end) {
+                showError('投票已结束');
+                return;
+            }
+            
+            const records = DataStore.getVoteRecords();
+            const hasVoted = currentUser && records.some(r => r.voteId === activityId && r.userId === currentUser.id);
+            
+            if (hasVoted) {
+                showResult(true, '已参与', '您已经参与过此投票');
+                return;
+            }
+            
+            currentActivity = vote;
+            
+            if (!currentUser) {
+                showLoginPrompt(vote.title, '请先登录后再参与投票');
+                return;
+            }
+            
+            document.getElementById('voteTitle').textContent = vote.title;
+            document.getElementById('voteDescription').textContent = vote.description || '暂无说明';
+            
+            const optionsHtml = vote.options.map((opt, idx) => {
+                const inputType = vote.type === 'single' ? 'radio' : 'checkbox';
+                return `
+                    <label class="vote-option flex items-center p-4 border rounded-xl cursor-pointer">
+                        <input type="${inputType}" name="voteOption" value="${idx}" class="w-5 h-5 text-primary mr-3">
+                        <span class="flex-1">${opt}</span>
+                    </label>
+                `;
+            }).join('');
+            
+            document.getElementById('voteOptions').innerHTML = optionsHtml;
+            
+            let extraFields = '';
+            if (vote.needName) {
+                extraFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                        <input type="text" id="voteName" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="${currentUser ? currentUser.name : ''}">
+                    </div>
+                `;
+            }
+            if (vote.needPhone) {
+                extraFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机号</label>
+                        <input type="tel" id="votePhone" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入手机号">
+                    </div>
+                `;
+            }
+            if (vote.needRemark) {
+                extraFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                        <textarea id="voteRemark" rows="2" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入备注"></textarea>
+                    </div>
+                `;
+            }
+            document.getElementById('voteExtraFields').innerHTML = extraFields;
+            
+            document.getElementById('voteContent').classList.remove('hidden');
+        }
+        
+        function loadLottery() {
+            const lotteries = DataStore.getLotteries();
+            const lottery = lotteries.find(l => l.id === activityId);
+            
+            if (!lottery) {
+                showError('抽奖不存在');
+                return;
+            }
+            
+            const now = new Date();
+            const start = new Date(lottery.startTime);
+            const end = new Date(lottery.endTime);
+            
+            if (now < start) {
+                showError('抽奖尚未开始');
+                return;
+            }
+            
+            if (now > end) {
+                showError('抽奖已结束');
+                return;
+            }
+            
+            const records = DataStore.getLotteryRecords();
+            const hasDrawn = currentUser && records.some(r => r.lotteryId === activityId && r.userId === currentUser.id);
+            
+            if (hasDrawn) {
+                const userRecord = records.find(r => r.lotteryId === activityId && r.userId === currentUser.id);
+                if (userRecord && userRecord.prize && userRecord.prize !== '未中奖') {
+                    showResult(true, '恭喜中奖', `您获得了：${userRecord.prize}`);
+                } else {
+                    showResult(false, '已参与', '您已经参与过此抽奖，未中奖');
+                }
+                return;
+            }
+            
+            currentActivity = lottery;
+            
+            if (!currentUser) {
+                showLoginPrompt(lottery.title, '请先登录后再参与抽奖');
+                return;
+            }
+            
+            document.getElementById('lotteryTitle').textContent = lottery.title;
+            document.getElementById('lotteryDescription').textContent = lottery.description || '暂无说明';
+            
+            const prizesHtml = lottery.prizes.map(p => `
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
+                    <span class="font-medium">${p.name}</span>
+                    <span class="text-sm text-gray-500">概率 ${p.probability}%</span>
+                </div>
+            `).join('');
+            document.getElementById('prizeList').innerHTML = prizesHtml;
+            
+            let extraFields = '';
+            if (lottery.needName) {
+                extraFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                        <input type="text" id="lotteryName" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="${currentUser ? currentUser.name : ''}">
+                    </div>
+                `;
+            }
+            if (lottery.needPhone) {
+                extraFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机号</label>
+                        <input type="tel" id="lotteryPhone" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入手机号">
+                    </div>
+                `;
+            }
+            document.getElementById('lotteryExtraFields').innerHTML = extraFields;
+            
+            document.getElementById('lotteryContent').classList.remove('hidden');
+        }
+        
+        function showLoginPrompt(title, desc) {
+            document.getElementById('activityTitle').textContent = title;
+            document.getElementById('activityDesc').textContent = desc;
+            document.getElementById('loginPrompt').classList.remove('hidden');
+        }
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorState').classList.remove('hidden');
+        }
+        
+        function showResult(isWin, title, message) {
+            const icon = document.getElementById('resultIcon');
+            
+            if (isWin) {
+                icon.className = 'w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-5xl bg-yellow-100';
+                icon.innerHTML = '🎁';
+                document.getElementById('resultTitle').className = 'text-2xl font-bold mb-2 text-yellow-600';
+            } else {
+                icon.className = 'w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-5xl bg-gray-100';
+                icon.innerHTML = '😢';
+                document.getElementById('resultTitle').className = 'text-2xl font-bold mb-2 text-gray-600';
+            }
+            
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('resultContent').classList.remove('hidden');
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toast.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-xl shadow-lg z-50 ${type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'} text-white`;
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        function bindEvents() {
+            document.getElementById('loginSubmitBtn').addEventListener('click', function() {
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                
+                if (!username || !password) {
+                    showToast('请输入账号和密码', 'error');
+                    return;
+                }
+                
+                const user = DataStore.getUserByUsername(username);
+                if (!user || user.password !== password) {
+                    showToast('账号或密码错误', 'error');
+                    return;
+                }
+                
+                DataStore.setCurrentUser(user);
+                currentUser = user;
+                
+                document.getElementById('loginPrompt').classList.add('hidden');
+                
+                if (activityType === 'vote') {
+                    loadVote();
+                } else if (activityType === 'lottery') {
+                    loadLottery();
+                }
+            });
+            
+            document.getElementById('voteForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const selectedOptions = [];
+                document.querySelectorAll('input[name="voteOption"]:checked').forEach(input => {
+                    selectedOptions.push(parseInt(input.value));
+                });
+                
+                if (selectedOptions.length === 0) {
+                    showToast('请选择至少一个选项', 'error');
+                    return;
+                }
+                
+                const record = {
+                    voteId: currentActivity.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    participantName: currentActivity.needName ? document.getElementById('voteName')?.value : '',
+                    participantPhone: currentActivity.needPhone ? document.getElementById('votePhone')?.value : '',
+                    remark: currentActivity.needRemark ? document.getElementById('voteRemark')?.value : '',
+                    selectedOptions: selectedOptions,
+                    participatedAt: new Date().toISOString()
+                };
+                
+                DataStore.addVoteRecord(record);
+                
+                document.getElementById('voteContent').classList.add('hidden');
+                showResult(true, '投票成功', '感谢您的参与！');
+            });
+            
+            document.getElementById('lotteryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                let prize = null;
+                const random = Math.random() * 100;
+                let cumulative = 0;
+                
+                for (const p of currentActivity.prizes) {
+                    cumulative += p.probability;
+                    if (random < cumulative) {
+                        prize = p.name;
+                        break;
+                    }
+                }
+                
+                const record = {
+                    lotteryId: currentActivity.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    participantName: currentActivity.needName ? document.getElementById('lotteryName')?.value : '',
+                    participantPhone: currentActivity.needPhone ? document.getElementById('lotteryPhone')?.value : '',
+                    prize: prize,
+                    participatedAt: new Date().toISOString()
+                };
+                
+                DataStore.addLotteryRecord(record);
+                
+                document.getElementById('lotteryContent').classList.add('hidden');
+                
+                if (prize) {
+                    showResult(true, '恭喜中奖', `您获得了：${prize}`);
+                } else {
+                    showResult(false, '很遗憾', '未中奖，下次再接再厉！');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

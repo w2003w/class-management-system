@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 个人资料</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .tab-btn { transition: all 0.2s ease; }
+        .tab-btn.active { border-bottom: 2px solid #1E40AF; color: #1E40AF; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">个人资料</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center" id="notificationBadge">3</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center space-x-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium" id="userAvatar">WT</div>
+                                <span class="hidden md:block text-sm font-medium text-gray-700" id="userName">吴涛</span>
+                                <i class="fa fa-chevron-down text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <hr class="my-2">
+                                <a href="#" id="logoutLink" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="mobileSidebar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden md:hidden">
+                <div class="w-64 h-full bg-white">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                                <i class="fa fa-graduation-cap text-white text-lg"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            </div>
+                        </div>
+                        <button id="closeMobileSidebar" class="text-gray-500">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <nav class="p-4">
+                        <div class="mb-6">
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                            <ul class="space-y-1">
+                                <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                                <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                                <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                                <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-6" id="mobileAdminMenu">
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                            <ul class="space-y-1">
+                                <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                                <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                            <ul class="space-y-1">
+                                <li><a href="profile.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                                <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            
+            <main class="flex-1 overflow-y-auto p-6">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex border-b border-gray-200 mb-6">
+                        <button class="tab-btn active px-4 py-3 text-sm font-medium text-gray-600" data-tab="basic">基本信息</button>
+                        <button class="tab-btn px-4 py-3 text-sm font-medium text-gray-600" data-tab="password">修改密码</button>
+                    </div>
+                    
+                    <div id="basicTab" class="tab-content">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-2">
+                                <div class="card bg-white rounded-xl shadow-sm p-6">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-6">个人信息</h3>
+                                    
+                                    <form id="profileForm">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                                                <input type="text" id="profileName" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">账号</label>
+                                                <input type="text" id="profileUsername" class="w-full px-4 py-2 border border-gray-300 rounded-xl bg-gray-50 text-gray-500" disabled>
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                                                <input type="email" id="profileEmail" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">手机号</label>
+                                                <input type="tel" id="profilePhone" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">院系</label>
+                                                <input type="text" id="profileDepartment" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">专业</label>
+                                                <input type="text" id="profileMajor" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">班级</label>
+                                                <input type="text" id="profileClass" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                            
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">学号</label>
+                                                <input type="text" id="profileStudentId" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-6 flex justify-end space-x-3">
+                                            <button type="button" id="cancelProfileBtn" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                                            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"><i class="fa fa-save mr-2"></i>保存修改</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="card bg-white rounded-xl shadow-sm p-6 mb-6">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-6">头像设置</h3>
+                                    
+                                    <div class="flex flex-col items-center">
+                                        <div class="relative mb-4">
+                                            <div id="avatarPreview" class="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-3xl font-bold">WT</div>
+                                            <input type="file" id="avatarInput" class="hidden" accept="image/*">
+                                            <button type="button" id="changeAvatarBtn" class="absolute bottom-0 right-0 bg-white text-primary p-2 rounded-full shadow-md hover:bg-gray-50 transition-colors">
+                                                <i class="fa fa-camera"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <p class="text-sm text-gray-500 text-center mb-4">点击相机图标更换头像<br>支持 JPG、PNG 格式</p>
+                                        
+                                        <button type="button" id="resetAvatarBtn" class="text-sm text-gray-500 hover:text-primary transition-colors">
+                                            <i class="fa fa-refresh mr-1"></i>恢复默认
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="card bg-white rounded-xl shadow-sm p-6">
+                                    <h3 class="text-lg font-semibold text-gray-800 mb-4">我的统计</h3>
+                                    
+                                    <div class="space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="fa fa-calendar-check-o text-blue-500"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500">签到次数</p>
+                                                    <p class="text-lg font-semibold text-gray-800" id="statCheckins">0</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="fa fa-file-text-o text-purple-500"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500">考试次数</p>
+                                                    <p class="text-lg font-semibold text-gray-800" id="statExams">0</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="fa fa-check-square-o text-orange-500"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500">投票次数</p>
+                                                    <p class="text-lg font-semibold text-gray-800" id="statVotes">0</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                                                    <i class="fa fa-trophy text-green-500"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-gray-500">抽奖中奖</p>
+                                                    <p class="text-lg font-semibold text-gray-800" id="statLotteries">0</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="passwordTab" class="tab-content hidden">
+                        <div class="card bg-white rounded-xl shadow-sm p-6 max-w-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-6">修改密码</h3>
+                            
+                            <form id="passwordForm">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
+                                        <input type="password" id="currentPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
+                                        <input type="password" id="newPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                        <p class="text-xs text-gray-500 mt-1">密码长度至少6位</p>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
+                                        <input type="password" id="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-end space-x-3">
+                                    <button type="button" id="cancelPasswordBtn" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors"><i class="fa fa-lock mr-2"></i>修改密码</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let currentUser = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            DataStore.init();
+            checkAuth();
+            initEventListeners();
+            loadUserProfile();
+            loadUserStats();
+            renderNotifications();
+        });
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i><p>暂无通知</p></div>';
+                return;
+            }
+            
+            let html = '';
+            notifications.forEach(n => {
+                let iconClass = 'fa-bell';
+                if (n.type === 'attendance') iconClass = 'fa-calendar-check-o';
+                else if (n.type === 'exam') iconClass = 'fa-file-text-o';
+                else if (n.type === 'vote') iconClass = 'fa-check-square-o';
+                
+                html += '<div class="p-4 border-b hover:bg-gray-50 cursor-pointer ' + (!n.read ? 'bg-blue-50' : '') + '" onclick="markAsRead(' + n.id + ')">';
+                html += '<div class="flex items-start">';
+                html += '<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">';
+                html += '<i class="fa ' + iconClass + ' text-primary"></i>';
+                html += '</div>';
+                html += '<div class="flex-1">';
+                html += '<p class="text-sm font-medium text-gray-800">' + n.title + '</p>';
+                html += '<p class="text-xs text-gray-500 mt-1">' + n.message + '</p>';
+                html += '<p class="text-xs text-gray-400 mt-1">' + formatDateTime(n.createdAt) + '</p>';
+                html += '</div>';
+                if (!n.read) html += '<span class="w-2 h-2 bg-red-500 rounded-full"></span>';
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function checkAuth() {
+            const userStr = localStorage.getItem('currentUser');
+            if (!userStr) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            
+            if (currentUser.role !== 'admin') {
+                document.getElementById('adminMenu').classList.add('hidden');
+                document.getElementById('mobileAdminMenu').classList.add('hidden');
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+        }
+        
+        function initEventListeners() {
+            document.getElementById('userMenuBtn').addEventListener('click', function() {
+                document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutLink').addEventListener('click', logout);
+            document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
+            
+            document.getElementById('notificationBtn').addEventListener('click', function() {
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', function() {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', function(e) {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                    document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+                });
+            });
+            
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveProfile();
+            });
+            
+            document.getElementById('passwordForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                changePassword();
+            });
+            
+            document.getElementById('changeAvatarBtn').addEventListener('click', function() {
+                document.getElementById('avatarInput').click();
+            });
+            
+            document.getElementById('avatarInput').addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        document.getElementById('avatarPreview').style.backgroundImage = `url(${event.target.result})`;
+                        document.getElementById('avatarPreview').style.backgroundSize = 'cover';
+                        document.getElementById('avatarPreview').textContent = '';
+                        
+                        const users = DataStore.getUsers();
+                        const userIndex = users.findIndex(u => u.id === currentUser.id);
+                        if (userIndex !== -1) {
+                            users[userIndex].avatar = event.target.result;
+                            DataStore.saveUsers(users);
+                            showToast('头像更新成功', 'success');
+                        }
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            document.getElementById('resetAvatarBtn').addEventListener('click', function() {
+                document.getElementById('avatarPreview').style.backgroundImage = '';
+                document.getElementById('avatarPreview').textContent = currentUser.name.substring(0, 2).toUpperCase();
+                
+                const users = DataStore.getUsers();
+                const userIndex = users.findIndex(u => u.id === currentUser.id);
+                if (userIndex !== -1) {
+                    users[userIndex].avatar = null;
+                    DataStore.saveUsers(users);
+                    showToast('头像已恢复默认', 'success');
+                }
+            });
+            
+            document.getElementById('cancelProfileBtn').addEventListener('click', loadUserProfile);
+            document.getElementById('cancelPasswordBtn').addEventListener('click', function() {
+                document.getElementById('passwordForm').reset();
+            });
+        }
+        
+        function loadUserProfile() {
+            const users = DataStore.getUsers();
+            const user = users.find(u => u.id === currentUser.id);
+            
+            if (user) {
+                document.getElementById('profileName').value = user.name || '';
+                document.getElementById('profileUsername').value = user.username || '';
+                document.getElementById('profileEmail').value = user.email || '';
+                document.getElementById('profilePhone').value = user.phone || '';
+                document.getElementById('profileDepartment').value = user.department || '';
+                document.getElementById('profileMajor').value = user.major || '';
+                document.getElementById('profileClass').value = user.className || '';
+                document.getElementById('profileStudentId').value = user.studentId || '';
+                
+                if (user.avatar) {
+                    document.getElementById('avatarPreview').style.backgroundImage = `url(${user.avatar})`;
+                    document.getElementById('avatarPreview').style.backgroundSize = 'cover';
+                    document.getElementById('avatarPreview').textContent = '';
+                }
+            }
+        }
+        
+        function loadUserStats() {
+            const attendanceRecords = DataStore.getAttendanceRecords();
+            const userCheckins = attendanceRecords.filter(r => r.userId === currentUser.id).length;
+            document.getElementById('statCheckins').textContent = userCheckins;
+            
+            const examRecords = DataStore.getExamRecords();
+            const userExams = examRecords.filter(r => r.userId === currentUser.id).length;
+            document.getElementById('statExams').textContent = userExams;
+            
+            const voteRecords = DataStore.getVoteRecords();
+            const userVotes = voteRecords.filter(r => r.userId === currentUser.id).length;
+            document.getElementById('statVotes').textContent = userVotes;
+            
+            const lotteryRecords = DataStore.getLotteryRecords();
+            const userLotteries = lotteryRecords.filter(r => r.userId === currentUser.id && r.prize).length;
+            document.getElementById('statLotteries').textContent = userLotteries;
+        }
+        
+        function saveProfile() {
+            const users = DataStore.getUsers();
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            
+            if (userIndex !== -1) {
+                users[userIndex].name = document.getElementById('profileName').value;
+                users[userIndex].email = document.getElementById('profileEmail').value;
+                users[userIndex].phone = document.getElementById('profilePhone').value;
+                users[userIndex].department = document.getElementById('profileDepartment').value;
+                users[userIndex].major = document.getElementById('profileMajor').value;
+                users[userIndex].className = document.getElementById('profileClass').value;
+                users[userIndex].studentId = document.getElementById('profileStudentId').value;
+                
+                DataStore.saveUsers(users);
+                
+                currentUser.name = users[userIndex].name;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+                
+                showToast('个人资料保存成功', 'success');
+            }
+        }
+        
+        function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword.length < 6) {
+                showToast('新密码长度至少6位', 'warning');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showToast('两次输入的密码不一致', 'warning');
+                return;
+            }
+            
+            const users = DataStore.getUsers();
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            
+            if (userIndex !== -1) {
+                if (users[userIndex].password !== currentPassword) {
+                    showToast('当前密码错误', 'error');
+                    return;
+                }
+                
+                users[userIndex].password = newPassword;
+                DataStore.saveUsers(users);
+                
+                document.getElementById('passwordForm').reset();
+                showToast('密码修改成功', 'success');
+            }
+        }
+        
+        function logout(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

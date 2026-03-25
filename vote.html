@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 投票抽奖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .tab-btn.active { border-bottom: 2px solid #1E40AF; color: #1E40AF; }
+        .vote-option { transition: all 0.2s ease; }
+        .vote-option:hover { background: #F3F4F6; }
+        .vote-option.selected { background: #DBEAFE; border-color: #3B82F6; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">投票抽奖</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <div class="max-w-7xl mx-auto">
+                    <div class="flex border-b mb-6">
+                        <button class="tab-btn active px-6 py-3 font-medium text-gray-600" data-tab="votes">
+                            <i class="fa fa-check-square-o mr-2"></i>投票活动
+                        </button>
+                        <button class="tab-btn px-6 py-3 font-medium text-gray-600" data-tab="lotteries">
+                            <i class="fa fa-gift mr-2"></i>抽奖活动
+                        </button>
+                    </div>
+                    
+                    <div id="votesTab" class="tab-content">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                            <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                                <button id="createVoteBtn" class="bg-primary text-white px-4 py-2 rounded-xl font-medium hover:bg-secondary transition-colors flex items-center">
+                                    <i class="fa fa-plus mr-2"></i>创建投票
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <select id="voteStatusFilter" class="px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                    <option value="">全部状态</option>
+                                    <option value="active">进行中</option>
+                                    <option value="pending">待开始</option>
+                                    <option value="completed">已结束</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-500">投票活动</p>
+                                        <p class="text-2xl font-bold text-gray-800" id="totalVotes">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <i class="fa fa-check-square-o text-blue-500 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-500">参与人次</p>
+                                        <p class="text-2xl font-bold text-green-600" id="totalVoteRecords">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                        <i class="fa fa-users text-green-500 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-500">抽奖活动</p>
+                                        <p class="text-2xl font-bold text-orange-600" id="totalLotteries">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                        <i class="fa fa-gift text-orange-500 text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm">
+                            <div id="voteList" class="divide-y">
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="fa fa-check-square-o text-4xl mb-2 text-gray-300"></i>
+                                    <p>暂无投票活动</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="lotteriesTab" class="tab-content hidden">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                            <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                                <button id="createLotteryBtn" class="bg-primary text-white px-4 py-2 rounded-xl font-medium hover:bg-secondary transition-colors flex items-center">
+                                    <i class="fa fa-plus mr-2"></i>创建抽奖
+                                </button>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3">
+                                <select id="lotteryStatusFilter" class="px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                    <option value="">全部状态</option>
+                                    <option value="active">进行中</option>
+                                    <option value="pending">待开始</option>
+                                    <option value="completed">已结束</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl shadow-sm">
+                            <div id="lotteryList" class="divide-y">
+                                <div class="p-8 text-center text-gray-500">
+                                    <i class="fa fa-gift text-4xl mb-2 text-gray-300"></i>
+                                    <p>暂无抽奖活动</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="createVoteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-plus-circle text-primary mr-2"></i>创建投票</h3>
+                    <button id="closeCreateVoteModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <form id="createVoteForm" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">投票主题 *</label>
+                    <input type="text" id="voteTitle" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：班级活动投票">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">投票说明</label>
+                    <textarea id="voteDescription" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="投票相关说明"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
+                        <input type="datetime-local" id="voteStartTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
+                        <input type="datetime-local" id="voteEndTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">投票选项 *</label>
+                    <div id="voteOptionsList" class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 vote-option-input" placeholder="选项1" required>
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-vote-option"><i class="fa fa-times"></i></button>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 vote-option-input" placeholder="选项2" required>
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-vote-option"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button type="button" id="addVoteOptionBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加选项</button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">投票设置</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="voteType" value="single" checked class="w-4 h-4 text-primary">
+                            <span class="ml-2 text-sm text-gray-700">单选（每人只能投一票）</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="voteType" value="multiple" class="w-4 h-4 text-primary">
+                            <span class="ml-2 text-sm text-gray-700">多选（每人可投多票）</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">需填写信息</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="voteNeedName" checked class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">姓名</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="voteNeedPhone" class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">手机号</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="voteNeedRemark" class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">备注</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">自定义字段</label>
+                    <div id="voteCustomFieldsList" class="space-y-2">
+                    </div>
+                    <button type="button" id="addVoteCustomFieldBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加自定义字段</button>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelCreateVoteBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">创建投票</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="createLotteryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-plus-circle text-primary mr-2"></i>创建抽奖</h3>
+                    <button id="closeCreateLotteryModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <form id="createLotteryForm" class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">抽奖主题 *</label>
+                    <input type="text" id="lotteryTitle" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：新年抽奖">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">抽奖说明</label>
+                    <textarea id="lotteryDescription" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="抽奖相关说明"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
+                        <input type="datetime-local" id="lotteryStartTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
+                        <input type="datetime-local" id="lotteryEndTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">奖项设置 *</label>
+                    <div id="prizeList" class="space-y-2">
+                        <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl">
+                            <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称" required>
+                            <input type="number" class="w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" required>
+                            <input type="number" class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100" step="0.1" required>
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-prize"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button type="button" id="addPrizeBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加奖项</button>
+                    <p class="text-xs text-gray-500 mt-1">概率总和应为100%，未中奖概率 = 100% - 各奖项概率之和</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">需填写信息</label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="lotteryNeedName" checked class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">姓名</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="lotteryNeedPhone" class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">手机号</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">自定义字段</label>
+                    <div id="lotteryCustomFieldsList" class="space-y-2">
+                    </div>
+                    <button type="button" id="addLotteryCustomFieldBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加自定义字段</button>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelCreateLotteryBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">创建抽奖</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="participateVoteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="participateVoteTitle">投票</h3>
+                    <button id="closeParticipateVoteModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <form id="participateVoteForm" class="p-6">
+                <div id="voteOptionsContainer" class="mb-4">
+                </div>
+                
+                <div id="voteInfoFields" class="mb-4 space-y-3">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelParticipateVoteBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">提交投票</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="participateLotteryModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="participateLotteryTitle">抽奖</h3>
+                    <button id="closeParticipateLotteryModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <form id="participateLotteryForm" class="p-6">
+                <div id="lotteryInfoFields" class="mb-4 space-y-3">
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelParticipateLotteryBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">开始抽奖</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="qrCodeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md modal-content mx-4">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-qrcode text-primary mr-2"></i>扫码参与</h3>
+                    <button id="closeQrCodeModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-6 text-center">
+                <div id="qrCodeContainer" class="inline-block mb-4"></div>
+                <p class="text-sm text-gray-500" id="qrCodeTip">使用微信扫一扫即可参与</p>
+                <p class="text-lg font-semibold text-gray-800 mt-2" id="qrCodeTitle"></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="lotteryResultModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md modal-content mx-4">
+            <div class="p-6 text-center">
+                <div id="lotteryResultIcon" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center">
+                    <i class="fa fa-trophy text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2" id="lotteryResultTitle">恭喜您！</h3>
+                <p class="text-lg text-gray-600" id="lotteryResultPrize"></p>
+                <button id="closeLotteryResultBtn" class="mt-6 w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="voteDetailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-bar-chart text-primary mr-2"></i>投票统计</h3>
+                    <button id="closeVoteDetailModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div id="voteDetailContent" class="p-6">
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        let currentUser = null;
+        let currentVote = null;
+        let currentLottery = null;
+        let qrCodeInstance = null;
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
+            const icon = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' }[type] || 'fa-info-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `<i class="fa ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无通知</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notifications.map(n => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
+                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
+                        </div>
+                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getStatus(status) {
+            const now = new Date();
+            const start = new Date(status.startTime);
+            const end = new Date(status.endTime);
+            
+            if (now < start) return 'pending';
+            if (now > end) return 'completed';
+            return 'active';
+        }
+        
+        function getStatusBadge(status) {
+            const badges = {
+                active: '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">进行中</span>',
+                pending: '<span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">待开始</span>',
+                completed: '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">已结束</span>'
+            };
+            return badges[status] || '';
+        }
+        
+        function renderVoteList() {
+            const votes = DataStore.getVotes();
+            const voteRecords = DataStore.getVoteRecords();
+            const statusFilter = document.getElementById('voteStatusFilter').value;
+            
+            let filtered = votes.filter(v => !statusFilter || getStatus(v) === statusFilter);
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            const container = document.getElementById('voteList');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-check-square-o text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无投票活动</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(vote => {
+                const status = getStatus(vote);
+                const voteRecordCount = voteRecords.filter(r => r.voteId === vote.id).length;
+                const userVoted = voteRecords.find(r => r.voteId === vote.id && r.userId === currentUser.id);
+                
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    ${getStatusBadge(status)}
+                                    ${userVoted ? '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"><i class="fa fa-check mr-1"></i>已参与</span>' : ''}
+                                </div>
+                                <h4 class="font-semibold text-gray-800">${vote.title}</h4>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(vote.startTime)} - ${formatDateTime(vote.endTime)}</span>
+                                    <span><i class="fa fa-users mr-1"></i>${voteRecordCount}人参与</span>
+                                    <span><i class="fa fa-list-ul mr-1"></i>${vote.type === 'single' ? '单选' : '多选'}</span>
+                                </div>
+                                ${vote.description ? `<p class="text-sm text-gray-500 mt-1">${vote.description}</p>` : ''}
+                            </div>
+                            
+                            <div class="flex items-center space-x-2 ml-4">
+                                ${status === 'active' && !userVoted ? `
+                                    <button onclick="participateVote(${vote.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
+                                        <i class="fa fa-check mr-1"></i>参与投票
+                                    </button>
+                                ` : ''}
+                                <button onclick="showQrCode('vote', ${vote.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                    <i class="fa fa-qrcode mr-1"></i>二维码
+                                </button>
+                                ${currentUser.role !== 'user' ? `
+                                    <button onclick="showVoteDetail(${vote.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                        <i class="fa fa-bar-chart mr-1"></i>统计
+                                    </button>
+                                    <button onclick="deleteVote(${vote.id})" class="text-red-500 hover:text-red-600 px-2">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('totalVotes').textContent = votes.length;
+            document.getElementById('totalVoteRecords').textContent = voteRecords.length;
+            document.getElementById('totalLotteries').textContent = DataStore.getLotteries().length;
+        }
+        
+        function renderLotteryList() {
+            const lotteries = DataStore.getLotteries();
+            const lotteryRecords = DataStore.getLotteryRecords();
+            const statusFilter = document.getElementById('lotteryStatusFilter').value;
+            
+            let filtered = lotteries.filter(l => !statusFilter || getStatus(l) === statusFilter);
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            const container = document.getElementById('lotteryList');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-gift text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无抽奖活动</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(lottery => {
+                const status = getStatus(lottery);
+                const lotteryRecordCount = lotteryRecords.filter(r => r.lotteryId === lottery.id).length;
+                const userParticipated = lotteryRecords.find(r => r.lotteryId === lottery.id && r.userId === currentUser.id);
+                
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    ${getStatusBadge(status)}
+                                    ${userParticipated ? '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"><i class="fa fa-check mr-1"></i>已参与</span>' : ''}
+                                </div>
+                                <h4 class="font-semibold text-gray-800">${lottery.title}</h4>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(lottery.startTime)} - ${formatDateTime(lottery.endTime)}</span>
+                                    <span><i class="fa fa-users mr-1"></i>${lotteryRecordCount}人参与</span>
+                                    <span><i class="fa fa-gift mr-1"></i>${lottery.prizes.length}个奖项</span>
+                                </div>
+                                ${lottery.description ? `<p class="text-sm text-gray-500 mt-1">${lottery.description}</p>` : ''}
+                            </div>
+                            
+                            <div class="flex items-center space-x-2 ml-4">
+                                ${status === 'active' && !userParticipated ? `
+                                    <button onclick="participateLottery(${lottery.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
+                                        <i class="fa fa-gift mr-1"></i>参与抽奖
+                                    </button>
+                                ` : ''}
+                                <button onclick="showQrCode('lottery', ${lottery.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                    <i class="fa fa-qrcode mr-1"></i>二维码
+                                </button>
+                                ${currentUser.role !== 'user' ? `
+                                    <button onclick="showLotteryRecords(${lottery.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                        <i class="fa fa-list mr-1"></i>记录
+                                    </button>
+                                    <button onclick="deleteLottery(${lottery.id})" class="text-red-500 hover:text-red-600 px-2">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function participateVote(voteId) {
+            const votes = DataStore.getVotes();
+            currentVote = votes.find(v => v.id === voteId);
+            
+            if (!currentVote) {
+                showToast('投票不存在', 'error');
+                return;
+            }
+            
+            document.getElementById('participateVoteTitle').textContent = currentVote.title;
+            
+            let optionsHtml = currentVote.options.map((opt, i) => `
+                <label class="vote-option flex items-center p-3 border rounded-xl cursor-pointer">
+                    <input type="${currentVote.type === 'multiple' ? 'checkbox' : 'radio'}" name="voteOption" value="${i}" class="w-4 h-4 text-primary mr-3">
+                    <span>${opt}</span>
+                </label>
+            `).join('');
+            
+            document.getElementById('voteOptionsContainer').innerHTML = `
+                <label class="block text-sm font-medium text-gray-700 mb-2">请选择</label>
+                <div class="space-y-2">${optionsHtml}</div>
+            `;
+            
+            let infoFields = '';
+            if (currentVote.needName) {
+                infoFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
+                        <input type="text" id="voteParticipantName" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="${currentUser ? currentUser.name : ''}">
+                    </div>
+                `;
+            }
+            if (currentVote.needPhone) {
+                infoFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机号 *</label>
+                        <input type="tel" id="voteParticipantPhone" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                `;
+            }
+            if (currentVote.needRemark) {
+                infoFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                        <textarea id="voteParticipantRemark" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"></textarea>
+                    </div>
+                `;
+            }
+            if (currentVote.customFields && currentVote.customFields.length > 0) {
+                currentVote.customFields.forEach((field, index) => {
+                    const requiredAttr = field.required ? 'required' : '';
+                    const requiredMark = field.required ? ' *' : '';
+                    let inputHtml = '';
+                    if (field.type === 'text') {
+                        inputHtml = `<input type="text" id="voteCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'number') {
+                        inputHtml = `<input type="number" id="voteCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'date') {
+                        inputHtml = `<input type="date" id="voteCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'select') {
+                        inputHtml = `<select id="voteCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">请选择</option><option value="选项1">选项1</option><option value="选项2">选项2</option><option value="选项3">选项3</option></select>`;
+                    }
+                    infoFields += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">${field.name}${requiredMark}</label>
+                            ${inputHtml}
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('voteInfoFields').innerHTML = infoFields;
+            
+            document.getElementById('participateVoteModal').classList.remove('hidden');
+        }
+        
+        function participateLottery(lotteryId) {
+            const lotteries = DataStore.getLotteries();
+            currentLottery = lotteries.find(l => l.id === lotteryId);
+            
+            if (!currentLottery) {
+                showToast('抽奖不存在', 'error');
+                return;
+            }
+            
+            document.getElementById('participateLotteryTitle').textContent = currentLottery.title;
+            
+            let infoFields = '';
+            if (currentLottery.needName) {
+                infoFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
+                        <input type="text" id="lotteryParticipantName" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="${currentUser ? currentUser.name : ''}">
+                    </div>
+                `;
+            }
+            if (currentLottery.needPhone) {
+                infoFields += `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机号 *</label>
+                        <input type="tel" id="lotteryParticipantPhone" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                `;
+            }
+            if (currentLottery.customFields && currentLottery.customFields.length > 0) {
+                currentLottery.customFields.forEach((field, index) => {
+                    const requiredAttr = field.required ? 'required' : '';
+                    const requiredMark = field.required ? ' *' : '';
+                    let inputHtml = '';
+                    if (field.type === 'text') {
+                        inputHtml = `<input type="text" id="lotteryCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'number') {
+                        inputHtml = `<input type="number" id="lotteryCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'date') {
+                        inputHtml = `<input type="date" id="lotteryCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">`;
+                    } else if (field.type === 'select') {
+                        inputHtml = `<select id="lotteryCustomField_${index}" ${requiredAttr} class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"><option value="">请选择</option><option value="选项1">选项1</option><option value="选项2">选项2</option><option value="选项3">选项3</option></select>`;
+                    }
+                    infoFields += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">${field.name}${requiredMark}</label>
+                            ${inputHtml}
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('lotteryInfoFields').innerHTML = infoFields;
+            
+            document.getElementById('participateLotteryModal').classList.remove('hidden');
+        }
+        
+        function showQrCode(type, id) {
+            const container = document.getElementById('qrCodeContainer');
+            container.innerHTML = '';
+            
+            const url = `${window.location.origin}${window.location.pathname.replace('vote.html', '')}participate.html?type=${type}&id=${id}`;
+            
+            if (qrCodeInstance) {
+                qrCodeInstance.clear();
+            }
+            
+            qrCodeInstance = new QRCode(container, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            const title = type === 'vote' ? DataStore.getVotes().find(v => v.id === id)?.title : DataStore.getLotteries().find(l => l.id === id)?.title;
+            document.getElementById('qrCodeTitle').textContent = title || '';
+            
+            document.getElementById('qrCodeModal').classList.remove('hidden');
+        }
+        
+        function showVoteDetail(voteId) {
+            const votes = DataStore.getVotes();
+            const vote = votes.find(v => v.id === voteId);
+            const records = DataStore.getVoteRecords().filter(r => r.voteId === voteId);
+            
+            if (!vote) return;
+            
+            const optionCounts = vote.options.map((opt, i) => ({
+                name: opt,
+                count: records.filter(r => r.selectedOptions.includes(i)).length
+            }));
+            
+            const maxCount = Math.max(...optionCounts.map(o => o.count));
+            
+            let exportBtnHtml = '';
+            if (currentUser.role !== 'user') {
+                exportBtnHtml = '<button onclick="exportVoteRecords(' + voteId + ')" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary transition-colors"><i class="fa fa-download mr-1"></i>导出记录</button>';
+            }
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">${vote.title}</h4>
+                    <p class="text-sm text-gray-500 mb-4">总参与人数：${records.length}</p>
+                    
+                    <div class="space-y-3">
+                        ${optionCounts.map(opt => `
+                            <div>
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>${opt.name}</span>
+                                    <span class="font-medium">${opt.count}票 (${records.length > 0 ? Math.round(opt.count / records.length * 100) : 0}%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-primary rounded-full h-3 transition-all" style="width: ${records.length > 0 ? (opt.count / records.length * 100) : 0}%"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    ${exportBtnHtml}
+                </div>
+            `;
+            
+            document.getElementById('voteDetailContent').innerHTML = html;
+            document.getElementById('voteDetailModal').classList.remove('hidden');
+        }
+        
+        function showLotteryRecords(lotteryId) {
+            const lotteries = DataStore.getLotteries();
+            const lottery = lotteries.find(l => l.id === lotteryId);
+            const records = DataStore.getLotteryRecords().filter(r => r.lotteryId === lotteryId);
+            
+            if (!lottery) return;
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">${lottery.title}</h4>
+                    <p class="text-sm text-gray-500 mb-4">总参与人数：${records.length}</p>
+                    
+                    <div class="max-h-64 overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-500 border-b">
+                                    <th class="pb-2">姓名</th>
+                                    <th class="pb-2">奖项</th>
+                                    <th class="pb-2">时间</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                ${records.map(r => `
+                                    <tr>
+                                        <td class="py-2">${r.participantName || '-'}</td>
+                                        <td class="py-2 ${r.prize ? 'text-green-600 font-medium' : 'text-gray-500'}">${r.prize || '未中奖'}</td>
+                                        <td class="py-2 text-gray-500">${formatDateTime(r.participatedAt)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('voteDetailContent').innerHTML = html;
+            document.getElementById('voteDetailModal').classList.remove('hidden');
+        }
+        
+        function exportVoteRecords(voteId) {
+            const records = DataStore.getVoteRecords().filter(r => r.voteId === voteId);
+            const votes = DataStore.getVotes();
+            const vote = votes.find(v => v.id === voteId);
+            
+            if (records.length === 0) {
+                showToast('没有记录可导出', 'warning');
+                return;
+            }
+            
+            const data = records.map(r => ({
+                姓名: r.participantName || '',
+                手机号: r.participantPhone || '',
+                选择: r.selectedOptions.map(i => vote.options[i]).join(','),
+                备注: r.remark || '',
+                时间: formatDateTime(r.participatedAt)
+            }));
+            
+            DataStore.exportToCSV(data, `投票记录_${vote.title}_${new Date().toLocaleDateString()}`);
+        }
+        
+        function deleteVote(voteId) {
+            if (!confirm('确定要删除这个投票吗？')) return;
+            
+            let votes = DataStore.getVotes();
+            votes = votes.filter(v => v.id !== voteId);
+            DataStore.saveVotes(votes);
+            
+            showToast('删除成功', 'success');
+            renderVoteList();
+        }
+        
+        function deleteLottery(lotteryId) {
+            if (!confirm('确定要删除这个抽奖吗？')) return;
+            
+            let lotteries = DataStore.getLotteries();
+            lotteries = lotteries.filter(l => l.id !== lotteryId);
+            DataStore.saveLotteries(lotteries);
+            
+            showToast('删除成功', 'success');
+            renderLotteryList();
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = DataStore.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '超级管理员' : currentUser.role === 'subAdmin' ? '子管理员' : '普通成员';
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            
+            if (currentUser.role === 'user') {
+                document.getElementById('adminMenu').style.display = 'none';
+                document.getElementById('mobileAdminMenu').style.display = 'none';
+                document.getElementById('createVoteBtn').style.display = 'none';
+                document.getElementById('createLotteryBtn').style.display = 'none';
+                document.getElementById('exportBtn').style.display = 'none';
+            }
+            
+            renderVoteList();
+            renderLotteryList();
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(btn.dataset.tab + 'Tab').classList.remove('hidden');
+                });
+            });
+            
+            document.getElementById('createVoteBtn').addEventListener('click', () => {
+                document.getElementById('createVoteModal').classList.remove('hidden');
+                const now = new Date();
+                document.getElementById('voteStartTime').value = now.toISOString().slice(0, 16);
+                document.getElementById('voteEndTime').value = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+            });
+            
+            document.getElementById('closeCreateVoteModal').addEventListener('click', () => {
+                document.getElementById('createVoteModal').classList.add('hidden');
+            });
+            document.getElementById('cancelCreateVoteBtn').addEventListener('click', () => {
+                document.getElementById('createVoteModal').classList.add('hidden');
+            });
+            
+            document.getElementById('addVoteCustomFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('voteCustomFieldsList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 p-3 bg-gray-50 rounded-xl vote-custom-field';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-name" placeholder="字段名称" required>
+                    <select class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-type">
+                        <option value="text">文本</option>
+                        <option value="number">数字</option>
+                        <option value="select">下拉选择</option>
+                        <option value="date">日期</option>
+                    </select>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="checkbox" class="w-4 h-4 text-primary rounded custom-field-required">
+                        <span class="ml-1">必填</span>
+                    </label>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('voteCustomFieldsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-custom-field')) {
+                    e.target.closest('.vote-custom-field').remove();
+                }
+            });
+            
+            document.getElementById('addLotteryCustomFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('lotteryCustomFieldsList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 p-3 bg-gray-50 rounded-xl lottery-custom-field';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-name" placeholder="字段名称" required>
+                    <select class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-type">
+                        <option value="text">文本</option>
+                        <option value="number">数字</option>
+                        <option value="select">下拉选择</option>
+                        <option value="date">日期</option>
+                    </select>
+                    <label class="flex items-center text-sm text-gray-600">
+                        <input type="checkbox" class="w-4 h-4 text-primary rounded custom-field-required">
+                        <span class="ml-1">必填</span>
+                    </label>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('lotteryCustomFieldsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-custom-field')) {
+                    e.target.closest('.lottery-custom-field').remove();
+                }
+            });
+            
+            document.getElementById('addVoteOptionBtn').addEventListener('click', () => {
+                const container = document.getElementById('voteOptionsList');
+                const count = container.children.length + 1;
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 vote-option-input" placeholder="选项${count}" required>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-vote-option"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('voteOptionsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-vote-option')) {
+                    const div = e.target.closest('.flex');
+                    if (document.querySelectorAll('#voteOptionsList > .flex').length > 2) {
+                        div.remove();
+                    }
+                }
+            });
+            
+            document.getElementById('createVoteForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const options = [];
+                document.querySelectorAll('.vote-option-input').forEach(input => {
+                    if (input.value.trim()) options.push(input.value.trim());
+                });
+                
+                if (options.length < 2) {
+                    showToast('请至少添加2个选项', 'warning');
+                    return;
+                }
+                
+                const customFields = [];
+                document.querySelectorAll('.vote-custom-field').forEach(field => {
+                    const name = field.querySelector('.custom-field-name').value.trim();
+                    const type = field.querySelector('.custom-field-type').value;
+                    const required = field.querySelector('.custom-field-required').checked;
+                    if (name) {
+                        customFields.push({ name, type, required });
+                    }
+                });
+                
+                const vote = {
+                    title: document.getElementById('voteTitle').value,
+                    description: document.getElementById('voteDescription').value,
+                    startTime: document.getElementById('voteStartTime').value,
+                    endTime: document.getElementById('voteEndTime').value,
+                    options: options,
+                    type: document.querySelector('input[name="voteType"]:checked').value,
+                    needName: document.getElementById('voteNeedName').checked,
+                    needPhone: document.getElementById('voteNeedPhone').checked,
+                    needRemark: document.getElementById('voteNeedRemark').checked,
+                    customFields: customFields,
+                    createdBy: currentUser.id
+                };
+                
+                DataStore.addVote(vote);
+                showToast('投票创建成功', 'success');
+                document.getElementById('createVoteModal').classList.add('hidden');
+                renderVoteList();
+            });
+            
+            document.getElementById('createLotteryBtn').addEventListener('click', () => {
+                document.getElementById('createLotteryModal').classList.remove('hidden');
+                const now = new Date();
+                document.getElementById('lotteryStartTime').value = now.toISOString().slice(0, 16);
+                document.getElementById('lotteryEndTime').value = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+            });
+            
+            document.getElementById('closeCreateLotteryModal').addEventListener('click', () => {
+                document.getElementById('createLotteryModal').classList.add('hidden');
+            });
+            document.getElementById('cancelCreateLotteryBtn').addEventListener('click', () => {
+                document.getElementById('createLotteryModal').classList.add('hidden');
+            });
+            
+            document.getElementById('addPrizeBtn').addEventListener('click', () => {
+                const container = document.getElementById('prizeList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 p-3 bg-gray-50 rounded-xl';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称" required>
+                    <input type="number" class="w-20 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" required>
+                    <input type="number" class="w-24 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100" step="0.1" required>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-prize"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('prizeList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-prize')) {
+                    const div = e.target.closest('.flex');
+                    if (document.querySelectorAll('#prizeList > .flex').length > 1) {
+                        div.remove();
+                    }
+                }
+            });
+            
+            document.getElementById('createLotteryForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const prizes = [];
+                let totalProbability = 0;
+                
+                document.querySelectorAll('#prizeList > .flex').forEach(div => {
+                    const name = div.querySelector('.prize-name').value.trim();
+                    const count = parseInt(div.querySelector('.prize-count').value);
+                    const probability = parseFloat(div.querySelector('.prize-probability').value);
+                    
+                    if (name && count > 0) {
+                        prizes.push({ name, count, probability });
+                        totalProbability += probability;
+                    }
+                });
+                
+                if (prizes.length === 0) {
+                    showToast('请至少添加1个奖项', 'warning');
+                    return;
+                }
+                
+                if (totalProbability > 100) {
+                    showToast('概率总和不能超过100%', 'warning');
+                    return;
+                }
+                
+                const lottery = {
+                    title: document.getElementById('lotteryTitle').value,
+                    description: document.getElementById('lotteryDescription').value,
+                    startTime: document.getElementById('lotteryStartTime').value,
+                    endTime: document.getElementById('lotteryEndTime').value,
+                    prizes: prizes,
+                    needName: document.getElementById('lotteryNeedName').checked,
+                    needPhone: document.getElementById('lotteryNeedPhone').checked,
+                    customFields: getLotteryCustomFields(),
+                    createdBy: currentUser.id
+                };
+                
+                DataStore.addLottery(lottery);
+                showToast('抽奖创建成功', 'success');
+                document.getElementById('createLotteryModal').classList.add('hidden');
+                renderLotteryList();
+            });
+            
+            function getLotteryCustomFields() {
+                const customFields = [];
+                document.querySelectorAll('.lottery-custom-field').forEach(field => {
+                    const name = field.querySelector('.custom-field-name').value.trim();
+                    const type = field.querySelector('.custom-field-type').value;
+                    const required = field.querySelector('.custom-field-required').checked;
+                    if (name) {
+                        customFields.push({ name, type, required });
+                    }
+                });
+                return customFields;
+            }
+            
+            document.getElementById('participateVoteForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const selectedOptions = [];
+                document.querySelectorAll('input[name="voteOption"]:checked').forEach(input => {
+                    selectedOptions.push(parseInt(input.value));
+                });
+                
+                if (selectedOptions.length === 0) {
+                    showToast('请选择投票选项', 'warning');
+                    return;
+                }
+                
+                if (currentVote.type === 'single' && selectedOptions.length > 1) {
+                    showToast('单选投票只能选择一个选项', 'warning');
+                    return;
+                }
+                
+                const customFieldValues = {};
+                if (currentVote.customFields && currentVote.customFields.length > 0) {
+                    currentVote.customFields.forEach((field, index) => {
+                        const input = document.getElementById(`voteCustomField_${index}`);
+                        if (input) {
+                            customFieldValues[field.name] = input.value;
+                        }
+                    });
+                }
+                
+                const record = {
+                    voteId: currentVote.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    participantName: currentVote.needName ? document.getElementById('voteParticipantName').value : '',
+                    participantPhone: currentVote.needPhone ? document.getElementById('voteParticipantPhone').value : '',
+                    remark: currentVote.needRemark ? document.getElementById('voteParticipantRemark').value : '',
+                    customFields: customFieldValues,
+                    selectedOptions: selectedOptions,
+                    participatedAt: new Date().toISOString()
+                };
+                
+                DataStore.addVoteRecord(record);
+                showToast('投票成功', 'success');
+                document.getElementById('participateVoteModal').classList.add('hidden');
+                renderVoteList();
+            });
+            
+            document.getElementById('participateLotteryForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const participantName = currentLottery.needName ? document.getElementById('lotteryParticipantName').value : '';
+                const participantPhone = currentLottery.needPhone ? document.getElementById('lotteryParticipantPhone').value : '';
+                
+                const customFieldValues = {};
+                if (currentLottery.customFields && currentLottery.customFields.length > 0) {
+                    currentLottery.customFields.forEach((field, index) => {
+                        const input = document.getElementById(`lotteryCustomField_${index}`);
+                        if (input) {
+                            customFieldValues[field.name] = input.value;
+                        }
+                    });
+                }
+                
+                let prize = null;
+                const random = Math.random() * 100;
+                let cumulative = 0;
+                
+                for (const p of currentLottery.prizes) {
+                    cumulative += p.probability;
+                    if (random < cumulative) {
+                        prize = p.name;
+                        break;
+                    }
+                }
+                
+                const record = {
+                    lotteryId: currentLottery.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    participantName: participantName,
+                    participantPhone: participantPhone,
+                    customFields: customFieldValues,
+                    prize: prize,
+                    participatedAt: new Date().toISOString()
+                };
+                
+                DataStore.addLotteryRecord(record);
+                
+                document.getElementById('participateLotteryModal').classList.add('hidden');
+                
+                const resultIcon = document.getElementById('lotteryResultIcon');
+                const resultTitle = document.getElementById('lotteryResultTitle');
+                const resultPrize = document.getElementById('lotteryResultPrize');
+                
+                if (prize) {
+                    resultIcon.className = 'w-24 h-24 mx-auto mb-4 rounded-full bg-yellow-100 flex items-center justify-center';
+                    resultIcon.innerHTML = '<i class="fa fa-trophy text-4xl text-yellow-500"></i>';
+                    resultTitle.textContent = '恭喜您！';
+                    resultPrize.textContent = `您获得了：${prize}`;
+                } else {
+                    resultIcon.className = 'w-24 h-24 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center';
+                    resultIcon.innerHTML = '<i class="fa fa-meh-o text-4xl text-gray-400"></i>';
+                    resultTitle.textContent = '很遗憾';
+                    resultPrize.textContent = '下次好运！';
+                }
+                
+                document.getElementById('lotteryResultModal').classList.remove('hidden');
+                renderLotteryList();
+            });
+            
+            document.getElementById('closeParticipateVoteModal').addEventListener('click', () => {
+                document.getElementById('participateVoteModal').classList.add('hidden');
+            });
+            document.getElementById('cancelParticipateVoteBtn').addEventListener('click', () => {
+                document.getElementById('participateVoteModal').classList.add('hidden');
+            });
+            
+            document.getElementById('closeParticipateLotteryModal').addEventListener('click', () => {
+                document.getElementById('participateLotteryModal').classList.add('hidden');
+            });
+            document.getElementById('cancelParticipateLotteryBtn').addEventListener('click', () => {
+                document.getElementById('participateLotteryModal').classList.add('hidden');
+            });
+            
+            document.getElementById('closeQrCodeModal').addEventListener('click', () => {
+                document.getElementById('qrCodeModal').classList.add('hidden');
+            });
+            
+            document.getElementById('closeLotteryResultBtn').addEventListener('click', () => {
+                document.getElementById('lotteryResultModal').classList.add('hidden');
+            });
+            
+            document.getElementById('closeVoteDetailModal').addEventListener('click', () => {
+                document.getElementById('voteDetailModal').classList.add('hidden');
+            });
+            
+            document.getElementById('voteStatusFilter').addEventListener('change', renderVoteList);
+            document.getElementById('lotteryStatusFilter').addEventListener('change', renderLotteryList);
+            
+            document.getElementById('notificationBtn').addEventListener('click', () => {
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', () => {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', (e) => {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('userMenuBtn').addEventListener('click', () => {
+                document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                DataStore.clearCurrentUser();
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                DataStore.clearCurrentUser();
+                window.location.href = 'index.html';
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>

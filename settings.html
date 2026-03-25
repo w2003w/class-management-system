@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 系统设置</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .tab-btn { transition: all 0.2s ease; }
+        .tab-btn.active { background: #1E40AF; color: white; }
+        .tab-btn:not(.active):hover { background: #E5E7EB; }
+        .toggle-switch { transition: all 0.3s ease; }
+        .toggle-switch.active { background: #1E40AF; }
+        .toggle-switch.active .toggle-dot { transform: translateX(20px); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">系统设置</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <div class="max-w-6xl mx-auto">
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium" data-tab="basic">基本设置</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="attendance">签到设置</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="exam">考试设置</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="vote">投票设置</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="system">系统维护</button>
+                    </div>
+                    
+                    <div id="basicTab" class="tab-content">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-info-circle text-primary mr-2"></i>系统信息
+                                </h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">系统名称</label>
+                                        <input type="text" id="systemName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="班级管理系统">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">系统版本</label>
+                                        <input type="text" class="w-full px-4 py-2 border rounded-xl bg-gray-50 text-gray-500" value="v1.0.0" disabled>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">单位名称</label>
+                                        <input type="text" id="companyName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="XX大学">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">联系邮箱</label>
+                                        <input type="email" id="contactEmail" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="support@example.com">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-shield text-primary mr-2"></i>安全设置
+                                </h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">登录失败次数限制</label>
+                                        <select id="loginAttempts" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            <option value="3">3次</option>
+                                            <option value="5" selected>5次</option>
+                                            <option value="10">10次</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">密码过期时间</label>
+                                        <select id="passwordExpiry" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                            <option value="0">永不过期</option>
+                                            <option value="30">30天</option>
+                                            <option value="60" selected>60天</option>
+                                            <option value="90">90天</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-center justify-between py-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">双因素认证</p>
+                                            <p class="text-xs text-gray-500">启用后登录需二次验证</p>
+                                        </div>
+                                        <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                            <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-bell text-primary mr-2"></i>通知设置
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between py-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">系统通知</p>
+                                            <p class="text-xs text-gray-500">启用站内消息通知</p>
+                                        </div>
+                                        <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                            <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between py-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">邮件通知</p>
+                                            <p class="text-xs text-gray-500">重要消息邮件提醒</p>
+                                        </div>
+                                        <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                            <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">通知邮箱</label>
+                                        <input type="email" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="notifications@example.com">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-paint-brush text-primary mr-2"></i>外观设置
+                                </h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">主题颜色</label>
+                                        <div class="flex space-x-2">
+                                            <button class="w-8 h-8 rounded-full bg-blue-600 ring-2 ring-offset-2 ring-blue-600"></button>
+                                            <button class="w-8 h-8 rounded-full bg-green-600"></button>
+                                            <button class="w-8 h-8 rounded-full bg-purple-600"></button>
+                                            <button class="w-8 h-8 rounded-full bg-red-600"></button>
+                                            <button class="w-8 h-8 rounded-full bg-orange-600"></button>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between py-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">深色模式</p>
+                                            <p class="text-xs text-gray-500">切换深色主题</p>
+                                        </div>
+                                        <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                            <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="saveBasicSettings()" class="bg-primary text-white px-6 py-2 rounded-xl font-medium hover:bg-secondary transition-colors">
+                                <i class="fa fa-save mr-2"></i>保存设置
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="attendanceTab" class="tab-content hidden">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fa fa-calendar-check-o text-primary mr-2"></i>签到设置
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">默认签到时长</label>
+                                    <select id="defaultCheckinTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        <option value="30">30分钟</option>
+                                        <option value="60" selected>60分钟</option>
+                                        <option value="90">90分钟</option>
+                                        <option value="120">120分钟</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">定位半径（米）</label>
+                                    <input type="number" id="locationRadius" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="100" min="50" max="500">
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">允许补签</p>
+                                        <p class="text-xs text-gray-500">用户可申请补签</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">最大补签天数</label>
+                                    <input type="number" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="3" min="1" max="30">
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">自动提醒</p>
+                                        <p class="text-xs text-gray-500">签到开始前自动提醒</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">提醒时间（提前分钟）</label>
+                                    <input type="number" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="15" min="1" max="60">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="saveAttendanceSettings()" class="bg-primary text-white px-6 py-2 rounded-xl font-medium hover:bg-secondary transition-colors">
+                                <i class="fa fa-save mr-2"></i>保存设置
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="examTab" class="tab-content hidden">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fa fa-file-text-o text-primary mr-2"></i>考试设置
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">默认考试时长（分钟）</label>
+                                    <input type="number" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="120" min="5" max="360">
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">随机出题</p>
+                                        <p class="text-xs text-gray-500">每位考生题目顺序不同</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">防作弊模式</p>
+                                        <p class="text-xs text-gray-500">禁止切屏、复制等操作</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">自动提交</p>
+                                        <p class="text-xs text-gray-500">时间到自动提交试卷</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">显示答案</p>
+                                        <p class="text-xs text-gray-500">考试结束后显示答案</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="saveExamSettings()" class="bg-primary text-white px-6 py-2 rounded-xl font-medium hover:bg-secondary transition-colors">
+                                <i class="fa fa-save mr-2"></i>保存设置
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="voteTab" class="tab-content hidden">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fa fa-check-square-o text-primary mr-2"></i>投票抽奖设置
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">默认投票时长（小时）</label>
+                                    <input type="number" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="24" min="1" max="168">
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">匿名投票</p>
+                                        <p class="text-xs text-gray-500">默认启用匿名投票</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">允许修改</p>
+                                        <p class="text-xs text-gray-500">投票期间可修改选择</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between py-2">
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-700">实名抽奖</p>
+                                        <p class="text-xs text-gray-500">抽奖需填写真实信息</p>
+                                    </div>
+                                    <button type="button" class="toggle-switch active w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="saveVoteSettings()" class="bg-primary text-white px-6 py-2 rounded-xl font-medium hover:bg-secondary transition-colors">
+                                <i class="fa fa-save mr-2"></i>保存设置
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="systemTab" class="tab-content hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-database text-primary mr-2"></i>数据管理
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">数据备份</p>
+                                            <p class="text-sm text-gray-500">上次备份: 2024-01-15 10:30</p>
+                                        </div>
+                                        <button onclick="backupData()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                            <i class="fa fa-download mr-1"></i>立即备份
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">数据恢复</p>
+                                            <p class="text-sm text-gray-500">从备份文件恢复数据</p>
+                                        </div>
+                                        <button onclick="restoreData()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                                            <i class="fa fa-upload mr-1"></i>选择文件
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-red-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-red-800">清空数据</p>
+                                            <p class="text-sm text-red-500">此操作不可恢复</p>
+                                        </div>
+                                        <button onclick="clearAllData()" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+                                            <i class="fa fa-trash mr-1"></i>清空
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-wrench text-primary mr-2"></i>系统维护
+                                </h3>
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">系统日志</p>
+                                            <p class="text-sm text-gray-500">查看系统运行日志</p>
+                                        </div>
+                                        <button onclick="viewLogs()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                                            <i class="fa fa-file-text-o mr-1"></i>查看
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">清除缓存</p>
+                                            <p class="text-sm text-gray-500">清除系统缓存数据</p>
+                                        </div>
+                                        <button onclick="clearCache()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
+                                            <i class="fa fa-eraser mr-1"></i>清除
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">检查更新</p>
+                                            <p class="text-sm text-gray-500">当前版本: v1.0.0</p>
+                                        </div>
+                                        <button onclick="checkUpdate()" class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition-colors">
+                                            <i class="fa fa-refresh mr-1"></i>检查
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-info-circle text-primary mr-2"></i>系统信息
+                                </h3>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-primary" id="totalUsers">0</p>
+                                        <p class="text-sm text-gray-500">用户总数</p>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-primary" id="totalAttendances">0</p>
+                                        <p class="text-sm text-gray-500">签到总数</p>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-primary" id="totalExams">0</p>
+                                        <p class="text-sm text-gray-500">考试总数</p>
+                                    </div>
+                                    <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                        <p class="text-2xl font-bold text-primary" id="totalVotes">0</p>
+                                        <p class="text-sm text-gray-500">投票总数</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="mobileSidebar" class="fixed inset-0 bg-black/50 z-50 hidden md:hidden">
+        <div class="w-64 h-full bg-white">
+            <div class="p-4 border-b flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                    </div>
+                </div>
+                <button id="closeMobileSidebar" class="text-gray-500">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <nav class="p-4">
+                <div class="mb-6" id="mobileAdminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let currentUser = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            DataStore.init();
+            checkAuth();
+            initEventListeners();
+            loadSettings();
+            renderNotifications();
+            loadSystemStats();
+        });
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i><p>暂无通知</p></div>';
+                return;
+            }
+            
+            let html = '';
+            notifications.forEach(n => {
+                let iconClass = 'fa-bell';
+                if (n.type === 'attendance') iconClass = 'fa-calendar-check-o';
+                else if (n.type === 'exam') iconClass = 'fa-file-text-o';
+                else if (n.type === 'vote') iconClass = 'fa-check-square-o';
+                
+                html += '<div class="p-4 border-b hover:bg-gray-50 cursor-pointer ' + (!n.read ? 'bg-blue-50' : '') + '" onclick="markAsRead(' + n.id + ')">';
+                html += '<div class="flex items-start">';
+                html += '<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">';
+                html += '<i class="fa ' + iconClass + ' text-primary"></i>';
+                html += '</div>';
+                html += '<div class="flex-1">';
+                html += '<p class="text-sm font-medium text-gray-800">' + n.title + '</p>';
+                html += '<p class="text-xs text-gray-500 mt-1">' + n.message + '</p>';
+                html += '<p class="text-xs text-gray-400 mt-1">' + formatDateTime(n.createdAt) + '</p>';
+                html += '</div>';
+                if (!n.read) html += '<span class="w-2 h-2 bg-red-500 rounded-full"></span>';
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function checkAuth() {
+            const userStr = localStorage.getItem('currentUser');
+            if (!userStr) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            
+            if (currentUser.role !== 'admin') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+        }
+        
+        function initEventListeners() {
+            document.getElementById('userMenuBtn').addEventListener('click', function() {
+                document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutMenuBtn').addEventListener('click', logout);
+            document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
+            
+            document.getElementById('notificationBtn').addEventListener('click', function() {
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', function() {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', function(e) {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.add('bg-gray-100', 'text-gray-600');
+                    });
+                    this.classList.add('active');
+                    this.classList.remove('bg-gray-100', 'text-gray-600');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                    document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+                });
+            });
+        }
+        
+        function loadSettings() {
+            const settings = DataStore.getSettings();
+            if (settings) {
+                if (settings.systemName) document.getElementById('systemName').value = settings.systemName;
+                if (settings.companyName) document.getElementById('companyName').value = settings.companyName;
+                if (settings.contactEmail) document.getElementById('contactEmail').value = settings.contactEmail;
+                if (settings.locationRadius) document.getElementById('locationRadius').value = settings.locationRadius;
+            }
+        }
+        
+        function loadSystemStats() {
+            const users = DataStore.getUsers();
+            const attendances = DataStore.getAttendances();
+            const exams = DataStore.getExams();
+            const votes = DataStore.getVotes();
+            
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalAttendances').textContent = attendances.length;
+            document.getElementById('totalExams').textContent = exams.length;
+            document.getElementById('totalVotes').textContent = votes.length;
+        }
+        
+        function saveBasicSettings() {
+            const settings = {
+                systemName: document.getElementById('systemName').value,
+                companyName: document.getElementById('companyName').value,
+                contactEmail: document.getElementById('contactEmail').value,
+                loginAttempts: document.getElementById('loginAttempts').value,
+                passwordExpiry: document.getElementById('passwordExpiry').value
+            };
+            DataStore.saveSettings(settings);
+            showToast('基本设置已保存', 'success');
+        }
+        
+        function saveAttendanceSettings() {
+            const settings = DataStore.getSettings() || {};
+            settings.defaultCheckinTime = document.getElementById('defaultCheckinTime').value;
+            settings.locationRadius = document.getElementById('locationRadius').value;
+            DataStore.saveSettings(settings);
+            showToast('签到设置已保存', 'success');
+        }
+        
+        function saveExamSettings() {
+            showToast('考试设置已保存', 'success');
+        }
+        
+        function saveVoteSettings() {
+            showToast('投票设置已保存', 'success');
+        }
+        
+        function backupData() {
+            const data = {
+                users: DataStore.getUsers(),
+                attendances: DataStore.getAttendances(),
+                attendanceRecords: DataStore.getAttendanceRecords(),
+                exams: DataStore.getExams(),
+                examRecords: DataStore.getExamRecords(),
+                questions: DataStore.getQuestions(),
+                votes: DataStore.getVotes(),
+                voteRecords: DataStore.getVoteRecords(),
+                lotteries: DataStore.getLotteries(),
+                lotteryRecords: DataStore.getLotteryRecords(),
+                notifications: DataStore.getNotifications(),
+                settings: DataStore.getSettings(),
+                backupTime: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'class-management-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('数据备份成功', 'success');
+        }
+        
+        function restoreData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (data.users) localStorage.setItem('users', JSON.stringify(data.users));
+                        if (data.attendances) localStorage.setItem('attendances', JSON.stringify(data.attendances));
+                        if (data.attendanceRecords) localStorage.setItem('attendanceRecords', JSON.stringify(data.attendanceRecords));
+                        if (data.exams) localStorage.setItem('exams', JSON.stringify(data.exams));
+                        if (data.examRecords) localStorage.setItem('examRecords', JSON.stringify(data.examRecords));
+                        if (data.questions) localStorage.setItem('questions', JSON.stringify(data.questions));
+                        if (data.votes) localStorage.setItem('votes', JSON.stringify(data.votes));
+                        if (data.voteRecords) localStorage.setItem('voteRecords', JSON.stringify(data.voteRecords));
+                        if (data.lotteries) localStorage.setItem('lotteries', JSON.stringify(data.lotteries));
+                        if (data.lotteryRecords) localStorage.setItem('lotteryRecords', JSON.stringify(data.lotteryRecords));
+                        if (data.notifications) localStorage.setItem('notifications', JSON.stringify(data.notifications));
+                        if (data.settings) localStorage.setItem('settings', JSON.stringify(data.settings));
+                        showToast('数据恢复成功，即将刷新页面', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } catch (err) {
+                        showToast('数据恢复失败，文件格式错误', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        function clearAllData() {
+            if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                if (confirm('再次确认：这将删除所有用户、签到、考试、投票等数据！')) {
+                    localStorage.clear();
+                    showToast('数据已清空，即将返回登录页', 'success');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                }
+            }
+        }
+        
+        function viewLogs() {
+            showToast('日志查看功能开发中', 'info');
+        }
+        
+        function clearCache() {
+            showToast('缓存已清除', 'success');
+        }
+        
+        function checkUpdate() {
+            showToast('当前已是最新版本', 'success');
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

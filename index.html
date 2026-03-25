@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 登录</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" type="image/svg+xml">
+    <meta name="theme-color" content="#1E40AF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="班级管理系统">
+    <meta name="description" content="大学生班级综合管理平台，支持定位签到、考试、投票抽奖等功能">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .login-bg {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .input-field {
+            transition: all 0.3s ease;
+            border: 2px solid #E5E7EB;
+        }
+        
+        .input-field:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .floating-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            left: 80%;
+            animation-delay: -5s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 80%;
+            left: 20%;
+            animation-delay: -10s;
+        }
+        
+        .shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 20%;
+            left: 70%;
+            animation-delay: -15s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-20px) rotate(90deg);
+            }
+            50% {
+                transform: translateY(0) rotate(180deg);
+            }
+            75% {
+                transform: translateY(20px) rotate(270deg);
+            }
+        }
+        
+        .logo-container {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .toast {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-overlay {
+            animation: fadeIn 0.2s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .password-strength {
+            height: 4px;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="login-bg">
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+    
+    <div class="min-h-screen flex items-center justify-center p-4 relative z-10">
+        <div class="w-full max-w-md">
+            <div class="glass-card rounded-2xl shadow-2xl overflow-hidden">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <div class="logo-container inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-2xl shadow-lg mb-4">
+                            <i class="fa fa-graduation-cap text-white text-4xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-gray-800">班级管理系统</h1>
+                        <p class="text-gray-500 mt-1 text-sm">大学生班级综合管理平台</p>
+                    </div>
+                    
+                    <form id="loginForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fa fa-user mr-1 text-gray-400"></i> 账号
+                            </label>
+                            <input type="text" id="username" 
+                                class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-700"
+                                placeholder="请输入账号" required>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fa fa-lock mr-1 text-gray-400"></i> 密码
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="password" 
+                                    class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-700 pr-12"
+                                    placeholder="请输入密码" required>
+                                <button type="button" id="togglePassword" 
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                                    <i class="fa fa-eye-slash text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="remember" 
+                                    class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <span class="ml-2 text-sm text-gray-600">记住我</span>
+                            </label>
+                            <a href="#" id="forgotPasswordLink" 
+                                class="text-sm text-primary hover:text-secondary transition-colors">
+                                忘记密码？
+                            </a>
+                        </div>
+                        
+                        <button type="submit" id="loginBtn"
+                            class="btn-login w-full py-3 rounded-xl text-white font-semibold text-lg flex items-center justify-center">
+                            <span id="loginText">登 录</span>
+                            <div id="loginSpinner" class="loading-spinner ml-2 hidden"></div>
+                        </button>
+                    </form>
+                    
+                    <div class="mt-6 text-center">
+                        <p class="text-sm text-gray-500">
+                            没有账号？请联系<span class="text-primary font-medium">管理员</span>添加
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 px-8 py-4 border-t border-gray-100">
+                    <div class="flex items-center justify-center space-x-6 text-gray-400 text-xs">
+                        <span><i class="fa fa-shield mr-1"></i>安全登录</span>
+                        <span><i class="fa fa-lock mr-1"></i>数据加密</span>
+                        <span><i class="fa fa-check-circle mr-1"></i>稳定可靠</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-6 text-white/80 text-sm">
+                <p>© 2026 班级管理系统 · 版权所有</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="forgotPasswordModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fa fa-key text-primary mr-2"></i>忘记密码
+                </h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="bg-blue-50 rounded-xl p-4 mb-6">
+                <p class="text-sm text-blue-800">
+                    <i class="fa fa-info-circle mr-1"></i>
+                    请输入您的账号，系统将向管理员发送密码重置请求。管理员处理后，您的密码将重置为初始密码 <code class="bg-blue-100 px-1 rounded">123456</code>
+                </p>
+            </div>
+            
+            <form id="forgotPasswordForm">
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">账号</label>
+                    <input type="text" id="forgotUsername" 
+                        class="input-field w-full px-4 py-3 rounded-xl outline-none"
+                        placeholder="请输入您的账号" required>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelBtn" 
+                        class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        取消
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                        提交请求
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script src="js/data.js"></script>
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const rememberCheckbox = document.getElementById('remember');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginText = document.getElementById('loginText');
+        const loginSpinner = document.getElementById('loginSpinner');
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            }[type] || 'bg-blue-500';
+            
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            }[type] || 'fa-info-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `
+                <i class="fa ${icon}"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function checkLogin() {
+            const user = DataStore.getCurrentUser();
+            if (user) {
+                window.location.href = 'dashboard.html';
+                return true;
+            }
+            return false;
+        }
+        
+        function loadRememberedUser() {
+            const remembered = localStorage.getItem('rememberedUser');
+            if (remembered) {
+                usernameInput.value = remembered;
+                rememberCheckbox.checked = true;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (checkLogin()) return;
+            loadRememberedUser();
+        });
+        
+        togglePasswordBtn.addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            const icon = togglePasswordBtn.querySelector('i');
+            icon.className = type === 'password' ? 'fa fa-eye-slash text-lg' : 'fa fa-eye text-lg';
+        });
+        
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!username) {
+                showToast('请输入账号', 'warning');
+                usernameInput.focus();
+                return;
+            }
+            
+            if (!password) {
+                showToast('请输入密码', 'warning');
+                passwordInput.focus();
+                return;
+            }
+            
+            loginBtn.disabled = true;
+            loginText.textContent = '登录中...';
+            loginSpinner.classList.remove('hidden');
+            
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            const user = DataStore.getUserByUsername(username);
+            
+            if (user && user.password === password) {
+                if (rememberCheckbox.checked) {
+                    localStorage.setItem('rememberedUser', username);
+                } else {
+                    localStorage.removeItem('rememberedUser');
+                }
+                
+                DataStore.setCurrentUser(user);
+                
+                showToast('登录成功，正在跳转...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 500);
+            } else {
+                showToast('账号或密码错误', 'error');
+                loginBtn.disabled = false;
+                loginText.textContent = '登 录';
+                loginSpinner.classList.add('hidden');
+                passwordInput.focus();
+            }
+        });
+        
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            forgotPasswordModal.classList.remove('hidden');
+            document.getElementById('forgotUsername').focus();
+        });
+        
+        function closeForgotModal() {
+            forgotPasswordModal.classList.add('hidden');
+            document.getElementById('forgotUsername').value = '';
+        }
+        
+        closeModalBtn.addEventListener('click', closeForgotModal);
+        cancelBtn.addEventListener('click', closeForgotModal);
+        
+        forgotPasswordModal.addEventListener('click', (e) => {
+            if (e.target === forgotPasswordModal) {
+                closeForgotModal();
+            }
+        });
+        
+        forgotPasswordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('forgotUsername').value.trim();
+            
+            if (!username) {
+                showToast('请输入账号', 'warning');
+                return;
+            }
+            
+            const user = DataStore.getUserByUsername(username);
+            
+            if (user) {
+                DataStore.addPasswordResetRequest({
+                    username: username,
+                    name: user.name,
+                    userId: user.id
+                });
+                
+                DataStore.addNotification({
+                    type: 'password_reset',
+                    title: '密码重置请求',
+                    message: `用户 ${user.name}(${username}) 请求重置密码`,
+                    forAdmin: true
+                });
+                
+                showToast('请求已提交，请等待管理员处理', 'success');
+                closeForgotModal();
+            } else {
+                showToast('未找到该账号', 'error');
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !forgotPasswordModal.classList.contains('hidden')) {
+                closeForgotModal();
+            }
+        });
+    </script>
+</body>
+</html>

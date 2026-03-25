@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 用户管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">用户管理</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center" id="notificationBadge">3</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center space-x-2">
+                                <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium" id="userAvatar">WT</div>
+                                <span class="hidden md:block text-sm font-medium text-gray-700" id="userName">吴涛</span>
+                                <i class="fa fa-chevron-down text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <hr class="my-2">
+                                <a href="#" id="logoutLink" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div id="mobileSidebar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden md:hidden">
+                <div class="w-64 h-full bg-white">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                                <i class="fa fa-graduation-cap text-white text-lg"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            </div>
+                        </div>
+                        <button id="closeMobileSidebar" class="text-gray-500">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <nav class="p-4">
+                        <div class="mb-6">
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                            <ul class="space-y-1">
+                                <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                                <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                                <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                                <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                            <ul class="space-y-1">
+                                <li><a href="users.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                                <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                            <ul class="space-y-1">
+                                <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                                <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            
+            <main class="flex-1 overflow-y-auto p-6">
+                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <input type="text" id="searchInput" placeholder="搜索用户..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        
+                        <select id="roleFilter" class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            <option value="">全部角色</option>
+                            <option value="admin">管理员</option>
+                            <option value="subadmin">子管理员</option>
+                            <option value="user">普通用户</option>
+                        </select>
+                    </div>
+                    
+                    <button id="addUserBtn" class="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 transition-colors flex items-center">
+                        <i class="fa fa-plus mr-2"></i>添加用户
+                    </button>
+                </div>
+                
+                <div class="card bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">账号</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">院系/班级</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userTableBody" class="divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 modal-content">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">添加用户</h3>
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <form id="userForm" class="p-6">
+                <input type="hidden" id="userId">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                        <input type="text" id="userName" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">账号</label>
+                        <input type="text" id="userUsername" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                        <input type="password" id="userPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <p class="text-xs text-gray-500 mt-1">留空则默认密码为 123456</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">角色</label>
+                        <select id="userRole" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                            <option value="user">普通用户</option>
+                            <option value="subadmin">子管理员</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">院系</label>
+                        <input type="text" id="userDepartment" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">班级</label>
+                        <input type="text" id="userClass" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/data.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        let currentUser = null;
+        let editingUserId = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            DataStore.init();
+            checkAuth();
+            initEventListeners();
+            renderUserList();
+            renderNotifications();
+        });
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i><p>暂无通知</p></div>';
+                return;
+            }
+            
+            let html = '';
+            notifications.forEach(n => {
+                let iconClass = 'fa-bell';
+                if (n.type === 'attendance') iconClass = 'fa-calendar-check-o';
+                else if (n.type === 'exam') iconClass = 'fa-file-text-o';
+                else if (n.type === 'vote') iconClass = 'fa-check-square-o';
+                
+                html += '<div class="p-4 border-b hover:bg-gray-50 cursor-pointer ' + (!n.read ? 'bg-blue-50' : '') + '" onclick="markAsRead(' + n.id + ')">';
+                html += '<div class="flex items-start">';
+                html += '<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">';
+                html += '<i class="fa ' + iconClass + ' text-primary"></i>';
+                html += '</div>';
+                html += '<div class="flex-1">';
+                html += '<p class="text-sm font-medium text-gray-800">' + n.title + '</p>';
+                html += '<p class="text-xs text-gray-500 mt-1">' + n.message + '</p>';
+                html += '<p class="text-xs text-gray-400 mt-1">' + formatDateTime(n.createdAt) + '</p>';
+                html += '</div>';
+                if (!n.read) html += '<span class="w-2 h-2 bg-red-500 rounded-full"></span>';
+                html += '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function checkAuth() {
+            const userStr = localStorage.getItem('currentUser');
+            if (!userStr) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+            
+            if (currentUser.role !== 'admin') {
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+        }
+        
+        function initEventListeners() {
+            document.getElementById('userMenuBtn').addEventListener('click', function() {
+                document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutLink').addEventListener('click', logout);
+            document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
+            
+            document.getElementById('notificationBtn').addEventListener('click', function() {
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', function() {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', function(e) {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
+                document.getElementById('mobileSidebar').classList.add('hidden');
+            });
+            
+            document.getElementById('addUserBtn').addEventListener('click', function() {
+                editingUserId = null;
+                document.getElementById('modalTitle').textContent = '添加用户';
+                document.getElementById('userForm').reset();
+                document.getElementById('userModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('userModal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancelBtn').addEventListener('click', function() {
+                document.getElementById('userModal').classList.add('hidden');
+            });
+            
+            document.getElementById('userForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveUser();
+            });
+            
+            document.getElementById('searchInput').addEventListener('input', renderUserList);
+            document.getElementById('roleFilter').addEventListener('change', renderUserList);
+        }
+        
+        function renderUserList() {
+            const users = DataStore.getUsers();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const roleFilter = document.getElementById('roleFilter').value;
+            
+            let filteredUsers = users.filter(user => {
+                const matchesSearch = user.name.toLowerCase().includes(searchTerm) || 
+                                     user.username.toLowerCase().includes(searchTerm);
+                const matchesRole = !roleFilter || user.role === roleFilter;
+                return matchesSearch && matchesRole;
+            });
+            
+            const tbody = document.getElementById('userTableBody');
+            tbody.innerHTML = '';
+            
+            filteredUsers.forEach(user => {
+                const roleClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : 
+                                 user.role === 'subadmin' ? 'bg-orange-100 text-orange-800' : 
+                                 'bg-green-100 text-green-800';
+                const roleName = user.role === 'admin' ? '管理员' : 
+                                user.role === 'subadmin' ? '子管理员' : '普通用户';
+                
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                ${user.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">${user.name}</div>
+                                <div class="text-sm text-gray-500">${user.email || ''}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.username}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full ${roleClass}">${roleName}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.department || '-'} / ${user.className || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">正常</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button onclick="editUser(${user.id})" class="text-primary hover:text-primary/80 mr-3"><i class="fa fa-edit"></i> 编辑</button>
+                        ${user.id !== currentUser.id ? `<button onclick="deleteUser(${user.id})" class="text-red-500 hover:text-red-600"><i class="fa fa-trash"></i> 删除</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function editUser(userId) {
+            const users = DataStore.getUsers();
+            const user = users.find(u => u.id === userId);
+            
+            if (user) {
+                editingUserId = userId;
+                document.getElementById('modalTitle').textContent = '编辑用户';
+                document.getElementById('userId').value = user.id;
+                document.getElementById('userName').value = user.name;
+                document.getElementById('userUsername').value = user.username;
+                document.getElementById('userPassword').value = '';
+                document.getElementById('userRole').value = user.role;
+                document.getElementById('userDepartment').value = user.department || '';
+                document.getElementById('userClass').value = user.className || '';
+                document.getElementById('userModal').classList.remove('hidden');
+            }
+        }
+        
+        function saveUser() {
+            const users = DataStore.getUsers();
+            
+            if (editingUserId) {
+                const userIndex = users.findIndex(u => u.id === editingUserId);
+                if (userIndex !== -1) {
+                    users[userIndex].name = document.getElementById('userName').value;
+                    users[userIndex].username = document.getElementById('userUsername').value;
+                    users[userIndex].role = document.getElementById('userRole').value;
+                    users[userIndex].department = document.getElementById('userDepartment').value;
+                    users[userIndex].className = document.getElementById('userClass').value;
+                    
+                    const password = document.getElementById('userPassword').value;
+                    if (password) {
+                        users[userIndex].password = password;
+                    }
+                    
+                    DataStore.saveUsers(users);
+                    showToast('用户更新成功', 'success');
+                }
+            } else {
+                const newUser = {
+                    name: document.getElementById('userName').value,
+                    username: document.getElementById('userUsername').value,
+                    password: document.getElementById('userPassword').value || '123456',
+                    role: document.getElementById('userRole').value,
+                    department: document.getElementById('userDepartment').value,
+                    className: document.getElementById('userClass').value,
+                };
+                
+                DataStore.addUser(newUser);
+                showToast('用户添加成功', 'success');
+            }
+            
+            document.getElementById('userModal').classList.add('hidden');
+            renderUserList();
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('确定要删除该用户吗？')) {
+                const users = DataStore.getUsers();
+                const filteredUsers = users.filter(u => u.id !== userId);
+                DataStore.saveUsers(filteredUsers);
+                showToast('用户删除成功', 'success');
+                renderUserList();
+            }
+        }
+        
+        function logout(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

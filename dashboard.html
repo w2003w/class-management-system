@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班级管理系统 - 仪表盘</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF', // 深蓝
+                        secondary: '#3B82F6', // 中蓝
+                        accent: '#F97316', // 橙色
+                        light: '#F3F4F6', // 浅灰
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, theme('colors.primary'), theme('colors.secondary'));
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .sidebar-link {
+                @apply flex items-center px-4 py-3 text-gray-600 transition-all-300 hover:bg-blue-50 hover:text-primary rounded-md;
+            }
+            .sidebar-link.active {
+                @apply bg-blue-50 text-primary font-medium;
+            }
+            .sidebar-link i {
+                @apply mr-3 text-lg;
+            }
+            .card-stat {
+                @apply bg-white rounded-lg shadow-card p-6 transition-all-300 hover:shadow-card-hover;
+            }
+            .card-stat-icon {
+                @apply w-12 h-12 rounded-full flex items-center justify-center text-white text-xl mb-4;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- 侧边栏 -->
+        <aside class="w-64 bg-white shadow-lg hidden md:block">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="p-4">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul>
+                        <li class="mb-1">
+                            <a href="dashboard.html" class="sidebar-link active">
+                                <i class="fa fa-dashboard"></i>
+                                <span>仪表盘</span>
+                            </a>
+                        </li>
+                        <li class="mb-1">
+                            <a href="attendance.html" class="sidebar-link">
+                                <i class="fa fa-calendar-check-o"></i>
+                                <span>签到管理</span>
+                            </a>
+                        </li>
+                        <li class="mb-1">
+                            <a href="exam.html" class="sidebar-link">
+                                <i class="fa fa-file-text-o"></i>
+                                <span>考试系统</span>
+                            </a>
+                        </li>
+                        <li class="mb-1">
+                            <a href="vote.html" class="sidebar-link">
+                                <i class="fa fa-check-square-o"></i>
+                                <span>投票抽奖</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul>
+                        <li class="mb-1">
+                            <a href="users.html" class="sidebar-link">
+                                <i class="fa fa-users"></i>
+                                <span>用户管理</span>
+                            </a>
+                        </li>
+                        <li class="mb-1">
+                            <a href="settings.html" class="sidebar-link">
+                                <i class="fa fa-cog"></i>
+                                <span>系统设置</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">个人</h2>
+                    <ul>
+                        <li class="mb-1">
+                            <a href="profile.html" class="sidebar-link">
+                                <i class="fa fa-user"></i>
+                                <span>个人资料</span>
+                            </a>
+                        </li>
+                        <li class="mb-1">
+                            <a href="#" id="logoutBtn" class="sidebar-link">
+                                <i class="fa fa-sign-out"></i>
+                                <span>退出登录</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- 主内容区 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary focus:outline-none">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="ml-4 text-xl font-semibold text-gray-800">仪表盘</h2>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <div class="relative mr-4">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary focus:outline-none relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuButton" class="flex items-center focus:outline-none">
+                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
+                                    <span id="userInitials">WT</span>
+                                </div>
+                                <div class="ml-2 hidden md:block">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-500 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t border-gray-100"></div>
+                                <a href="#" id="userMenuLogoutBtn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- 移动端侧边栏 -->
+            <div id="mobileSidebar" class="fixed inset-0 bg-gray-600 bg-opacity-75 z-50 hidden md:hidden">
+                <div class="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-xl">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <div class="flex items-center">
+                            <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
+                            <div class="ml-3">
+                                <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            </div>
+                        </div>
+                        <button id="closeMobileSidebar" class="text-gray-500 hover:text-primary focus:outline-none">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <nav class="p-4">
+                        <div class="mb-6">
+                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">主菜单</h2>
+                            <ul>
+                                <li class="mb-1">
+                                    <a href="dashboard.html" class="sidebar-link active">
+                                        <i class="fa fa-dashboard"></i>
+                                        <span>仪表盘</span>
+                                    </a>
+                                </li>
+                                <li class="mb-1">
+                                    <a href="attendance.html" class="sidebar-link">
+                                        <i class="fa fa-calendar-check-o"></i>
+                                        <span>签到管理</span>
+                                    </a>
+                                </li>
+                                <li class="mb-1">
+                                    <a href="exam.html" class="sidebar-link">
+                                        <i class="fa fa-file-text-o"></i>
+                                        <span>考试系统</span>
+                                    </a>
+                                </li>
+                                <li class="mb-1">
+                                    <a href="vote.html" class="sidebar-link">
+                                        <i class="fa fa-check-square-o"></i>
+                                        <span>投票抽奖</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-6" id="mobileAdminMenu">
+                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">管理中心</h2>
+                            <ul>
+                                <li class="mb-1">
+                                    <a href="users.html" class="sidebar-link">
+                                        <i class="fa fa-users"></i>
+                                        <span>用户管理</span>
+                                    </a>
+                                </li>
+                                <li class="mb-1">
+                                    <a href="settings.html" class="sidebar-link">
+                                        <i class="fa fa-cog"></i>
+                                        <span>系统设置</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">个人</h2>
+                            <ul>
+                                <li class="mb-1">
+                                    <a href="profile.html" class="sidebar-link">
+                                        <i class="fa fa-user"></i>
+                                        <span>个人资料</span>
+                                    </a>
+                                </li>
+                                <li class="mb-1">
+                                    <a href="#" id="mobileLogoutBtn" class="sidebar-link">
+                                        <i class="fa fa-sign-out"></i>
+                                        <span>退出登录</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- 页面内容 -->
+            <main class="flex-1 overflow-y-auto p-4 bg-gray-100">
+                <!-- 欢迎信息 -->
+                <div class="bg-gradient-primary rounded-lg shadow-lg p-6 mb-6 text-white">
+                    <h1 class="text-2xl font-bold mb-2">欢迎回来，<span id="welcomeUserName">吴涛</span>！</h1>
+                    <p class="text-blue-100">今天是 <span id="currentDate">2026年7月21日</span>，祝您有愉快的一天！</p>
+                </div>
+                
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="card-stat">
+                        <div class="card-stat-icon bg-blue-500">
+                            <i class="fa fa-users"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-1">班级成员</h3>
+                        <p class="text-3xl font-bold text-primary" id="totalUsers">0</p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <span>已注册用户</span>
+                        </p>
+                    </div>
+                    
+                    <div class="card-stat">
+                        <div class="card-stat-icon bg-green-500">
+                            <i class="fa fa-calendar-check-o"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-1">今日签到</h3>
+                        <p class="text-3xl font-bold text-primary" id="todayCheckIns">0</p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <span>签到活动: <span id="totalAttendances">0</span></span>
+                        </p>
+                    </div>
+                    
+                    <div class="card-stat">
+                        <div class="card-stat-icon bg-purple-500">
+                            <i class="fa fa-file-text-o"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-1">考试系统</h3>
+                        <p class="text-3xl font-bold text-primary" id="totalExams">0</p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <span>平均分: <span id="avgExamScore">-</span></span>
+                        </p>
+                    </div>
+                    
+                    <div class="card-stat">
+                        <div class="card-stat-icon bg-orange-500">
+                            <i class="fa fa-check-square-o"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-1">投票抽奖</h3>
+                        <p class="text-3xl font-bold text-primary" id="totalVotes">0</p>
+                        <p class="text-sm text-gray-500 mt-2">
+                            <span>进行中的活动</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 图表和数据 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- 签到统计图表 -->
+                    <div class="bg-white rounded-lg shadow-card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-700">本周签到统计</h3>
+                            <div class="flex">
+                                <button class="text-sm text-gray-500 hover:text-primary focus:outline-none mr-4">
+                                    <i class="fa fa-download mr-1"></i>
+                                    导出
+                                </button>
+                                <button class="text-sm text-gray-500 hover:text-primary focus:outline-none">
+                                    <i class="fa fa-ellipsis-v"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="attendanceChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- 最近活动 -->
+                    <div class="bg-white rounded-lg shadow-card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-700">最近活动</h3>
+                            <button class="text-sm text-primary hover:text-primary-dark focus:outline-none">
+                                查看全部
+                            </button>
+                        </div>
+                        <div id="recentActivities" class="space-y-4">
+                            <p class="text-gray-500 text-center py-4">暂无活动记录</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 快速操作 -->
+                <div class="bg-white rounded-lg shadow-card p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">快速操作</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quickActions">
+                        <a href="attendance.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-all-300" id="quickCreateAttendance">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-calendar-plus-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">创建签到</span>
+                        </a>
+                        
+                        <a href="exam.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all-300" id="quickCreateExam">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-file-text-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">创建考试</span>
+                        </a>
+                        
+                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-200 transition-all-300" id="quickCreateVote">
+                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-check-square-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">创建投票</span>
+                        </a>
+                        
+                        <a href="users.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all-300" id="quickAddUser">
+                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-user-plus text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">添加成员</span>
+                        </a>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- 退出登录确认模态框 -->
+    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <div class="mb-4">
+                <h3 class="text-lg font-bold text-gray-900">确认退出登录</h3>
+                <p class="text-gray-600 mt-2">您确定要退出当前账号吗？</p>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-all-300">
+                    取消
+                </button>
+                <button id="confirmLogout" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-all-300">
+                    确认退出
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 消息通知模态框 -->
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script>
+        let currentUser = null;
+        
+        function updateUserInfo() {
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('welcomeUserName').textContent = currentUser.name;
+                document.getElementById('userInitials').textContent = currentUser.name.substring(0, 2).toUpperCase();
+                
+                let roleText = '普通成员';
+                if (currentUser.role === 'admin') {
+                    roleText = '超级管理员';
+                } else if (currentUser.role === 'subAdmin') {
+                    roleText = '子管理员';
+                }
+                document.getElementById('userRole').textContent = roleText;
+                
+                const adminMenu = document.getElementById('adminMenu');
+                const mobileAdminMenu = document.getElementById('mobileAdminMenu');
+                if (currentUser.role === 'admin' || currentUser.role === 'subAdmin') {
+                    adminMenu.classList.remove('hidden');
+                    mobileAdminMenu.classList.remove('hidden');
+                } else {
+                    adminMenu.classList.add('hidden');
+                    mobileAdminMenu.classList.add('hidden');
+                }
+                
+                if (currentUser.role === 'user') {
+                    document.getElementById('quickCreateAttendance').style.display = 'none';
+                    document.getElementById('quickCreateExam').style.display = 'none';
+                    document.getElementById('quickCreateVote').style.display = 'none';
+                    document.getElementById('quickAddUser').style.display = 'none';
+                }
+                
+                const settingsLink = document.querySelector('#userMenu a[href="settings.html"]');
+                if (settingsLink && currentUser.role === 'user') {
+                    settingsLink.style.display = 'none';
+                }
+            }
+        }
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无通知</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notifications.map(n => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
+                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
+                        </div>
+                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function updateStatistics() {
+            const users = DataStore.getUsers();
+            const attendances = DataStore.getAttendances();
+            const attendanceRecords = DataStore.getAttendanceRecords();
+            const exams = DataStore.getExams();
+            const examRecords = DataStore.getExamRecords();
+            const votes = DataStore.getVotes();
+            const lotteries = DataStore.getLotteries();
+            
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('totalAttendances').textContent = attendances.length;
+            document.getElementById('totalExams').textContent = exams.length;
+            document.getElementById('totalVotes').textContent = votes.length + lotteries.length;
+            
+            const todayRecords = attendanceRecords.filter(r => {
+                const recordDate = new Date(r.checkInTime).toDateString();
+                return recordDate === new Date().toDateString();
+            });
+            document.getElementById('todayCheckIns').textContent = todayRecords.length;
+            
+            if (examRecords.length > 0) {
+                const avgScore = Math.round(examRecords.reduce((sum, r) => sum + r.score, 0) / examRecords.length);
+                document.getElementById('avgExamScore').textContent = avgScore;
+            }
+        }
+
+        function initAttendanceChart() {
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            
+            const attendanceRecords = DataStore.getAttendanceRecords();
+            const users = DataStore.getUsers();
+            
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const today = new Date();
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay() + 1);
+            
+            const attendanceData = days.map((_, index) => {
+                const date = new Date(weekStart);
+                date.setDate(weekStart.getDate() + index);
+                const dateStr = date.toDateString();
+                return attendanceRecords.filter(r => new Date(r.checkInTime).toDateString() === dateStr).length;
+            });
+            
+            const totalData = days.map(() => users.length);
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: '签到人数',
+                            data: attendanceData,
+                            backgroundColor: '#3B82F6',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '班级总人数',
+                            data: totalData,
+                            backgroundColor: '#E5E7EB',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(...totalData, 10) + 5,
+                            ticks: {
+                                stepSize: Math.max(1, Math.floor(users.length / 5))
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function loadRecentActivities() {
+            const attendanceRecords = DataStore.getAttendanceRecords();
+            const examRecords = DataStore.getExamRecords();
+            const users = DataStore.getUsers();
+            
+            const activities = [];
+            
+            attendanceRecords.slice(-5).forEach(record => {
+                const user = users.find(u => u.id === record.userId);
+                if (user) {
+                    activities.push({
+                        type: 'attendance',
+                        user: user.name,
+                        time: record.checkInTime,
+                        content: '完成签到'
+                    });
+                }
+            });
+            
+            examRecords.slice(-5).forEach(record => {
+                const user = users.find(u => u.id === record.userId);
+                const exam = DataStore.getExams().find(e => e.id === record.examId);
+                if (user && exam) {
+                    activities.push({
+                        type: 'exam',
+                        user: user.name,
+                        time: record.submittedAt,
+                        content: `完成考试「${exam.name}」，得分：${record.score}分`
+                    });
+                }
+            });
+            
+            activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+            
+            const container = document.getElementById('recentActivities');
+            if (activities.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">暂无活动记录</p>';
+                return;
+            }
+            
+            container.innerHTML = activities.slice(0, 10).map(activity => {
+                const icon = activity.type === 'attendance' ? 'fa-calendar-check-o text-green-500' : 'fa-file-text-o text-blue-500';
+                const time = new Date(activity.time).toLocaleString('zh-CN');
+                return `
+                    <div class="flex items-center py-3 border-b border-gray-100 last:border-0">
+                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                            <i class="fa ${icon}"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-800">${activity.user} ${activity.content}</p>
+                            <p class="text-xs text-gray-500">${time}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+        const mobileSidebar = document.getElementById('mobileSidebar');
+        const closeMobileSidebar = document.getElementById('closeMobileSidebar');
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userMenu = document.getElementById('userMenu');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userMenuLogoutBtn = document.getElementById('userMenuLogoutBtn');
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        const logoutModal = document.getElementById('logoutModal');
+        const cancelLogout = document.getElementById('cancelLogout');
+        const confirmLogout = document.getElementById('confirmLogout');
+
+        mobileSidebarToggle.addEventListener('click', () => {
+            mobileSidebar.classList.remove('hidden');
+        });
+
+        closeMobileSidebar.addEventListener('click', () => {
+            mobileSidebar.classList.add('hidden');
+        });
+
+        userMenuButton.addEventListener('click', () => {
+            userMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
+
+        function showLogoutModal() {
+            logoutModal.classList.remove('hidden');
+        }
+
+        logoutBtn.addEventListener('click', showLogoutModal);
+        userMenuLogoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLogoutModal();
+        });
+        mobileLogoutBtn.addEventListener('click', showLogoutModal);
+
+        cancelLogout.addEventListener('click', () => {
+            logoutModal.classList.add('hidden');
+        });
+
+        confirmLogout.addEventListener('click', () => {
+            DataStore.clearCurrentUser();
+            window.location.href = 'index.html';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                logoutModal.classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('notificationBtn').addEventListener('click', () => {
+            renderNotifications();
+            document.getElementById('notificationModal').classList.remove('hidden');
+        });
+        
+        document.getElementById('closeNotificationModal').addEventListener('click', () => {
+            document.getElementById('notificationModal').classList.add('hidden');
+        });
+        
+        document.getElementById('notificationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'notificationModal') {
+                document.getElementById('notificationModal').classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = DataStore.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            updateUserInfo();
+            updateCurrentDate();
+            updateStatistics();
+            initAttendanceChart();
+            loadRecentActivities();
+            renderNotifications();
+        });
+    </script>
+</body>
+</html>

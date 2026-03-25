@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>班级管理系统 - 签到管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .progress-ring { transition: stroke-dashoffset 0.5s ease; }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .location-marker { animation: bounce 1s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">签到管理</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <main class="flex-1 overflow-y-auto p-4 md:p-6">
+                <div class="max-w-7xl mx-auto">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                        <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                            <button id="createAttendanceBtn" class="bg-primary text-white px-4 py-2 rounded-xl font-medium hover:bg-secondary transition-colors flex items-center">
+                                <i class="fa fa-plus mr-2"></i>创建签到
+                            </button>
+                            <button id="refreshBtn" class="bg-white text-gray-600 px-4 py-2 rounded-xl font-medium hover:bg-gray-50 transition-colors border">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="searchInput" placeholder="搜索签到..." class="w-64 px-4 py-2 pl-10 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            </div>
+                            <select id="statusFilter" class="px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <option value="">全部状态</option>
+                                <option value="active">进行中</option>
+                                <option value="pending">待开始</option>
+                                <option value="completed">已结束</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">总签到数</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="totalCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-calendar-check-o text-blue-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">进行中</p>
+                                    <p class="text-2xl font-bold text-green-600" id="activeCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-clock-o text-green-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">待开始</p>
+                                    <p class="text-2xl font-bold text-orange-600" id="pendingCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-hourglass-half text-orange-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">已结束</p>
+                                    <p class="text-2xl font-bold text-gray-600" id="completedCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-check-circle text-gray-500 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b">
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-semibold text-gray-800">签到列表</h3>
+                                <div class="flex items-center space-x-2">
+                                    <button id="exportBtn" class="text-sm text-primary hover:text-secondary flex items-center">
+                                        <i class="fa fa-download mr-1"></i>导出数据
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="attendanceList" class="divide-y">
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fa fa-calendar-check-o text-4xl mb-2 text-gray-300"></i>
+                                <p>暂无签到数据</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="createModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-plus-circle text-primary mr-2"></i>创建签到</h3>
+                    <button id="closeCreateModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <form id="createAttendanceForm" class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">签到名称 *</label>
+                        <input type="text" id="attendanceName" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：班级例会签到">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">签到类型</label>
+                        <select id="attendanceType" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="location">定位签到</option>
+                            <option value="simple">普通签到</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="locationSettings" class="mb-4 p-4 bg-blue-50 rounded-xl">
+                    <h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-map-marker text-red-500 mr-2"></i>签到位置设置</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">签到地点名称 *</label>
+                            <input type="text" id="locationName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：教学楼A101">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">有效范围（米）*</label>
+                            <select id="rangeMeters" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <option value="50">50米</option>
+                                <option value="100">100米</option>
+                                <option value="200" selected>200米</option>
+                                <option value="300">300米</option>
+                                <option value="400">400米</option>
+                                <option value="500">500米</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">签到中心位置</label>
+                        <div class="flex items-center space-x-2 mb-2">
+                            <input type="text" id="latitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="纬度" readonly>
+                            <input type="text" id="longitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="经度" readonly>
+                        </div>
+                        <button type="button" id="getLocationBtn" class="w-full bg-green-500 text-white px-4 py-2 rounded-xl font-medium hover:bg-green-600 transition-colors">
+                            <i class="fa fa-location-arrow mr-2"></i>获取当前位置
+                        </button>
+                        <p class="text-xs text-gray-500 mt-2">提示：点击按钮获取您当前位置作为签到中心点，成员需在此范围内签到</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
+                        <input type="datetime-local" id="startTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
+                        <input type="datetime-local" id="endTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">签到说明</label>
+                    <textarea id="description" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="签到相关说明或备注"></textarea>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">自定义填写内容</label>
+                    <div id="customFields" class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" placeholder="如：今日学习内容">
+                            <button type="button" class="remove-field-btn text-red-500 hover:text-red-600"><i class="fa fa-times"></i></button>
+                        </div>
+                    </div>
+                    <button type="button" id="addFieldBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加字段</button>
+                </div>
+                
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="allowLate" class="w-4 h-4 text-primary rounded">
+                    <label for="allowLate" class="ml-2 text-sm text-gray-700">允许迟到签到</label>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelCreateBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">创建签到</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="signModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md modal-content mx-4">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-check-circle text-green-500 mr-2"></i>签到</h3>
+                    <button id="closeSignModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div id="signContent" class="p-6">
+                <div class="text-center mb-6">
+                    <h4 class="text-lg font-semibold text-gray-800" id="signAttendanceName">班级例会签到</h4>
+                    <p class="text-sm text-gray-500" id="signLocationName">教学楼A101</p>
+                </div>
+                
+                <div id="locationStatus" class="mb-6">
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center location-marker">
+                            <i class="fa fa-map-marker text-blue-500 text-3xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-center text-gray-600" id="locationMessage">正在获取您的位置...</p>
+                    <p class="text-center text-sm text-gray-500 mt-2" id="distanceInfo"></p>
+                </div>
+                
+                <div id="customFieldsContainer" class="mb-6 hidden">
+                    <h5 class="font-medium text-gray-700 mb-3">请填写以下信息</h5>
+                    <div id="signCustomFields" class="space-y-3"></div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">备注（选填）</label>
+                    <textarea id="signRemark" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="签到备注"></textarea>
+                </div>
+                
+                <button id="confirmSignBtn" class="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                    <i class="fa fa-check mr-2"></i>确认签到
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+            <div class="p-6 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-info-circle text-primary mr-2"></i>签到详情</h3>
+                    <button id="closeDetailModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div id="detailContent" class="p-6">
+            </div>
+        </div>
+    </div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        let currentUser = null;
+        let currentAttendance = null;
+        let userLocation = null;
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
+            const icon = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' }[type] || 'fa-info-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `<i class="fa ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function renderNotifications() {
+            const notifications = DataStore.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无通知</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notifications.map(n => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
+                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
+                        </div>
+                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function markAsRead(id) {
+            DataStore.markNotificationRead(id);
+            renderNotifications();
+        }
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function formatTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getAttendanceStatus(attendance) {
+            const now = new Date();
+            const start = new Date(attendance.startTime);
+            const end = new Date(attendance.endTime);
+            
+            if (now < start) return 'pending';
+            if (now > end) return 'completed';
+            return 'active';
+        }
+        
+        function getStatusBadge(status) {
+            const badges = {
+                active: '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">进行中</span>',
+                pending: '<span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">待开始</span>',
+                completed: '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">已结束</span>'
+            };
+            return badges[status] || '';
+        }
+        
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+        
+        function renderAttendanceList() {
+            const attendances = DataStore.getAttendances();
+            const records = DataStore.getAttendanceRecords();
+            const users = DataStore.getUsers();
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            let filtered = attendances.filter(a => {
+                const matchSearch = a.name.toLowerCase().includes(searchTerm) || 
+                                   (a.locationName && a.locationName.toLowerCase().includes(searchTerm));
+                const matchStatus = !statusFilter || getAttendanceStatus(a) === statusFilter;
+                return matchSearch && matchStatus;
+            });
+            
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            const container = document.getElementById('attendanceList');
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-calendar-check-o text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无签到数据</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(attendance => {
+                const status = getAttendanceStatus(attendance);
+                const attendanceRecords = records.filter(r => r.attendanceId === attendance.id);
+                const signedCount = attendanceRecords.length;
+                const totalUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin').length;
+                const progress = totalUsers > 0 ? Math.round((signedCount / totalUsers) * 100) : 0;
+                
+                const userRecord = records.find(r => r.attendanceId === attendance.id && r.userId === currentUser.id);
+                const hasSigned = !!userRecord;
+                
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    ${getStatusBadge(status)}
+                                    ${hasSigned ? '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"><i class="fa fa-check mr-1"></i>已签到</span>' : ''}
+                                </div>
+                                <h4 class="font-semibold text-gray-800">${attendance.name}</h4>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(attendance.startTime)} - ${formatTime(attendance.endTime)}</span>
+                                    ${attendance.locationName ? `<span><i class="fa fa-map-marker mr-1 text-red-500"></i>${attendance.locationName}</span>` : ''}
+                                </div>
+                                ${attendance.description ? `<p class="text-sm text-gray-500 mt-1">${attendance.description}</p>` : ''}
+                            </div>
+                            
+                            <div class="flex items-center space-x-2 ml-4">
+                                ${status === 'active' && !hasSigned ? `
+                                    <button onclick="openSignModal(${attendance.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
+                                        <i class="fa fa-check mr-1"></i>签到
+                                    </button>
+                                ` : ''}
+                                <button onclick="openDetailModal(${attendance.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                    <i class="fa fa-eye mr-1"></i>详情
+                                </button>
+                                ${currentUser.role !== 'user' ? `
+                                    <button onclick="deleteAttendance(${attendance.id})" class="text-red-500 hover:text-red-600 px-2">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between text-sm mb-1">
+                                <span class="text-gray-500">签到进度</span>
+                                <span class="font-medium">${signedCount}/${totalUsers} (${progress}%)</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-primary rounded-full h-2 transition-all" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('totalCount').textContent = attendances.length;
+            document.getElementById('activeCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'active').length;
+            document.getElementById('pendingCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'pending').length;
+            document.getElementById('completedCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'completed').length;
+        }
+        
+        function openCreateModal() {
+            document.getElementById('createModal').classList.remove('hidden');
+            
+            const now = new Date();
+            const startTime = new Date(now.getTime() + 5 * 60000);
+            const endTime = new Date(now.getTime() + 35 * 60000);
+            
+            document.getElementById('startTime').value = startTime.toISOString().slice(0, 16);
+            document.getElementById('endTime').value = endTime.toISOString().slice(0, 16);
+            
+            document.getElementById('createAttendanceForm').reset();
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+        }
+        
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.add('hidden');
+        }
+        
+        function openSignModal(attendanceId) {
+            const attendances = DataStore.getAttendances();
+            currentAttendance = attendances.find(a => a.id === attendanceId);
+            
+            if (!currentAttendance) {
+                showToast('签到不存在', 'error');
+                return;
+            }
+            
+            document.getElementById('signAttendanceName').textContent = currentAttendance.name;
+            document.getElementById('signLocationName').textContent = currentAttendance.locationName || '普通签到';
+            document.getElementById('locationMessage').textContent = '正在获取您的位置...';
+            document.getElementById('distanceInfo').textContent = '';
+            document.getElementById('confirmSignBtn').disabled = true;
+            document.getElementById('signRemark').value = '';
+            
+            const customFieldsContainer = document.getElementById('customFieldsContainer');
+            const signCustomFields = document.getElementById('signCustomFields');
+            
+            if (currentAttendance.customFields && currentAttendance.customFields.length > 0) {
+                customFieldsContainer.classList.remove('hidden');
+                signCustomFields.innerHTML = currentAttendance.customFields.map((field, index) => `
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">${field}</label>
+                        <input type="text" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-value" data-field="${field}">
+                    </div>
+                `).join('');
+            } else {
+                customFieldsContainer.classList.add('hidden');
+            }
+            
+            document.getElementById('signModal').classList.remove('hidden');
+            
+            if (currentAttendance.type === 'location') {
+                getUserLocation();
+            } else {
+                document.getElementById('locationMessage').textContent = '普通签到，无需定位';
+                document.getElementById('confirmSignBtn').disabled = false;
+            }
+        }
+        
+        function closeSignModal() {
+            document.getElementById('signModal').classList.add('hidden');
+            currentAttendance = null;
+        }
+        
+        function getUserLocation() {
+            if (!navigator.geolocation) {
+                document.getElementById('locationMessage').textContent = '您的浏览器不支持定位功能';
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    
+                    if (currentAttendance && currentAttendance.latitude) {
+                        const distance = calculateDistance(
+                            userLocation.lat, userLocation.lng,
+                            currentAttendance.latitude, currentAttendance.longitude
+                        );
+                        
+                        const range = currentAttendance.rangeMeters || 200;
+                        
+                        if (distance <= range) {
+                            document.getElementById('locationMessage').innerHTML = '<span class="text-green-600 font-medium"><i class="fa fa-check-circle mr-1"></i>您在签到范围内</span>';
+                            document.getElementById('distanceInfo').textContent = `距离签到点约 ${Math.round(distance)} 米`;
+                            document.getElementById('confirmSignBtn').disabled = false;
+                        } else {
+                            document.getElementById('locationMessage').innerHTML = '<span class="text-red-600 font-medium"><i class="fa fa-times-circle mr-1"></i>您不在签到范围内</span>';
+                            document.getElementById('distanceInfo').textContent = `距离签到点约 ${Math.round(distance)} 米，需要在 ${range} 米范围内`;
+                            document.getElementById('confirmSignBtn').disabled = true;
+                        }
+                    }
+                },
+                (error) => {
+                    let message = '无法获取您的位置';
+                    if (error.code === 1) message = '请授权位置权限';
+                    if (error.code === 2) message = '位置信息不可用';
+                    if (error.code === 3) message = '获取位置超时';
+                    document.getElementById('locationMessage').textContent = message;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+        
+        function confirmSign() {
+            if (!currentAttendance) return;
+            
+            const records = DataStore.getAttendanceRecords();
+            const existingRecord = records.find(r => r.attendanceId === currentAttendance.id && r.userId === currentUser.id);
+            
+            if (existingRecord) {
+                showToast('您已经签到过了', 'warning');
+                closeSignModal();
+                return;
+            }
+            
+            const customFieldValues = {};
+            document.querySelectorAll('.custom-field-value').forEach(input => {
+                customFieldValues[input.dataset.field] = input.value;
+            });
+            
+            const record = {
+                attendanceId: currentAttendance.id,
+                attendanceName: currentAttendance.name,
+                userId: currentUser.id,
+                username: currentUser.username,
+                name: currentUser.name,
+                latitude: userLocation ? userLocation.lat : null,
+                longitude: userLocation ? userLocation.lng : null,
+                customFields: customFieldValues,
+                remark: document.getElementById('signRemark').value,
+                signedAt: new Date().toISOString()
+            };
+            
+            DataStore.addAttendanceRecord(record);
+            
+            showToast('签到成功！', 'success');
+            closeSignModal();
+            renderAttendanceList();
+        }
+        
+        function openDetailModal(attendanceId) {
+            const attendances = DataStore.getAttendances();
+            const attendance = attendances.find(a => a.id === attendanceId);
+            
+            if (!attendance) {
+                showToast('签到不存在', 'error');
+                return;
+            }
+            
+            const records = DataStore.getAttendanceRecords();
+            const attendanceRecords = records.filter(r => r.attendanceId === attendanceId);
+            const users = DataStore.getUsers();
+            const allMembers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+            
+            const signedUsers = attendanceRecords.map(r => r.userId);
+            const unsignedUsers = allMembers.filter(u => !signedUsers.includes(u.id));
+            
+            const status = getAttendanceStatus(attendance);
+            
+            document.getElementById('detailContent').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3"><i class="fa fa-info-circle text-primary mr-2"></i>签到信息</h4>
+                        <div class="space-y-2 text-sm">
+                            <p><span class="text-gray-500">名称：</span>${attendance.name}</p>
+                            <p><span class="text-gray-500">状态：</span>${getStatusBadge(status)}</p>
+                            <p><span class="text-gray-500">时间：</span>${formatDateTime(attendance.startTime)} - ${formatTime(attendance.endTime)}</p>
+                            ${attendance.locationName ? `<p><span class="text-gray-500">地点：</span>${attendance.locationName}</p>` : ''}
+                            ${attendance.rangeMeters ? `<p><span class="text-gray-500">范围：</span>${attendance.rangeMeters}米</p>` : ''}
+                            ${attendance.description ? `<p><span class="text-gray-500">说明：</span>${attendance.description}</p>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3"><i class="fa fa-bar-chart text-primary mr-2"></i>签到统计</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <p class="text-3xl font-bold text-green-600">${attendanceRecords.length}</p>
+                                <p class="text-sm text-gray-500">已签到</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-3xl font-bold text-red-600">${unsignedUsers.length}</p>
+                                <p class="text-sm text-gray-500">未签到</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-800"><i class="fa fa-check-circle text-green-500 mr-2"></i>已签到成员 (${attendanceRecords.length})</h4>
+                        <button onclick="exportAttendanceData(${attendanceId}, 'signed')" class="text-sm text-primary hover:text-secondary">
+                            <i class="fa fa-download mr-1"></i>导出
+                        </button>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
+                        ${attendanceRecords.length > 0 ? `
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-left text-gray-500">
+                                        <th class="pb-2">姓名</th>
+                                        <th class="pb-2">账号</th>
+                                        <th class="pb-2">签到时间</th>
+                                        <th class="pb-2">备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    ${attendanceRecords.map(r => `
+                                        <tr>
+                                            <td class="py-2">${r.name}</td>
+                                            <td class="py-2 text-gray-500">${r.username}</td>
+                                            <td class="py-2 text-gray-500">${formatTime(r.signedAt)}</td>
+                                            <td class="py-2 text-gray-500">${r.remark || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<p class="text-gray-500 text-center">暂无签到记录</p>'}
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-semibold text-gray-800"><i class="fa fa-times-circle text-red-500 mr-2"></i>未签到成员 (${unsignedUsers.length})</h4>
+                        <button onclick="exportAttendanceData(${attendanceId}, 'unsigned')" class="text-sm text-primary hover:text-secondary">
+                            <i class="fa fa-download mr-1"></i>导出
+                        </button>
+                    </div>
+                    <div class="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
+                        ${unsignedUsers.length > 0 ? `
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                ${unsignedUsers.map(u => `
+                                    <div class="bg-white rounded-lg p-2 text-center">
+                                        <p class="font-medium text-gray-800">${u.name}</p>
+                                        <p class="text-xs text-gray-500">${u.username}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p class="text-gray-500 text-center">全部已签到</p>'}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+        
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+        
+        function deleteAttendance(attendanceId) {
+            if (!confirm('确定要删除这个签到吗？')) return;
+            
+            let attendances = DataStore.getAttendances();
+            attendances = attendances.filter(a => a.id !== attendanceId);
+            DataStore.saveAttendances(attendances);
+            
+            let records = DataStore.getAttendanceRecords();
+            records = records.filter(r => r.attendanceId !== attendanceId);
+            DataStore.saveAttendanceRecords(records);
+            
+            showToast('删除成功', 'success');
+            renderAttendanceList();
+        }
+        
+        function exportAttendanceData(attendanceId, type) {
+            const attendances = DataStore.getAttendances();
+            const attendance = attendances.find(a => a.id === attendanceId);
+            const records = DataStore.getAttendanceRecords();
+            const users = DataStore.getUsers();
+            const allMembers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+            
+            let data = [];
+            
+            if (type === 'signed') {
+                const attendanceRecords = records.filter(r => r.attendanceId === attendanceId);
+                data = attendanceRecords.map(r => ({
+                    姓名: r.name,
+                    账号: r.username,
+                    签到时间: formatDateTime(r.signedAt),
+                    备注: r.remark || ''
+                }));
+            } else {
+                const signedUsers = records.filter(r => r.attendanceId === attendanceId).map(r => r.userId);
+                const unsignedUsers = allMembers.filter(u => !signedUsers.includes(u.id));
+                data = unsignedUsers.map(u => ({
+                    姓名: u.name,
+                    账号: u.username
+                }));
+            }
+            
+            if (data.length === 0) {
+                showToast('没有数据可导出', 'warning');
+                return;
+            }
+            
+            DataStore.exportToCSV(data, `${attendance.name}_${type === 'signed' ? '已签到' : '未签到'}_${new Date().toLocaleDateString()}`);
+        }
+        
+        function exportAllData() {
+            const attendances = DataStore.getAttendances();
+            const records = DataStore.getAttendanceRecords();
+            
+            if (attendances.length === 0) {
+                showToast('没有签到数据可导出', 'warning');
+                return;
+            }
+            
+            const data = records.map(r => {
+                const attendance = attendances.find(a => a.id === r.attendanceId);
+                return {
+                    签到名称: attendance ? attendance.name : '',
+                    姓名: r.name,
+                    账号: r.username,
+                    签到时间: formatDateTime(r.signedAt),
+                    备注: r.remark || ''
+                };
+            });
+            
+            DataStore.exportToCSV(data, `签到记录_${new Date().toLocaleDateString()}`);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = DataStore.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '超级管理员' : currentUser.role === 'subAdmin' ? '子管理员' : '普通成员';
+            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            
+            if (currentUser.role === 'user') {
+                document.getElementById('adminMenu').style.display = 'none';
+                document.getElementById('mobileAdminMenu').style.display = 'none';
+                document.getElementById('createAttendanceBtn').style.display = 'none';
+                document.getElementById('exportBtn').style.display = 'none';
+            }
+            
+            renderAttendanceList();
+            
+            document.getElementById('createAttendanceBtn').addEventListener('click', openCreateModal);
+            document.getElementById('closeCreateModal').addEventListener('click', closeCreateModal);
+            document.getElementById('cancelCreateBtn').addEventListener('click', closeCreateModal);
+            
+            document.getElementById('closeSignModal').addEventListener('click', closeSignModal);
+            document.getElementById('confirmSignBtn').addEventListener('click', confirmSign);
+            
+            document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
+            
+            document.getElementById('getLocationBtn').addEventListener('click', () => {
+                if (!navigator.geolocation) {
+                    showToast('您的浏览器不支持定位功能', 'error');
+                    return;
+                }
+                
+                showToast('正在获取位置...', 'info');
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
+                        document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
+                        showToast('位置获取成功', 'success');
+                    },
+                    (error) => {
+                        let message = '无法获取位置';
+                        if (error.code === 1) message = '请授权位置权限';
+                        showToast(message, 'error');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+            
+            document.getElementById('addFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('customFields');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" placeholder="字段名称">
+                    <button type="button" class="remove-field-btn text-red-500 hover:text-red-600"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+                
+                div.querySelector('.remove-field-btn').addEventListener('click', () => div.remove());
+            });
+            
+            document.getElementById('customFields').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-field-btn')) {
+                    const fieldDiv = e.target.closest('.flex');
+                    if (document.querySelectorAll('#customFields > .flex').length > 1) {
+                        fieldDiv.remove();
+                    }
+                }
+            });
+            
+            document.getElementById('createAttendanceForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const type = document.getElementById('attendanceType').value;
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+                
+                if (type === 'location' && (!latitude || !longitude)) {
+                    showToast('定位签到需要获取签到中心位置', 'warning');
+                    return;
+                }
+                
+                const customFields = [];
+                document.querySelectorAll('.custom-field-input').forEach(input => {
+                    if (input.value.trim()) {
+                        customFields.push(input.value.trim());
+                    }
+                });
+                
+                const attendance = {
+                    name: document.getElementById('attendanceName').value,
+                    type: type,
+                    locationName: document.getElementById('locationName').value,
+                    latitude: latitude ? parseFloat(latitude) : null,
+                    longitude: longitude ? parseFloat(longitude) : null,
+                    rangeMeters: parseInt(document.getElementById('rangeMeters').value),
+                    startTime: document.getElementById('startTime').value,
+                    endTime: document.getElementById('endTime').value,
+                    description: document.getElementById('description').value,
+                    customFields: customFields,
+                    allowLate: document.getElementById('allowLate').checked,
+                    createdBy: currentUser.id,
+                    createdByName: currentUser.name
+                };
+                
+                DataStore.addAttendance(attendance);
+                
+                showToast('签到创建成功', 'success');
+                closeCreateModal();
+                renderAttendanceList();
+            });
+            
+            document.getElementById('attendanceType').addEventListener('change', (e) => {
+                const locationSettings = document.getElementById('locationSettings');
+                if (e.target.value === 'location') {
+                    locationSettings.style.display = 'block';
+                } else {
+                    locationSettings.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('searchInput').addEventListener('input', renderAttendanceList);
+            document.getElementById('statusFilter').addEventListener('change', renderAttendanceList);
+            document.getElementById('refreshBtn').addEventListener('click', renderAttendanceList);
+            document.getElementById('exportBtn').addEventListener('click', exportAllData);
+            
+            document.getElementById('notificationBtn').addEventListener('click', () => {
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', () => {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', (e) => {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('userMenuBtn').addEventListener('click', () => {
+                document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                DataStore.clearCurrentUser();
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                DataStore.clearCurrentUser();
+                window.location.href = 'index.html';
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

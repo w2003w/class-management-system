@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>安装指南 - 班级管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" type="image/png">
+    <meta name="theme-color" content="#1E40AF">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#60A5FA',
+                        dark: '#1E3A8A',
+                        light: '#EFF6FF'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .glass {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .step-card {
+                transition: all 0.3s ease;
+            }
+            .step-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="Logo" class="h-10 w-10 mr-3">
+                    <span class="text-xl font-bold text-primary">班级管理系统</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="backBtn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-dark transition flex items-center">
+                        <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 页面标题 -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-extrabold text-primary mb-4 text-shadow">安装班级管理系统</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                将班级管理系统安装到您的手机上，获得更好的使用体验！
+            </p>
+        </div>
+
+        <!-- 平台选择 -->
+        <div class="flex flex-col md:flex-row justify-center gap-8 mb-16">
+            <button id="androidBtn" class="platform-btn bg-white p-6 rounded-2xl shadow-lg flex-1 max-w-md border-4 border-primary">
+                <div class="text-center">
+                    <i class="fa fa-android text-6xl text-green-600 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Android</h3>
+                    <p class="text-gray-600">点击查看 Android 安装指南</p>
+                </div>
+            </button>
+            <button id="iosBtn" class="platform-btn bg-white p-6 rounded-2xl shadow-lg flex-1 max-w-md border-4 border-transparent">
+                <div class="text-center">
+                    <i class="fa fa-apple text-6xl text-gray-800 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">iOS</h3>
+                    <p class="text-gray-600">点击查看 iPhone/iPad 安装指南</p>
+                </div>
+            </button>
+        </div>
+
+        <!-- 安装步骤 -->
+        <div id="androidSteps" class="steps-container">
+            <div class="bg-white rounded-3xl shadow-xl p-8 mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-8 text-center">Android 安装步骤</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- 步骤1 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">1</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">打开 Chrome 浏览器</h3>
+                                <p class="text-gray-600 mb-4">使用 Chrome 浏览器访问班级管理系统网站</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="Chrome浏览器" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">2</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">点击安装按钮</h3>
+                                <p class="text-gray-600 mb-4">在页面底部会出现安装提示，点击"安装"按钮</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="安装按钮" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤3 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">3</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">确认安装</h3>
+                                <p class="text-gray-600 mb-4">在弹出的确认对话框中点击"安装"</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="确认安装" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤4 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">4</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">完成安装</h3>
+                                <p class="text-gray-600 mb-4">安装完成后，在手机桌面上找到应用图标并点击打开</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="完成安装" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="iosSteps" class="steps-container hidden">
+            <div class="bg-white rounded-3xl shadow-xl p-8 mb-8">
+                <h2 class="text-3xl font-bold text-primary mb-8 text-center">iOS 安装步骤</h2>
+                
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- 步骤1 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">1</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">打开 Safari 浏览器</h3>
+                                <p class="text-gray-600 mb-4">使用 Safari 浏览器访问班级管理系统网站</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="Safari浏览器" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">2</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">点击分享按钮</h3>
+                                <p class="text-gray-600 mb-4">点击底部工具栏中的分享按钮</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="分享按钮" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤3 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">3</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">添加到主屏幕</h3>
+                                <p class="text-gray-600 mb-4">在分享菜单中选择"添加到主屏幕"</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="添加到主屏幕" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤4 -->
+                    <div class="step-card bg-blue-50 p-6 rounded-2xl shadow">
+                        <div class="flex items-start">
+                            <div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center text-xl font-bold mr-4 shrink-0">4</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800 mb-2">确认添加</h3>
+                                <p class="text-gray-600 mb-4">点击"添加"按钮完成安装</p>
+                                <img src="https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D" alt="确认添加" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 特性介绍 -->
+        <div class="bg-white rounded-3xl shadow-xl p-8 mb-8">
+            <h2 class="text-3xl font-bold text-primary mb-8 text-center">安装后您将获得</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- 特性1 -->
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg transform transition-transform hover:scale-105">
+                    <div class="text-center mb-4">
+                        <i class="fa fa-mobile text-5xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">原生应用体验</h3>
+                        <p class="text-blue-100">就像使用普通手机应用一样，无需打开浏览器</p>
+                    </div>
+                </div>
+
+                <!-- 特性2 -->
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg transform transition-transform hover:scale-105">
+                    <div class="text-center mb-4">
+                        <i class="fa fa-wifi-slash text-5xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">离线访问</h3>
+                        <p class="text-blue-100">即使没有网络连接，也能访问基本功能</p>
+                    </div>
+                </div>
+
+                <!-- 特性3 -->
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg transform transition-transform hover:scale-105">
+                    <div class="text-center mb-4">
+                        <i class="fa fa-bell text-5xl mb-4"></i>
+                        <h3 class="text-xl font-bold mb-2">推送通知</h3>
+                        <p class="text-blue-100">及时收到签到、考试等重要通知</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 常见问题 -->
+        <div class="bg-white rounded-3xl shadow-xl p-8">
+            <h2 class="text-3xl font-bold text-primary mb-8 text-center">常见问题</h2>
+            
+            <div class="space-y-6">
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-btn w-full text-left p-6 focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-gray-800">安装后还需要登录吗？</h3>
+                            <i class="fa fa-chevron-down text-gray-500 transition-transform"></i>
+                        </div>
+                    </button>
+                    <div class="faq-answer p-6 bg-white border-t border-gray-200 hidden">
+                        <p class="text-gray-600">是的，首次安装后需要登录您的账号。登录后，系统会记住您的登录状态，下次打开应用时无需重新登录。</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-btn w-full text-left p-6 focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-gray-800">如何更新应用？</h3>
+                            <i class="fa fa-chevron-down text-gray-500 transition-transform"></i>
+                        </div>
+                    </button>
+                    <div class="faq-answer p-6 bg-white border-t border-gray-200 hidden">
+                        <p class="text-gray-600">应用会自动检测更新。当有新版本时，会在页面底部显示更新提示，点击"更新"按钮即可。</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-btn w-full text-left p-6 focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-gray-800">卸载应用后数据会丢失吗？</h3>
+                            <i class="fa fa-chevron-down text-gray-500 transition-transform"></i>
+                        </div>
+                    </button>
+                    <div class="faq-answer p-6 bg-white border-t border-gray-200 hidden">
+                        <p class="text-gray-600">不会。您的数据存储在服务器上，卸载应用后重新安装并登录，所有数据都会恢复。</p>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden">
+                    <button class="faq-btn w-full text-left p-6 focus:outline-none bg-gray-50 hover:bg-gray-100 transition">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-gray-800">为什么 iOS 版本功能较少？</h3>
+                            <i class="fa fa-chevron-down text-gray-500 transition-transform"></i>
+                        </div>
+                    </button>
+                    <div class="faq-answer p-6 bg-white border-t border-gray-200 hidden">
+                        <p class="text-gray-600">iOS 对 PWA 支持相对有限，某些功能如推送通知可能无法在 iOS 设备上正常工作。我们正在努力优化 iOS 上的体验。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="bg-primary text-white py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">班级管理系统</h3>
+                <p class="text-blue-200 mb-6">大学生班级综合管理平台</p>
+                <div class="flex justify-center space-x-6 mb-6">
+                    <a href="#" class="text-white hover:text-blue-200 transition">
+                        <i class="fa fa-question-circle text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-white hover:text-blue-200 transition">
+                        <i class="fa fa-envelope text-2xl"></i>
+                    </a>
+                    <a href="#" class="text-white hover:text-blue-200 transition">
+                        <i class="fa fa-phone text-2xl"></i>
+                    </a>
+                </div>
+                <p class="text-blue-300 text-sm">© 2026 班级管理系统 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 平台切换
+        document.getElementById('androidBtn').addEventListener('click', function() {
+            document.getElementById('androidBtn').classList.add('border-primary');
+            document.getElementById('androidBtn').classList.remove('border-transparent');
+            document.getElementById('iosBtn').classList.add('border-transparent');
+            document.getElementById('iosBtn').classList.remove('border-primary');
+            
+            document.getElementById('androidSteps').classList.remove('hidden');
+            document.getElementById('iosSteps').classList.add('hidden');
+        });
+
+        document.getElementById('iosBtn').addEventListener('click', function() {
+            document.getElementById('iosBtn').classList.add('border-primary');
+            document.getElementById('iosBtn').classList.remove('border-transparent');
+            document.getElementById('androidBtn').classList.add('border-transparent');
+            document.getElementById('androidBtn').classList.remove('border-primary');
+            
+            document.getElementById('iosSteps').classList.remove('hidden');
+            document.getElementById('androidSteps').classList.add('hidden');
+        });
+
+        // FAQ 折叠
+        document.querySelectorAll('.faq-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const answer = button.nextElementSibling;
+                const icon = button.querySelector('i');
+                
+                answer.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+            });
+        });
+
+        // 返回按钮
+        document.getElementById('backBtn').addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then((registration) => {
+                        console.log('Service Worker 注册成功:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.error('Service Worker 注册失败:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
