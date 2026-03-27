@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 登录</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" type="image/svg+xml">
@@ -330,7 +330,15 @@
     
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script>
         const loginForm = document.getElementById('loginForm');
         const usernameInput = document.getElementById('username');
@@ -378,8 +386,9 @@
             }, 3000);
         }
         
-        function checkLogin() {
-            const user = DataStore.getCurrentUser();
+        async function checkLogin() {
+            await DataService.init();
+            const user = await DataService.getCurrentUser();
             if (user) {
                 window.location.href = 'dashboard.html';
                 return true;
@@ -395,8 +404,8 @@
             }
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            if (checkLogin()) return;
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (await checkLogin()) return;
             loadRememberedUser();
         });
         
@@ -429,30 +438,33 @@
             loginText.textContent = '登录中...';
             loginSpinner.classList.remove('hidden');
             
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            const user = DataStore.getUserByUsername(username);
-            
-            if (user && user.password === password) {
-                if (rememberCheckbox.checked) {
-                    localStorage.setItem('rememberedUser', username);
+            try {
+                const result = await DataService.signIn(username, password);
+                
+                if (result.success) {
+                    if (rememberCheckbox.checked) {
+                        localStorage.setItem('rememberedUser', username);
+                    } else {
+                        localStorage.removeItem('rememberedUser');
+                    }
+                    
+                    showToast('登录成功，正在跳转...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 500);
                 } else {
-                    localStorage.removeItem('rememberedUser');
+                    showToast(result.message || '账号或密码错误', 'error');
+                    loginBtn.disabled = false;
+                    loginText.textContent = '登 录';
+                    loginSpinner.classList.add('hidden');
+                    passwordInput.focus();
                 }
-                
-                DataStore.setCurrentUser(user);
-                
-                showToast('登录成功，正在跳转...', 'success');
-                
-                setTimeout(() => {
-                    window.location.href = 'dashboard.html';
-                }, 500);
-            } else {
-                showToast('账号或密码错误', 'error');
+            } catch (error) {
+                showToast('登录失败: ' + error.message, 'error');
                 loginBtn.disabled = false;
                 loginText.textContent = '登 录';
                 loginSpinner.classList.add('hidden');
-                passwordInput.focus();
             }
         });
         
@@ -476,7 +488,7 @@
             }
         });
         
-        forgotPasswordForm.addEventListener('submit', (e) => {
+        forgotPasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('forgotUsername').value.trim();
@@ -486,26 +498,31 @@
                 return;
             }
             
-            const user = DataStore.getUserByUsername(username);
-            
-            if (user) {
-                DataStore.addPasswordResetRequest({
-                    username: username,
-                    name: user.name,
-                    userId: user.id
-                });
+            try {
+                const user = await DataService.getUserByUsername(username);
                 
-                DataStore.addNotification({
-                    type: 'password_reset',
-                    title: '密码重置请求',
-                    message: `用户 ${user.name}(${username}) 请求重置密码`,
-                    forAdmin: true
-                });
-                
-                showToast('请求已提交，请等待管理员处理', 'success');
-                closeForgotModal();
-            } else {
-                showToast('未找到该账号', 'error');
+                if (user) {
+                    const request = await DataService.addPasswordResetRequest({
+                        username: username,
+                        name: user.name,
+                        userId: user.id
+                    });
+                    
+                    await DataService.addNotification({
+                        type: 'password_reset',
+                        title: '密码重置请求',
+                        message: `用户 ${user.name}(${username}) 请求重置密码`,
+                        forAdmin: true,
+                        relatedId: request.id
+                    });
+                    
+                    showToast('请求已提交，请等待管理员处理', 'success');
+                    closeForgotModal();
+                } else {
+                    showToast('未找到该账号', 'error');
+                }
+            } catch (error) {
+                showToast('提交请求失败', 'error');
             }
         });
         

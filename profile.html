@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 个人资料</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -39,16 +39,21 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -67,6 +72,7 @@
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -85,7 +91,7 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
                         <h2 class="text-xl font-semibold text-gray-800">个人资料</h2>
@@ -95,22 +101,25 @@
                         <div class="relative">
                             <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
                                 <i class="fa fa-bell text-xl"></i>
-                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center" id="notificationBadge">3</span>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
                             </button>
                         </div>
                         
                         <div class="relative">
-                            <button id="userMenuBtn" class="flex items-center space-x-2">
-                                <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium" id="userAvatar">WT</div>
-                                <span class="hidden md:block text-sm font-medium text-gray-700" id="userName">吴涛</span>
-                                <i class="fa fa-chevron-down text-gray-400 text-xs"></i>
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
                             </button>
                             
                             <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
-                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">个人资料</a>
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
                                 <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
-                                <hr class="my-2">
-                                <a href="#" id="logoutLink" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">退出登录</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
                             </div>
                         </div>
                     </div>
@@ -148,6 +157,7 @@
                             <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                             <ul class="space-y-1">
                                 <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                                <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                                 <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                             </ul>
                         </div>
@@ -313,18 +323,18 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">当前密码</label>
-                                        <input type="password" id="currentPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                        <input type="password" id="currentPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
                                     </div>
                                     
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">新密码</label>
-                                        <input type="password" id="newPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                        <input type="password" id="newPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
                                         <p class="text-xs text-gray-500 mt-1">密码长度至少6位</p>
                                     </div>
                                     
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">确认新密码</label>
-                                        <input type="password" id="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                                        <input type="password" id="confirmPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
                                     </div>
                                 </div>
                                 
@@ -359,18 +369,44 @@
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script src="js/utils.js"></script>
     <script>
         let currentUser = null;
         
-        document.addEventListener('DOMContentLoaded', function() {
-            DataStore.init();
-            checkAuth();
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
+            const icon = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' }[type] || 'fa-info-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `<i class="fa ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            await DataService.init();
+            await checkAuth();
             initEventListeners();
-            loadUserProfile();
-            loadUserStats();
-            renderNotifications();
+            await loadUserProfile();
+            await loadUserStats();
+            await renderNotifications();
         });
         
         function formatDateTime(dateStr) {
@@ -378,8 +414,8 @@
             return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
         
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
             const container = document.getElementById('notificationList');
             const badge = document.getElementById('notificationBadge');
             
@@ -419,18 +455,17 @@
             container.innerHTML = html;
         }
         
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
         }
         
-        function checkAuth() {
-            const userStr = localStorage.getItem('currentUser');
-            if (!userStr) {
+        async function checkAuth() {
+            currentUser = await DataService.getCurrentUser();
+            if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
             }
-            currentUser = JSON.parse(userStr);
             
             if (currentUser.role !== 'admin') {
                 document.getElementById('adminMenu').classList.add('hidden');
@@ -439,11 +474,25 @@
             
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+            
+            let roleText = '普通成员';
+            if (currentUser.role === 'admin') {
+                roleText = '超级管理员';
+            } else if (currentUser.role === 'subAdmin') {
+                roleText = '子管理员';
+            }
+            document.getElementById('userRole').textContent = roleText;
         }
         
         function initEventListeners() {
-            document.getElementById('userMenuBtn').addEventListener('click', function() {
+            document.getElementById('userMenuBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', function(e) {
+                e.stopPropagation();
             });
             
             document.addEventListener('click', function(e) {
@@ -453,10 +502,11 @@
             });
             
             document.getElementById('logoutBtn').addEventListener('click', logout);
-            document.getElementById('logoutLink').addEventListener('click', logout);
+            document.getElementById('logoutMenuBtn').addEventListener('click', logout);
             document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
             
-            document.getElementById('notificationBtn').addEventListener('click', function() {
+            document.getElementById('notificationBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
                 renderNotifications();
                 document.getElementById('notificationModal').classList.remove('hidden');
             });
@@ -471,12 +521,28 @@
                 }
             });
             
-            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.remove('hidden');
-            });
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
             
-            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.add('hidden');
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', toggleSidebar);
+            }
+            
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
             });
             
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -506,16 +572,16 @@
             document.getElementById('avatarInput').addEventListener('change', function(e) {
                 if (e.target.files && e.target.files[0]) {
                     const reader = new FileReader();
-                    reader.onload = function(event) {
+                    reader.onload = async function(event) {
                         document.getElementById('avatarPreview').style.backgroundImage = `url(${event.target.result})`;
                         document.getElementById('avatarPreview').style.backgroundSize = 'cover';
                         document.getElementById('avatarPreview').textContent = '';
                         
-                        const users = DataStore.getUsers();
+                        const users = await DataService.getUsers();
                         const userIndex = users.findIndex(u => u.id === currentUser.id);
                         if (userIndex !== -1) {
                             users[userIndex].avatar = event.target.result;
-                            DataStore.saveUsers(users);
+                            await DataService.saveUsers(users);
                             showToast('头像更新成功', 'success');
                         }
                     };
@@ -523,15 +589,15 @@
                 }
             });
             
-            document.getElementById('resetAvatarBtn').addEventListener('click', function() {
+            document.getElementById('resetAvatarBtn').addEventListener('click', async function() {
                 document.getElementById('avatarPreview').style.backgroundImage = '';
                 document.getElementById('avatarPreview').textContent = currentUser.name.substring(0, 2).toUpperCase();
                 
-                const users = DataStore.getUsers();
+                const users = await DataService.getUsers();
                 const userIndex = users.findIndex(u => u.id === currentUser.id);
                 if (userIndex !== -1) {
                     users[userIndex].avatar = null;
-                    DataStore.saveUsers(users);
+                    await DataService.saveUsers(users);
                     showToast('头像已恢复默认', 'success');
                 }
             });
@@ -542,8 +608,8 @@
             });
         }
         
-        function loadUserProfile() {
-            const users = DataStore.getUsers();
+        async function loadUserProfile() {
+            const users = await DataService.getUsers();
             const user = users.find(u => u.id === currentUser.id);
             
             if (user) {
@@ -564,78 +630,83 @@
             }
         }
         
-        function loadUserStats() {
-            const attendanceRecords = DataStore.getAttendanceRecords();
+        async function loadUserStats() {
+            const attendanceRecords = await DataService.getAttendanceRecords();
             const userCheckins = attendanceRecords.filter(r => r.userId === currentUser.id).length;
             document.getElementById('statCheckins').textContent = userCheckins;
             
-            const examRecords = DataStore.getExamRecords();
+            const examRecords = await DataService.getExamRecords();
             const userExams = examRecords.filter(r => r.userId === currentUser.id).length;
             document.getElementById('statExams').textContent = userExams;
             
-            const voteRecords = DataStore.getVoteRecords();
+            const voteRecords = await DataService.getVoteRecords();
             const userVotes = voteRecords.filter(r => r.userId === currentUser.id).length;
             document.getElementById('statVotes').textContent = userVotes;
             
-            const lotteryRecords = DataStore.getLotteryRecords();
+            const lotteryRecords = await DataService.getLotteryRecords();
             const userLotteries = lotteryRecords.filter(r => r.userId === currentUser.id && r.prize).length;
             document.getElementById('statLotteries').textContent = userLotteries;
         }
         
-        function saveProfile() {
-            const users = DataStore.getUsers();
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            
-            if (userIndex !== -1) {
-                users[userIndex].name = document.getElementById('profileName').value;
-                users[userIndex].email = document.getElementById('profileEmail').value;
-                users[userIndex].phone = document.getElementById('profilePhone').value;
-                users[userIndex].department = document.getElementById('profileDepartment').value;
-                users[userIndex].major = document.getElementById('profileMajor').value;
-                users[userIndex].className = document.getElementById('profileClass').value;
-                users[userIndex].studentId = document.getElementById('profileStudentId').value;
+        async function saveProfile() {
+            try {
+                const updates = {
+                    name: document.getElementById('profileName').value,
+                    email: document.getElementById('profileEmail').value,
+                    phone: document.getElementById('profilePhone').value,
+                    department: document.getElementById('profileDepartment').value,
+                    major: document.getElementById('profileMajor').value,
+                    className: document.getElementById('profileClass').value,
+                    studentId: document.getElementById('profileStudentId').value
+                };
                 
-                DataStore.saveUsers(users);
+                await DataService.updateUser(currentUser.id, updates);
                 
-                currentUser.name = users[userIndex].name;
+                currentUser.name = updates.name;
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 
                 document.getElementById('userName').textContent = currentUser.name;
                 document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
                 
                 showToast('个人资料保存成功', 'success');
+            } catch (error) {
+                console.error('保存个人资料失败:', error);
+                showToast('保存个人资料失败，请重试', 'error');
             }
         }
         
-        function changePassword() {
-            const currentPassword = document.getElementById('currentPassword').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            
-            if (newPassword.length < 6) {
-                showToast('新密码长度至少6位', 'warning');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showToast('两次输入的密码不一致', 'warning');
-                return;
-            }
-            
-            const users = DataStore.getUsers();
-            const userIndex = users.findIndex(u => u.id === currentUser.id);
-            
-            if (userIndex !== -1) {
-                if (users[userIndex].password !== currentPassword) {
-                    showToast('当前密码错误', 'error');
+        async function changePassword() {
+            try {
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                
+                if (newPassword.length < 6) {
+                    showToast('新密码长度至少6位', 'warning');
                     return;
                 }
                 
-                users[userIndex].password = newPassword;
-                DataStore.saveUsers(users);
+                if (newPassword !== confirmPassword) {
+                    showToast('两次输入的密码不一致', 'warning');
+                    return;
+                }
                 
-                document.getElementById('passwordForm').reset();
-                showToast('密码修改成功', 'success');
+                const user = await DataService.getUserById(currentUser.id);
+                
+                if (user) {
+                    if (user.password !== currentPassword) {
+                        showToast('当前密码错误', 'error');
+                        return;
+                    }
+                    
+                    await DataService.updateUser(currentUser.id, { password: newPassword });
+                    
+                    document.getElementById('passwordForm').reset();
+                    showToast('密码修改成功', 'success');
+                }
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                showToast('修改密码失败，请重试', 'error');
             }
         }
         

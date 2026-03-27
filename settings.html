@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 系统设置</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -41,16 +41,21 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -69,6 +74,7 @@
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -87,7 +93,7 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
                         <h2 class="text-xl font-semibold text-gray-800">系统设置</h2>
@@ -126,10 +132,151 @@
                 <div class="max-w-6xl mx-auto">
                     <div class="flex flex-wrap gap-2 mb-6">
                         <button class="tab-btn active px-4 py-2 rounded-lg text-sm font-medium" data-tab="basic">基本设置</button>
+                        <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="permissions">权限设置</button>
                         <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="attendance">签到设置</button>
                         <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="exam">考试设置</button>
                         <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="vote">投票设置</button>
                         <button class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-600" data-tab="system">系统维护</button>
+                    </div>
+                    
+                    <div id="permissionsTab" class="tab-content hidden">
+                        <div class="bg-blue-50 rounded-xl p-4 mb-6">
+                            <p class="text-sm text-blue-800">
+                                <i class="fa fa-info-circle mr-1"></i>
+                                以下设置控制普通成员在各模块中可查看的信息。管理员和子管理员始终可以查看所有信息。
+                            </p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-calendar-check-o text-primary mr-2"></i>签到权限
+                                </h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看签到成员列表</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看已签到成员名单</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_attendance_showMemberList" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看签到人数统计</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看签到人数</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_attendance_showSignedCount" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看未签到成员列表</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看未签到成员名单</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_attendance_showUnsignedList" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-file-text-o text-primary mr-2"></i>考试权限
+                                </h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看参与成员列表</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看参与考试的成员</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_exam_showMemberList" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看他人分数</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看其他成员的分数</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_exam_showScores" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看答案解析</p>
+                                            <p class="text-xs text-gray-500">普通成员考试后可查看答案</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_exam_showAnswers" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看成绩排名</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看成绩排行榜</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_exam_showRanking" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-check-square-o text-primary mr-2"></i>投票权限
+                                </h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看参与成员列表</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看参与投票的成员</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_vote_showMemberList" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看投票统计</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看各选项票数</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_vote_showVoteCount" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看投票详情</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看每个人的投票选择</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_vote_showVoteDetails" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white rounded-xl shadow-sm p-6">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                    <i class="fa fa-gift text-primary mr-2"></i>抽奖权限
+                                </h3>
+                                <div class="space-y-3">
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看参与成员列表</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看参与抽奖的成员</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_lottery_showMemberList" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看奖项设置</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看奖项列表</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_lottery_showPrizeList" class="permission-toggle w-5 h-5 text-primary rounded" checked>
+                                    </label>
+                                    <label class="flex items-center justify-between py-2 cursor-pointer">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-700">查看中奖名单</p>
+                                            <p class="text-xs text-gray-500">普通成员可查看中奖成员名单</p>
+                                        </div>
+                                        <input type="checkbox" id="perm_lottery_showWinnerList" class="permission-toggle w-5 h-5 text-primary rounded">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 flex justify-end">
+                            <button onclick="savePermissionSettings()" class="bg-primary text-white px-6 py-2 rounded-xl font-medium hover:bg-secondary transition-colors">
+                                <i class="fa fa-save mr-2"></i>保存权限设置
+                            </button>
+                        </div>
                     </div>
                     
                     <div id="basicTab" class="tab-content">
@@ -229,12 +376,12 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">主题颜色</label>
-                                        <div class="flex space-x-2">
-                                            <button class="w-8 h-8 rounded-full bg-blue-600 ring-2 ring-offset-2 ring-blue-600"></button>
-                                            <button class="w-8 h-8 rounded-full bg-green-600"></button>
-                                            <button class="w-8 h-8 rounded-full bg-purple-600"></button>
-                                            <button class="w-8 h-8 rounded-full bg-red-600"></button>
-                                            <button class="w-8 h-8 rounded-full bg-orange-600"></button>
+                                        <div class="flex space-x-2" id="themeColors">
+                                            <button type="button" data-color="#1E40AF" class="theme-color-btn w-8 h-8 rounded-full bg-blue-600 ring-2 ring-offset-2 ring-blue-600" onclick="selectThemeColor(this, '#1E40AF')"></button>
+                                            <button type="button" data-color="#059669" class="theme-color-btn w-8 h-8 rounded-full bg-green-600" onclick="selectThemeColor(this, '#059669')"></button>
+                                            <button type="button" data-color="#7C3AED" class="theme-color-btn w-8 h-8 rounded-full bg-purple-600" onclick="selectThemeColor(this, '#7C3AED')"></button>
+                                            <button type="button" data-color="#DC2626" class="theme-color-btn w-8 h-8 rounded-full bg-red-600" onclick="selectThemeColor(this, '#DC2626')"></button>
+                                            <button type="button" data-color="#EA580C" class="theme-color-btn w-8 h-8 rounded-full bg-orange-600" onclick="selectThemeColor(this, '#EA580C')"></button>
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-between py-2">
@@ -242,7 +389,7 @@
                                             <p class="text-sm font-medium text-gray-700">深色模式</p>
                                             <p class="text-xs text-gray-500">切换深色主题</p>
                                         </div>
-                                        <button type="button" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="this.classList.toggle('active')">
+                                        <button type="button" id="darkModeToggle" class="toggle-switch w-12 h-6 bg-gray-200 rounded-full relative cursor-pointer" onclick="toggleDarkMode()">
                                             <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
                                         </button>
                                     </div>
@@ -459,6 +606,27 @@
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                                         <div>
+                                            <p class="font-medium text-gray-800">数据备份</p>
+                                            <p class="text-sm text-gray-500">导出所有系统数据</p>
+                                        </div>
+                                        <button onclick="backupData()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+                                            <i class="fa fa-download mr-1"></i>备份
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">数据恢复</p>
+                                            <p class="text-sm text-gray-500">从备份文件恢复数据</p>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <input type="file" id="restoreFileInput" accept=".json" class="hidden" onchange="restoreData(this)">
+                                            <button onclick="document.getElementById('restoreFileInput').click()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                                <i class="fa fa-upload mr-1"></i>恢复
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
                                             <p class="font-medium text-gray-800">系统日志</p>
                                             <p class="text-sm text-gray-500">查看系统运行日志</p>
                                         </div>
@@ -473,6 +641,15 @@
                                         </div>
                                         <button onclick="clearCache()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors">
                                             <i class="fa fa-eraser mr-1"></i>清除
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                        <div>
+                                            <p class="font-medium text-gray-800">重置系统</p>
+                                            <p class="text-sm text-gray-500">清除所有数据并恢复默认设置</p>
+                                        </div>
+                                        <button onclick="resetSystem()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                            <i class="fa fa-trash mr-1"></i>重置
                                         </button>
                                     </div>
                                     <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
@@ -538,6 +715,7 @@
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -572,18 +750,47 @@
     
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script src="js/utils.js"></script>
     <script>
         let currentUser = null;
         
-        document.addEventListener('DOMContentLoaded', function() {
-            DataStore.init();
-            checkAuth();
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
+            const icon = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' }[type] || 'fa-info-circle';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `<i class="fa ${icon}"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            await DataService.init();
+            await checkAuth();
             initEventListeners();
-            loadSettings();
-            renderNotifications();
-            loadSystemStats();
+            await loadSettings();
+            await loadPermissionSettings();
+            await loadAppearanceSettings();
+            await applyThemeSettings();
+            await renderNotifications();
+            await loadSystemStats();
         });
         
         function formatDateTime(dateStr) {
@@ -591,8 +798,8 @@
             return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
         
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
             const container = document.getElementById('notificationList');
             const badge = document.getElementById('notificationBadge');
             
@@ -632,31 +839,53 @@
             container.innerHTML = html;
         }
         
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
         }
         
-        function checkAuth() {
-            const userStr = localStorage.getItem('currentUser');
-            if (!userStr) {
+        async function checkAuth() {
+            currentUser = await DataService.getCurrentUser();
+            if (!currentUser) {
                 window.location.href = 'index.html';
-                return;
-            }
-            currentUser = JSON.parse(userStr);
-            
-            if (currentUser.role !== 'admin') {
-                window.location.href = 'dashboard.html';
                 return;
             }
             
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+            
+            if (currentUser.role === 'user') {
+                document.getElementById('adminMenu').style.display = 'none';
+                
+                const tabs = document.querySelectorAll('.tab-btn');
+                tabs.forEach(tab => {
+                    const tabName = tab.dataset.tab;
+                    if (tabName !== 'basic' && tabName !== 'permissions') {
+                        tab.style.display = 'none';
+                    }
+                });
+                
+                document.querySelectorAll('#basicTab input, #basicTab select').forEach(el => {
+                    el.disabled = true;
+                });
+                
+                const systemInfoSection = document.getElementById('basicTab').querySelector('.bg-white');
+                if (systemInfoSection) {
+                    const saveBtn = systemInfoSection.querySelector('button[onclick="saveBasicSettings()"]');
+                    if (saveBtn) saveBtn.style.display = 'none';
+                }
+            }
         }
         
         function initEventListeners() {
-            document.getElementById('userMenuBtn').addEventListener('click', function() {
+            document.getElementById('userMenuBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', function(e) {
+                e.stopPropagation();
             });
             
             document.addEventListener('click', function(e) {
@@ -669,7 +898,8 @@
             document.getElementById('logoutMenuBtn').addEventListener('click', logout);
             document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
             
-            document.getElementById('notificationBtn').addEventListener('click', function() {
+            document.getElementById('notificationBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
                 renderNotifications();
                 document.getElementById('notificationModal').classList.remove('hidden');
             });
@@ -684,12 +914,28 @@
                 }
             });
             
-            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.remove('hidden');
-            });
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
             
-            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.add('hidden');
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', toggleSidebar);
+            }
+            
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
             });
             
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -707,8 +953,8 @@
             });
         }
         
-        function loadSettings() {
-            const settings = DataStore.getSettings();
+        async function loadSettings() {
+            const settings = await DataService.getSettings();
             if (settings) {
                 if (settings.systemName) document.getElementById('systemName').value = settings.systemName;
                 if (settings.companyName) document.getElementById('companyName').value = settings.companyName;
@@ -717,11 +963,11 @@
             }
         }
         
-        function loadSystemStats() {
-            const users = DataStore.getUsers();
-            const attendances = DataStore.getAttendances();
-            const exams = DataStore.getExams();
-            const votes = DataStore.getVotes();
+        async function loadSystemStats() {
+            const users = await DataService.getUsers();
+            const attendances = await DataService.getAttendances();
+            const exams = await DataService.getExams();
+            const votes = await DataService.getVotes();
             
             document.getElementById('totalUsers').textContent = users.length;
             document.getElementById('totalAttendances').textContent = attendances.length;
@@ -729,24 +975,158 @@
             document.getElementById('totalVotes').textContent = votes.length;
         }
         
-        function saveBasicSettings() {
-            const settings = {
-                systemName: document.getElementById('systemName').value,
-                companyName: document.getElementById('companyName').value,
-                contactEmail: document.getElementById('contactEmail').value,
-                loginAttempts: document.getElementById('loginAttempts').value,
-                passwordExpiry: document.getElementById('passwordExpiry').value
-            };
-            DataStore.saveSettings(settings);
-            showToast('基本设置已保存', 'success');
+        async function saveBasicSettings() {
+            try {
+                const settings = {
+                    systemName: document.getElementById('systemName').value,
+                    companyName: document.getElementById('companyName').value,
+                    contactEmail: document.getElementById('contactEmail').value,
+                    loginAttempts: document.getElementById('loginAttempts').value,
+                    passwordExpiry: document.getElementById('passwordExpiry').value,
+                    themeColor: selectedThemeColor,
+                    darkMode: darkModeEnabled
+                };
+                await DataService.saveSettings(settings);
+                applyThemeSettings();
+                showToast('基本设置已保存', 'success');
+            } catch (error) {
+                console.error('保存设置失败:', error);
+                showToast('保存设置失败，请重试', 'error');
+            }
         }
         
-        function saveAttendanceSettings() {
-            const settings = DataStore.getSettings() || {};
-            settings.defaultCheckinTime = document.getElementById('defaultCheckinTime').value;
-            settings.locationRadius = document.getElementById('locationRadius').value;
-            DataStore.saveSettings(settings);
-            showToast('签到设置已保存', 'success');
+        let selectedThemeColor = '#1E40AF';
+        let darkModeEnabled = false;
+        
+        function selectThemeColor(btn, color) {
+            selectedThemeColor = color;
+            document.querySelectorAll('.theme-color-btn').forEach(b => {
+                b.classList.remove('ring-2', 'ring-offset-2');
+                b.style.removeProperty('--tw-ring-color');
+            });
+            btn.classList.add('ring-2', 'ring-offset-2');
+            btn.style.setProperty('--tw-ring-color', color);
+        }
+        
+        function toggleDarkMode() {
+            darkModeEnabled = !darkModeEnabled;
+            const toggle = document.getElementById('darkModeToggle');
+            if (darkModeEnabled) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+        
+        async function applyThemeSettings() {
+            const settings = await DataService.getSettings();
+            
+            if (settings.themeColor) {
+                document.documentElement.style.setProperty('--primary-color', settings.themeColor);
+                const lighterColor = settings.themeColor + '20';
+                document.documentElement.style.setProperty('--primary-light', lighterColor);
+            }
+            
+            if (settings.darkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+        
+        async function loadAppearanceSettings() {
+            const settings = await DataService.getSettings();
+            
+            if (settings.themeColor) {
+                selectedThemeColor = settings.themeColor;
+                document.querySelectorAll('.theme-color-btn').forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-offset-2');
+                    if (btn.dataset.color === settings.themeColor) {
+                        btn.classList.add('ring-2', 'ring-offset-2');
+                    }
+                });
+            }
+            
+            if (settings.darkMode) {
+                darkModeEnabled = true;
+                document.getElementById('darkModeToggle').classList.add('active');
+            }
+        }
+        
+        async function loadPermissionSettings() {
+            const settings = await DataService.getPermissionSettings();
+            
+            if (settings.attendance) {
+                document.getElementById('perm_attendance_showMemberList').checked = settings.attendance.showMemberList;
+                document.getElementById('perm_attendance_showSignedCount').checked = settings.attendance.showSignedCount;
+                document.getElementById('perm_attendance_showUnsignedList').checked = settings.attendance.showUnsignedList;
+            }
+            
+            if (settings.exam) {
+                document.getElementById('perm_exam_showMemberList').checked = settings.exam.showMemberList;
+                document.getElementById('perm_exam_showScores').checked = settings.exam.showScores;
+                document.getElementById('perm_exam_showAnswers').checked = settings.exam.showAnswers;
+                document.getElementById('perm_exam_showRanking').checked = settings.exam.showRanking;
+            }
+            
+            if (settings.vote) {
+                document.getElementById('perm_vote_showMemberList').checked = settings.vote.showMemberList;
+                document.getElementById('perm_vote_showVoteCount').checked = settings.vote.showVoteCount;
+                document.getElementById('perm_vote_showVoteDetails').checked = settings.vote.showVoteDetails;
+            }
+            
+            if (settings.lottery) {
+                document.getElementById('perm_lottery_showMemberList').checked = settings.lottery.showMemberList;
+                document.getElementById('perm_lottery_showPrizeList').checked = settings.lottery.showPrizeList;
+                document.getElementById('perm_lottery_showWinnerList').checked = settings.lottery.showWinnerList;
+            }
+        }
+        
+        async function savePermissionSettings() {
+            try {
+                const settings = {
+                    attendance: {
+                        showMemberList: document.getElementById('perm_attendance_showMemberList').checked,
+                        showSignedCount: document.getElementById('perm_attendance_showSignedCount').checked,
+                        showUnsignedList: document.getElementById('perm_attendance_showUnsignedList').checked
+                    },
+                    exam: {
+                        showMemberList: document.getElementById('perm_exam_showMemberList').checked,
+                        showScores: document.getElementById('perm_exam_showScores').checked,
+                        showAnswers: document.getElementById('perm_exam_showAnswers').checked,
+                        showRanking: document.getElementById('perm_exam_showRanking').checked
+                    },
+                    vote: {
+                        showMemberList: document.getElementById('perm_vote_showMemberList').checked,
+                        showVoteCount: document.getElementById('perm_vote_showVoteCount').checked,
+                        showVoteDetails: document.getElementById('perm_vote_showVoteDetails').checked
+                    },
+                    lottery: {
+                        showMemberList: document.getElementById('perm_lottery_showMemberList').checked,
+                        showPrizeList: document.getElementById('perm_lottery_showPrizeList').checked,
+                        showWinnerList: document.getElementById('perm_lottery_showWinnerList').checked
+                    }
+                };
+                
+                await DataService.savePermissionSettings(settings);
+                showToast('权限设置已保存', 'success');
+            } catch (error) {
+                console.error('保存权限设置失败:', error);
+                showToast('保存权限设置失败，请重试', 'error');
+            }
+        }
+        
+        async function saveAttendanceSettings() {
+            try {
+                const settings = await DataService.getSettings() || {};
+                settings.defaultCheckinTime = document.getElementById('defaultCheckinTime').value;
+                settings.locationRadius = document.getElementById('locationRadius').value;
+                await DataService.saveSettings(settings);
+                showToast('签到设置已保存', 'success');
+            } catch (error) {
+                console.error('保存签到设置失败:', error);
+                showToast('保存签到设置失败，请重试', 'error');
+            }
         }
         
         function saveExamSettings() {
@@ -757,28 +1137,33 @@
             showToast('投票设置已保存', 'success');
         }
         
-        function backupData() {
-            const data = {
-                users: DataStore.getUsers(),
-                attendances: DataStore.getAttendances(),
-                attendanceRecords: DataStore.getAttendanceRecords(),
-                exams: DataStore.getExams(),
-                examRecords: DataStore.getExamRecords(),
-                questions: DataStore.getQuestions(),
-                votes: DataStore.getVotes(),
-                voteRecords: DataStore.getVoteRecords(),
-                lotteries: DataStore.getLotteries(),
-                lotteryRecords: DataStore.getLotteryRecords(),
-                notifications: DataStore.getNotifications(),
-                settings: DataStore.getSettings(),
-                backupTime: new Date().toISOString()
+        async function backupData() {
+            const backupData = {
+                version: '1.0.0',
+                backupTime: new Date().toISOString(),
+                data: {
+                    users: await DataService.getUsers(),
+                    groups: await DataService.getGroups(),
+                    attendances: await DataService.getAttendances(),
+                    attendanceRecords: await DataService.getAttendanceRecords(),
+                    questions: await DataService.getQuestions(),
+                    exams: await DataService.getExams(),
+                    examRecords: await DataService.getExamRecords(),
+                    votes: await DataService.getVotes(),
+                    voteRecords: await DataService.getVoteRecords(),
+                    lotteries: await DataService.getLotteries(),
+                    lotteryRecords: await DataService.getLotteryRecords(),
+                    settings: await DataService.getSettings(),
+                    permissionSettings: await DataService.getPermissionSettings(),
+                    notifications: await DataService.getNotifications()
+                }
             };
             
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'class-management-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.download = `班级管理系统备份_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
             a.click();
             URL.revokeObjectURL(url);
             
@@ -829,15 +1214,123 @@
         }
         
         function viewLogs() {
-            showToast('日志查看功能开发中', 'info');
+            const logs = JSON.parse(localStorage.getItem('systemLogs') || '[]');
+            const logContent = logs.length > 0 ? logs.map(log => 
+                `[${log.time}] ${log.level}: ${log.message}`
+            ).join('\n') : '暂无系统日志';
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden mx-4">
+                    <div class="p-4 border-b flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-gray-800">系统日志</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fa fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-y-auto max-h-96">
+                        <pre class="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-4 rounded-xl">${logContent}</pre>
+                    </div>
+                    <div class="p-4 border-t flex justify-end space-x-2">
+                        <button onclick="clearLogs()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">清除日志</button>
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">关闭</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        function clearLogs() {
+            localStorage.setItem('systemLogs', JSON.stringify([]));
+            showToast('日志已清除', 'success');
+            document.querySelector('.fixed.inset-0.bg-black\\/50')?.remove();
         }
         
         function clearCache() {
+            const keysToKeep = ['users', 'currentUser', 'db_initialized', 'settings', 'permissionSettings', 'groups'];
+            const allKeys = Object.keys(localStorage);
+            
+            allKeys.forEach(key => {
+                if (!keysToKeep.includes(key)) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            localStorage.setItem('attendances', JSON.stringify([]));
+            localStorage.setItem('attendanceRecords', JSON.stringify([]));
+            localStorage.setItem('questions', JSON.stringify([]));
+            localStorage.setItem('exams', JSON.stringify([]));
+            localStorage.setItem('examRecords', JSON.stringify([]));
+            localStorage.setItem('votes', JSON.stringify([]));
+            localStorage.setItem('voteRecords', JSON.stringify([]));
+            localStorage.setItem('lotteries', JSON.stringify([]));
+            localStorage.setItem('lotteryRecords', JSON.stringify([]));
+            localStorage.setItem('notifications', JSON.stringify([]));
+            
             showToast('缓存已清除', 'success');
+            loadSystemStats();
         }
         
         function checkUpdate() {
-            showToast('当前已是最新版本', 'success');
+            showToast('当前已是最新版本 v1.0.0', 'success');
+        }
+        
+        function restoreData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.data) {
+                        showToast('无效的备份文件', 'error');
+                        return;
+                    }
+                    
+                    if (confirm('恢复数据将覆盖当前所有数据，是否继续？')) {
+                        const data = backupData.data;
+                        
+                        if (data.users) localStorage.setItem('users', JSON.stringify(data.users));
+                        if (data.groups) localStorage.setItem('groups', JSON.stringify(data.groups));
+                        if (data.attendances) localStorage.setItem('attendances', JSON.stringify(data.attendances));
+                        if (data.attendanceRecords) localStorage.setItem('attendanceRecords', JSON.stringify(data.attendanceRecords));
+                        if (data.questions) localStorage.setItem('questions', JSON.stringify(data.questions));
+                        if (data.exams) localStorage.setItem('exams', JSON.stringify(data.exams));
+                        if (data.examRecords) localStorage.setItem('examRecords', JSON.stringify(data.examRecords));
+                        if (data.votes) localStorage.setItem('votes', JSON.stringify(data.votes));
+                        if (data.voteRecords) localStorage.setItem('voteRecords', JSON.stringify(data.voteRecords));
+                        if (data.lotteries) localStorage.setItem('lotteries', JSON.stringify(data.lotteries));
+                        if (data.lotteryRecords) localStorage.setItem('lotteryRecords', JSON.stringify(data.lotteryRecords));
+                        if (data.settings) localStorage.setItem('settings', JSON.stringify(data.settings));
+                        if (data.permissionSettings) localStorage.setItem('permissionSettings', JSON.stringify(data.permissionSettings));
+                        if (data.notifications) localStorage.setItem('notifications', JSON.stringify(data.notifications));
+                        
+                        showToast('数据恢复成功，页面即将刷新', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } catch (error) {
+                    showToast('备份文件格式错误', 'error');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+        
+        function resetSystem() {
+            if (confirm('确定要重置系统吗？这将清除所有数据并恢复默认设置，此操作不可撤销！')) {
+                if (confirm('再次确认：所有数据将被删除，是否继续？')) {
+                    localStorage.clear();
+                    showToast('系统已重置，页面即将刷新', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+            }
         }
         
         function logout() {

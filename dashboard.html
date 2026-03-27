@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 仪表盘</title>
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -66,15 +66,19 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <!-- 侧边栏 -->
-        <aside class="w-64 bg-white shadow-lg hidden md:block">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -112,13 +116,19 @@
                 <div class="mb-6" id="adminMenu">
                     <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul>
-                        <li class="mb-1">
+                        <li class="mb-1" id="userManagementMenu">
                             <a href="users.html" class="sidebar-link">
                                 <i class="fa fa-users"></i>
                                 <span>用户管理</span>
                             </a>
                         </li>
                         <li class="mb-1">
+                            <a href="grading.html" class="sidebar-link">
+                                <i class="fa fa-edit"></i>
+                                <span>考试阅卷</span>
+                            </a>
+                        </li>
+                        <li class="mb-1" id="systemSettingsMenu">
                             <a href="settings.html" class="sidebar-link">
                                 <i class="fa fa-cog"></i>
                                 <span>系统设置</span>
@@ -153,10 +163,10 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary focus:outline-none">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary focus:outline-none mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
-                        <h2 class="ml-4 text-xl font-semibold text-gray-800">仪表盘</h2>
+                        <h2 class="text-xl font-semibold text-gray-800">仪表盘</h2>
                     </div>
                     
                     <div class="flex items-center">
@@ -168,112 +178,25 @@
                         </div>
                         
                         <div class="relative">
-                            <button id="userMenuButton" class="flex items-center focus:outline-none">
-                                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
-                                    <span id="userInitials">WT</span>
-                                </div>
-                                <div class="ml-2 hidden md:block">
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
                                     <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
                                     <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
                                 </div>
-                                <i class="fa fa-chevron-down ml-2 text-gray-500 text-xs"></i>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
                             </button>
                             
-                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden z-50">
-                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">个人资料</a>
-                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fa fa-home mr-2"></i>返回主页</a>
-                                <div class="border-t border-gray-100"></div>
-                                <a href="#" id="userMenuLogoutBtn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">退出登录</a>
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
                             </div>
                         </div>
                     </div>
                 </div>
             </header>
-            
-            <!-- 移动端侧边栏 -->
-            <div id="mobileSidebar" class="fixed inset-0 bg-gray-600 bg-opacity-75 z-50 hidden md:hidden">
-                <div class="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-xl">
-                    <div class="p-4 border-b flex justify-between items-center">
-                        <div class="flex items-center">
-                            <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
-                            <div class="ml-3">
-                                <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                            </div>
-                        </div>
-                        <button id="closeMobileSidebar" class="text-gray-500 hover:text-primary focus:outline-none">
-                            <i class="fa fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    
-                    <nav class="p-4">
-                        <div class="mb-6">
-                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">主菜单</h2>
-                            <ul>
-                                <li class="mb-1">
-                                    <a href="dashboard.html" class="sidebar-link active">
-                                        <i class="fa fa-dashboard"></i>
-                                        <span>仪表盘</span>
-                                    </a>
-                                </li>
-                                <li class="mb-1">
-                                    <a href="attendance.html" class="sidebar-link">
-                                        <i class="fa fa-calendar-check-o"></i>
-                                        <span>签到管理</span>
-                                    </a>
-                                </li>
-                                <li class="mb-1">
-                                    <a href="exam.html" class="sidebar-link">
-                                        <i class="fa fa-file-text-o"></i>
-                                        <span>考试系统</span>
-                                    </a>
-                                </li>
-                                <li class="mb-1">
-                                    <a href="vote.html" class="sidebar-link">
-                                        <i class="fa fa-check-square-o"></i>
-                                        <span>投票抽奖</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <div class="mb-6" id="mobileAdminMenu">
-                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">管理中心</h2>
-                            <ul>
-                                <li class="mb-1">
-                                    <a href="users.html" class="sidebar-link">
-                                        <i class="fa fa-users"></i>
-                                        <span>用户管理</span>
-                                    </a>
-                                </li>
-                                <li class="mb-1">
-                                    <a href="settings.html" class="sidebar-link">
-                                        <i class="fa fa-cog"></i>
-                                        <span>系统设置</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">个人</h2>
-                            <ul>
-                                <li class="mb-1">
-                                    <a href="profile.html" class="sidebar-link">
-                                        <i class="fa fa-user"></i>
-                                        <span>个人资料</span>
-                                    </a>
-                                </li>
-                                <li class="mb-1">
-                                    <a href="#" id="mobileLogoutBtn" class="sidebar-link">
-                                        <i class="fa fa-sign-out"></i>
-                                        <span>退出登录</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </nav>
-                </div>
-            </div>
             
             <!-- 页面内容 -->
             <main class="flex-1 overflow-y-auto p-4 bg-gray-100">
@@ -355,7 +278,7 @@
                     <div class="bg-white rounded-lg shadow-card p-6">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-lg font-semibold text-gray-700">最近活动</h3>
-                            <button class="text-sm text-primary hover:text-primary-dark focus:outline-none">
+                            <button onclick="window.location.href='attendance.html'" class="text-sm text-primary hover:text-primary-dark focus:outline-none cursor-pointer">
                                 查看全部
                             </button>
                         </div>
@@ -421,8 +344,8 @@
     </div>
     
     <!-- 消息通知模态框 -->
-    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
             <div class="p-4 border-b sticky top-0 bg-white z-10">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
@@ -440,7 +363,15 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script>
         let currentUser = null;
         
@@ -448,7 +379,7 @@
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.name;
                 document.getElementById('welcomeUserName').textContent = currentUser.name;
-                document.getElementById('userInitials').textContent = currentUser.name.substring(0, 2).toUpperCase();
+                document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
                 
                 let roleText = '普通成员';
                 if (currentUser.role === 'admin') {
@@ -460,19 +391,68 @@
                 
                 const adminMenu = document.getElementById('adminMenu');
                 const mobileAdminMenu = document.getElementById('mobileAdminMenu');
+                const userManagementMenu = document.getElementById('userManagementMenu');
+                const mobileUserManagementMenu = document.getElementById('mobileUserManagementMenu');
+                
                 if (currentUser.role === 'admin' || currentUser.role === 'subAdmin') {
-                    adminMenu.classList.remove('hidden');
-                    mobileAdminMenu.classList.remove('hidden');
+                    if (adminMenu) {
+                        adminMenu.classList.remove('hidden');
+                        adminMenu.style.display = '';
+                    }
+                    if (mobileAdminMenu) {
+                        mobileAdminMenu.classList.remove('hidden');
+                        mobileAdminMenu.style.display = '';
+                    }
                 } else {
-                    adminMenu.classList.add('hidden');
-                    mobileAdminMenu.classList.add('hidden');
+                    if (adminMenu) {
+                        adminMenu.classList.add('hidden');
+                        adminMenu.style.display = 'none';
+                    }
+                    if (mobileAdminMenu) {
+                        mobileAdminMenu.classList.add('hidden');
+                        mobileAdminMenu.style.display = 'none';
+                    }
                 }
                 
                 if (currentUser.role === 'user') {
-                    document.getElementById('quickCreateAttendance').style.display = 'none';
-                    document.getElementById('quickCreateExam').style.display = 'none';
-                    document.getElementById('quickCreateVote').style.display = 'none';
-                    document.getElementById('quickAddUser').style.display = 'none';
+                    if (userManagementMenu) userManagementMenu.style.display = 'none';
+                    if (mobileUserManagementMenu) mobileUserManagementMenu.style.display = 'none';
+                }
+                
+                if (currentUser.role === 'user') {
+                    const quickActions = document.getElementById('quickActions');
+                    quickActions.innerHTML = `
+                        <a href="attendance.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-all-300">
+                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-calendar-check-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">参与签到</span>
+                        </a>
+                        
+                        <a href="exam.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all-300">
+                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-file-text-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">参与考试</span>
+                        </a>
+                        
+                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-200 transition-all-300">
+                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-gift text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">参与抽奖</span>
+                        </a>
+                        
+                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all-300">
+                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-2">
+                                <i class="fa fa-check-square-o text-xl"></i>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">参与投票</span>
+                        </a>
+                    `;
+                    
+                    const quickAddUser = document.getElementById('quickAddUser');
+                    if (quickAddUser) quickAddUser.style.display = 'none';
                 }
                 
                 const settingsLink = document.querySelector('#userMenu a[href="settings.html"]');
@@ -493,12 +473,17 @@
             return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
         
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
             const container = document.getElementById('notificationList');
             const badge = document.getElementById('notificationBadge');
             
-            const unreadCount = notifications.filter(n => !n.read).length;
+            let filteredNotifications = notifications;
+            if (currentUser.role === 'user') {
+                filteredNotifications = notifications.filter(n => !n.forAdmin);
+            }
+            
+            const unreadCount = filteredNotifications.filter(n => !n.read).length;
             if (unreadCount > 0) {
                 badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
                 badge.classList.remove('hidden');
@@ -506,7 +491,7 @@
                 badge.classList.add('hidden');
             }
             
-            if (notifications.length === 0) {
+            if (filteredNotifications.length === 0) {
                 container.innerHTML = `
                     <div class="p-8 text-center text-gray-500">
                         <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
@@ -516,11 +501,11 @@
                 return;
             }
             
-            container.innerHTML = notifications.map(n => `
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
+            container.innerHTML = filteredNotifications.map(n => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="handleNotificationClick(${n.id}, '${n.type}', ${n.relatedId || 'null'})">
                     <div class="flex items-start">
                         <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
-                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
+                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : n.type === 'password_reset' ? 'fa-key' : 'fa-bell'} text-primary"></i>
                         </div>
                         <div class="flex-1">
                             <p class="text-sm font-medium text-gray-800">${n.title}</p>
@@ -533,19 +518,28 @@
             `).join('');
         }
         
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
+        async function handleNotificationClick(notificationId, type, relatedId) {
+            await markAsRead(notificationId);
+            
+            if (type === 'password_reset' && (currentUser.role === 'admin' || currentUser.role === 'subAdmin')) {
+                document.getElementById('notificationModal').classList.add('hidden');
+                window.location.href = 'users.html';
+            }
         }
         
-        function updateStatistics() {
-            const users = DataStore.getUsers();
-            const attendances = DataStore.getAttendances();
-            const attendanceRecords = DataStore.getAttendanceRecords();
-            const exams = DataStore.getExams();
-            const examRecords = DataStore.getExamRecords();
-            const votes = DataStore.getVotes();
-            const lotteries = DataStore.getLotteries();
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
+        }
+        
+        async function updateStatistics() {
+            const users = await DataService.getUsers();
+            const attendances = await DataService.getAttendances();
+            const attendanceRecords = await DataService.getAttendanceRecords();
+            const exams = await DataService.getExams();
+            const examRecords = await DataService.getExamRecords();
+            const votes = await DataService.getVotes();
+            const lotteries = await DataService.getLotteries();
             
             document.getElementById('totalUsers').textContent = users.length;
             document.getElementById('totalAttendances').textContent = attendances.length;
@@ -564,11 +558,11 @@
             }
         }
 
-        function initAttendanceChart() {
+        async function initAttendanceChart() {
             const ctx = document.getElementById('attendanceChart').getContext('2d');
             
-            const attendanceRecords = DataStore.getAttendanceRecords();
-            const users = DataStore.getUsers();
+            const attendanceRecords = await DataService.getAttendanceRecords();
+            const users = await DataService.getUsers();
             
             const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
             const today = new Date();
@@ -628,34 +622,65 @@
             });
         }
         
-        function loadRecentActivities() {
-            const attendanceRecords = DataStore.getAttendanceRecords();
-            const examRecords = DataStore.getExamRecords();
-            const users = DataStore.getUsers();
+        async function loadRecentActivities() {
+            const attendanceRecords = await DataService.getAttendanceRecords();
+            const examRecords = await DataService.getExamRecords();
+            const users = await DataService.getUsers();
+            const exams = await DataService.getExams();
+            const votes = await DataService.getVotes();
+            const voteRecords = await DataService.getVoteRecords();
+            const lotteryRecords = await DataService.getLotteryRecords();
+            const lotteries = await DataService.getLotteries();
             
             const activities = [];
             
-            attendanceRecords.slice(-5).forEach(record => {
+            attendanceRecords.slice(-10).forEach(record => {
                 const user = users.find(u => u.id === record.userId);
                 if (user) {
                     activities.push({
                         type: 'attendance',
                         user: user.name,
-                        time: record.checkInTime,
+                        time: record.signedAt || record.checkInTime,
                         content: '完成签到'
                     });
                 }
             });
             
-            examRecords.slice(-5).forEach(record => {
+            examRecords.slice(-10).forEach(record => {
                 const user = users.find(u => u.id === record.userId);
-                const exam = DataStore.getExams().find(e => e.id === record.examId);
+                const exam = exams.find(e => e.id === record.examId);
                 if (user && exam) {
                     activities.push({
                         type: 'exam',
                         user: user.name,
                         time: record.submittedAt,
-                        content: `完成考试「${exam.name}」，得分：${record.score}分`
+                        content: `完成考试「${exam.title}」，得分：${record.score}分`
+                    });
+                }
+            });
+            
+            voteRecords.slice(-10).forEach(record => {
+                const user = users.find(u => u.id === record.userId);
+                const vote = votes.find(v => v.id === record.voteId);
+                if (user && vote) {
+                    activities.push({
+                        type: 'vote',
+                        user: user.name,
+                        time: record.participatedAt,
+                        content: `参与投票「${vote.title}」`
+                    });
+                }
+            });
+            
+            lotteryRecords.slice(-10).forEach(record => {
+                const user = users.find(u => u.id === record.userId);
+                const lottery = lotteries.find(l => l.id === record.lotteryId);
+                if (user && lottery) {
+                    activities.push({
+                        type: 'lottery',
+                        user: user.name,
+                        time: record.participatedAt,
+                        content: `参与抽奖「${lottery.title}」${record.prize ? '，获得：' + record.prize : ''}`
                     });
                 }
             });
@@ -669,7 +694,11 @@
             }
             
             container.innerHTML = activities.slice(0, 10).map(activity => {
-                const icon = activity.type === 'attendance' ? 'fa-calendar-check-o text-green-500' : 'fa-file-text-o text-blue-500';
+                let icon = 'fa-calendar-check-o text-green-500';
+                if (activity.type === 'exam') icon = 'fa-file-text-o text-blue-500';
+                else if (activity.type === 'vote') icon = 'fa-check-square-o text-orange-500';
+                else if (activity.type === 'lottery') icon = 'fa-gift text-purple-500';
+                
                 const time = new Date(activity.time).toLocaleString('zh-CN');
                 return `
                     <div class="flex items-center py-3 border-b border-gray-100 last:border-0">
@@ -685,32 +714,49 @@
             }).join('');
         }
 
-        const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
-        const mobileSidebar = document.getElementById('mobileSidebar');
-        const closeMobileSidebar = document.getElementById('closeMobileSidebar');
-        const userMenuButton = document.getElementById('userMenuButton');
+        const userMenuBtn = document.getElementById('userMenuBtn');
         const userMenu = document.getElementById('userMenu');
         const logoutBtn = document.getElementById('logoutBtn');
-        const userMenuLogoutBtn = document.getElementById('userMenuLogoutBtn');
-        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        const logoutMenuBtn = document.getElementById('logoutMenuBtn');
         const logoutModal = document.getElementById('logoutModal');
         const cancelLogout = document.getElementById('cancelLogout');
         const confirmLogout = document.getElementById('confirmLogout');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
 
-        mobileSidebarToggle.addEventListener('click', () => {
-            mobileSidebar.classList.remove('hidden');
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            sidebar.classList.toggle('translate-x-0');
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+
+        if (closeSidebarBtn) {
+            closeSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                }
+            }
         });
 
-        closeMobileSidebar.addEventListener('click', () => {
-            mobileSidebar.classList.add('hidden');
-        });
-
-        userMenuButton.addEventListener('click', () => {
+        userMenuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             userMenu.classList.toggle('hidden');
+        });
+        
+        userMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
         });
 
         document.addEventListener('click', (e) => {
-            if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
+            if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
                 userMenu.classList.add('hidden');
             }
         });
@@ -720,18 +766,17 @@
         }
 
         logoutBtn.addEventListener('click', showLogoutModal);
-        userMenuLogoutBtn.addEventListener('click', (e) => {
+        logoutMenuBtn.addEventListener('click', (e) => {
             e.preventDefault();
             showLogoutModal();
         });
-        mobileLogoutBtn.addEventListener('click', showLogoutModal);
 
         cancelLogout.addEventListener('click', () => {
             logoutModal.classList.add('hidden');
         });
 
-        confirmLogout.addEventListener('click', () => {
-            DataStore.clearCurrentUser();
+        confirmLogout.addEventListener('click', async () => {
+            await DataService.clearCurrentUser();
             window.location.href = 'index.html';
         });
 
@@ -741,7 +786,8 @@
             }
         });
         
-        document.getElementById('notificationBtn').addEventListener('click', () => {
+        document.getElementById('notificationBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
             renderNotifications();
             document.getElementById('notificationModal').classList.remove('hidden');
         });
@@ -756,19 +802,19 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
-            currentUser = DataStore.getCurrentUser();
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = await DataService.getCurrentUser();
             if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
             }
             
-            updateUserInfo();
+            await updateUserInfo();
             updateCurrentDate();
-            updateStatistics();
-            initAttendanceChart();
-            loadRecentActivities();
-            renderNotifications();
+            await updateStatistics();
+            await initAttendanceChart();
+            await loadRecentActivities();
+            await renderNotifications();
         });
     </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 用户管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -29,24 +29,51 @@
         .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         .modal-overlay { animation: fadeIn 0.2s ease; }
         .modal-content { animation: slideUp 0.3s ease; }
+        .slide-panel { animation: slideInRight 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .toast { animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .checkbox-custom:checked { background-color: #1E40AF; border-color: #1E40AF; }
+        .checkbox-custom:checked::after { content: '✓'; color: white; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .status-active { background-color: #22C55E; }
+        .status-inactive { background-color: #EF4444; }
+        .table-row-hover:hover { background-color: #F8FAFC; }
+        .sort-icon { opacity: 0.3; transition: opacity 0.2s; }
+        .sort-active { opacity: 1; }
+        .dropdown-menu { transform-origin: top right; animation: dropdownFade 0.15s ease; }
+        @keyframes dropdownFade { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .input-focus:focus { box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+        .btn-primary { background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%); }
+        .btn-primary:hover { background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%); }
+        .avatar-gradient { background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%); }
+        .stat-card { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); }
+        .progress-bar { transition: width 0.5s ease; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -61,10 +88,11 @@
                     </ul>
                 </div>
                 
-                <div class="mb-6">
+                <div class="mb-6" id="adminMenu">
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -83,133 +111,222 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
-                        <h2 class="text-xl font-semibold text-gray-800">用户管理</h2>
+                        <div>
+                            <h2 class="text-xl font-semibold text-gray-800">用户管理</h2>
+                            <p class="text-xs text-gray-500">管理系统用户、角色和权限</p>
+                        </div>
                     </div>
                     
                     <div class="flex items-center space-x-4">
                         <div class="relative">
                             <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
                                 <i class="fa fa-bell text-xl"></i>
-                                <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center" id="notificationBadge">3</span>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
                             </button>
                         </div>
                         
                         <div class="relative">
-                            <button id="userMenuBtn" class="flex items-center space-x-2">
-                                <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium" id="userAvatar">WT</div>
-                                <span class="hidden md:block text-sm font-medium text-gray-700" id="userName">吴涛</span>
-                                <i class="fa fa-chevron-down text-gray-400 text-xs"></i>
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="headerUserAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="headerUserName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="headerUserRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
                             </button>
                             
                             <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
-                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">个人资料</a>
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
                                 <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
-                                <hr class="my-2">
-                                <a href="#" id="logoutLink" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50">退出登录</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
                             </div>
                         </div>
                     </div>
                 </div>
             </header>
             
-            <div id="mobileSidebar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden md:hidden">
-                <div class="w-64 h-full bg-white">
-                    <div class="p-4 border-b flex justify-between items-center">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                                <i class="fa fa-graduation-cap text-white text-lg"></i>
-                            </div>
-                            <div class="ml-3">
-                                <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                            </div>
-                        </div>
-                        <button id="closeMobileSidebar" class="text-gray-500">
-                            <i class="fa fa-times text-xl"></i>
-                        </button>
-                    </div>
-                    
-                    <nav class="p-4">
-                        <div class="mb-6">
-                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
-                            <ul class="space-y-1">
-                                <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
-                                <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
-                                <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
-                                <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
-                            </ul>
-                        </div>
-                        
-                        <div class="mb-6">
-                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
-                            <ul class="space-y-1">
-                                <li><a href="users.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
-                                <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
-                            </ul>
-                        </div>
-                        
-                        <div>
-                            <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
-                            <ul class="space-y-1">
-                                <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
-                                <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
-                            </ul>
-                        </div>
-                    </nav>
-                </div>
-            </div>
-            
             <main class="flex-1 overflow-y-auto p-6">
-                <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <input type="text" id="searchInput" placeholder="搜索用户..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64">
-                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <div class="mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="stat-card rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">总用户数</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="totalUsers">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-users text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
                         </div>
-                        
-                        <select id="roleFilter" class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                            <option value="">全部角色</option>
-                            <option value="admin">管理员</option>
-                            <option value="subadmin">子管理员</option>
-                            <option value="user">普通用户</option>
-                        </select>
+                        <div class="stat-card rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">管理员</p>
+                                    <p class="text-2xl font-bold text-red-600" id="adminCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-shield text-red-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">子管理员</p>
+                                    <p class="text-2xl font-bold text-orange-600" id="subAdminCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-user-secret text-orange-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card rounded-xl shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">普通用户</p>
+                                    <p class="text-2xl font-bold text-green-600" id="userCount">0</p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-user text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <button id="addUserBtn" class="bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary/90 transition-colors flex items-center">
-                        <i class="fa fa-plus mr-2"></i>添加用户
-                    </button>
                 </div>
                 
                 <div class="card bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-gray-100">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div class="flex flex-col sm:flex-row gap-3 flex-1">
+                                <div class="relative flex-1 max-w-md">
+                                    <input type="text" id="searchInput" placeholder="搜索用户姓名、账号..." class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all">
+                                    <i class="fa fa-search absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                                
+                                <select id="roleFilter" class="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white">
+                                    <option value="">全部角色</option>
+                                    <option value="admin">管理员</option>
+                                    <option value="subAdmin">子管理员</option>
+                                    <option value="user">普通用户</option>
+                                </select>
+                                
+                                <select id="statusFilter" class="px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white">
+                                    <option value="">全部状态</option>
+                                    <option value="active">正常</option>
+                                    <option value="inactive">已禁用</option>
+                                </select>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                <div id="batchActions" class="hidden items-center gap-2">
+                                    <span class="text-sm text-gray-500">已选 <span id="selectedCount">0</span> 项</span>
+                                    <button id="batchDeleteBtn" class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm">
+                                        <i class="fa fa-trash mr-1"></i>批量删除
+                                    </button>
+                                    <button id="batchEnableBtn" class="px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm">
+                                        <i class="fa fa-check mr-1"></i>批量启用
+                                    </button>
+                                    <button id="batchDisableBtn" class="px-3 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors text-sm">
+                                        <i class="fa fa-ban mr-1"></i>批量禁用
+                                    </button>
+                                    <button id="cancelSelectBtn" class="px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm">
+                                        取消选择
+                                    </button>
+                                </div>
+                                
+                                <button id="exportBtn" class="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors flex items-center text-sm">
+                                    <i class="fa fa-download mr-2"></i>导出
+                                </button>
+                                
+                                <button id="addGroupBtn" class="px-4 py-2.5 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors flex items-center text-sm">
+                                    <i class="fa fa-users mr-2"></i>分组
+                                </button>
+                                
+                                <button id="batchImportBtn" class="px-4 py-2.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors flex items-center text-sm">
+                                    <i class="fa fa-upload mr-2"></i>导入
+                                </button>
+                                
+                                <button id="addUserBtn" class="btn-primary px-4 py-2.5 text-white rounded-xl transition-all flex items-center text-sm shadow-md">
+                                    <i class="fa fa-plus mr-2"></i>添加用户
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">账号</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">院系/班级</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    <th class="px-4 py-3 text-left">
+                                        <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer">
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="sortUsers('name')">
+                                        <div class="flex items-center">
+                                            用户
+                                            <i class="fa fa-sort ml-1 sort-icon" id="sort-name"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="sortUsers('username')">
+                                        <div class="flex items-center">
+                                            账号
+                                            <i class="fa fa-sort ml-1 sort-icon" id="sort-username"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="sortUsers('role')">
+                                        <div class="flex items-center">
+                                            角色
+                                            <i class="fa fa-sort ml-1 sort-icon" id="sort-role"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">院系/班级</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="sortUsers('status')">
+                                        <div class="flex items-center">
+                                            状态
+                                            <i class="fa fa-sort ml-1 sort-icon" id="sort-status"></i>
+                                        </div>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">创建时间</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">操作</th>
                                 </tr>
                             </thead>
-                            <tbody id="userTableBody" class="divide-y divide-gray-200">
+                            <tbody id="userTableBody" class="divide-y divide-gray-100">
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-500">每页显示</span>
+                            <select id="pageSize" class="px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span class="text-sm text-gray-500">条</span>
+                        </div>
+                        <div class="flex items-center gap-2" id="pagination">
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            共 <span id="totalCount">0</span> 条记录
+                        </div>
                     </div>
                 </div>
             </main>
         </div>
     </div>
     
-    <div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center modal-overlay">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 modal-content">
-            <div class="p-6 border-b">
+    <div id="userModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 modal-content max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-800" id="modalTitle">添加用户</h3>
-                    <button id="closeModal" class="text-gray-400 hover:text-gray-600">
+                    <button id="closeModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                         <i class="fa fa-times text-xl"></i>
                     </button>
                 </div>
@@ -218,155 +335,344 @@
             <form id="userForm" class="p-6">
                 <input type="hidden" id="userId">
                 
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
-                        <input type="text" id="userName" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                <div class="space-y-5">
+                    <div class="flex justify-center">
+                        <div class="relative">
+                            <div class="w-20 h-20 avatar-gradient rounded-full flex items-center justify-center text-white text-2xl font-medium" id="avatarPreview">
+                                <i class="fa fa-user"></i>
+                            </div>
+                            <label class="absolute bottom-0 right-0 w-7 h-7 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                                <i class="fa fa-camera text-gray-500 text-sm"></i>
+                                <input type="file" id="avatarInput" accept="image/*" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">姓名 <span class="text-red-500">*</span></label>
+                            <input type="text" id="userName" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all">
+                            <p class="text-xs text-red-500 mt-1 hidden" id="nameError">请输入姓名</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">账号 <span class="text-red-500">*</span></label>
+                            <input type="text" id="userUsername" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all">
+                            <p class="text-xs text-red-500 mt-1 hidden" id="usernameError">账号至少3位，只能包含字母数字下划线</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">密码 <span id="passwordHint" class="text-gray-400 font-normal">(留空默认123456)</span></label>
+                            <div class="relative">
+                                <input type="password" id="userPassword" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all pr-10">
+                                <button type="button" id="togglePassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-red-500 mt-1 hidden" id="passwordError">密码长度至少6位</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">角色 <span class="text-red-500">*</span></label>
+                            <select id="userRole" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white">
+                                <option value="user">普通用户</option>
+                                <option value="subAdmin">子管理员</option>
+                                <option value="admin">管理员</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">院系</label>
+                            <input type="text" id="userDepartment" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all" placeholder="如：计算机学院">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">班级</label>
+                            <input type="text" id="userClass" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all" placeholder="如：软件工程1班">
+                        </div>
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">账号</label>
-                        <input type="text" id="userUsername" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" required>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">邮箱</label>
+                        <input type="email" id="userEmail" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all" placeholder="user@example.com">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
-                        <input type="password" id="userPassword" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                        <p class="text-xs text-gray-500 mt-1">留空则默认密码为 123456</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">手机号</label>
+                        <input type="tel" id="userPhone" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all" placeholder="13800138000">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">角色</label>
-                        <select id="userRole" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                            <option value="user">普通用户</option>
-                            <option value="subadmin">子管理员</option>
-                            <option value="admin">管理员</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">院系</label>
-                        <input type="text" id="userDepartment" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">班级</label>
-                        <input type="text" id="userClass" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">备注</label>
+                        <textarea id="userRemark" rows="2" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary input-focus transition-all resize-none" placeholder="添加备注信息..."></textarea>
                     </div>
                 </div>
                 
                 <div class="mt-6 flex justify-end space-x-3">
-                    <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
-                    <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors">保存</button>
+                    <button type="button" id="cancelBtn" class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="btn-primary px-5 py-2.5 text-white rounded-xl transition-all shadow-md">
+                        <i class="fa fa-check mr-2"></i>保存
+                    </button>
                 </div>
             </form>
         </div>
     </div>
     
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    
-    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden mx-4">
-            <div class="p-4 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
-                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+    <div id="batchImportModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 modal-content max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800"><i class="fa fa-upload text-green-500 mr-2"></i>批量导入用户</h3>
+                    <button id="closeBatchModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
-            <div id="notificationList" class="overflow-y-auto max-h-96">
-                <div class="p-8 text-center text-gray-500">
-                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                    <p>暂无通知</p>
+            
+            <div class="p-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-100">
+                    <p class="text-sm font-medium text-blue-800 mb-3"><i class="fa fa-info-circle mr-1"></i>导入格式说明</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-blue-600 mb-2 font-medium">TXT/CSV 格式（每行一个用户）：</p>
+                            <div class="bg-white/80 p-3 rounded-lg font-mono text-xs text-gray-700 border border-blue-200">
+                                账号,密码,姓名,角色,院系,班级
+                            </div>
+                            <p class="text-xs text-blue-500 mt-2">角色：user / subAdmin / admin</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-blue-600 mb-2 font-medium">示例：</p>
+                            <div class="bg-white/80 p-3 rounded-lg font-mono text-xs text-gray-700 border border-blue-200">
+                                zhangsan,123456,张三,user,计算机学院,软件1班<br>
+                                lisi,654321,李四,subAdmin,信息学院,网络2班
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择文件</label>
+                    <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer" id="dropZone">
+                        <input type="file" id="importFile" accept=".txt,.csv" class="hidden">
+                        <i class="fa fa-cloud-upload text-4xl text-gray-300 mb-3"></i>
+                        <p class="text-sm text-gray-500">点击或拖拽文件到此处上传</p>
+                        <p class="text-xs text-gray-400 mt-1">支持 .txt, .csv 格式</p>
+                    </div>
+                </div>
+                
+                <div id="importPreview" class="hidden mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700">预览数据</label>
+                        <span class="text-sm text-gray-500">共 <span id="importCount" class="font-medium text-primary">0</span> 条</span>
+                    </div>
+                    <div id="previewContent" class="bg-gray-50 rounded-xl p-4 max-h-60 overflow-y-auto text-sm border border-gray-200">
+                    </div>
+                    <div id="importErrors" class="hidden mt-2 text-sm text-red-500"></div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelBatchBtn" class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="button" id="confirmImportBtn" class="btn-primary px-5 py-2.5 text-white rounded-xl transition-all shadow-md" disabled>
+                        <i class="fa fa-check mr-2"></i>确认导入
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
+    <div id="groupModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 modal-content max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800"><i class="fa fa-users text-purple-500 mr-2"></i>分组管理</h3>
+                    <button id="closeGroupModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1">
+                <div class="mb-6">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="newGroupName" class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 input-focus transition-all" placeholder="输入新分组名称">
+                        <button id="createGroupBtn" class="bg-purple-500 text-white px-5 py-2.5 rounded-xl hover:bg-purple-600 transition-colors">
+                            <i class="fa fa-plus mr-1"></i>创建
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="groupList" class="space-y-3">
+                    <p class="text-gray-400 text-center py-8">暂无分组</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="editGroupModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 modal-content max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800" id="editGroupTitle">编辑分组</h3>
+                    <button id="closeEditGroupModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <input type="hidden" id="editGroupId">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">分组名称</label>
+                    <input type="text" id="editGroupName" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 input-focus transition-all">
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">成员列表</label>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="selectAllMembers" class="text-xs text-primary hover:text-primary/80">全选</button>
+                            <span class="text-gray-300">|</span>
+                            <button type="button" id="deselectAllMembers" class="text-xs text-gray-500 hover:text-gray-700">取消全选</button>
+                        </div>
+                    </div>
+                    <div id="groupMemberList" class="bg-gray-50 rounded-xl p-3 max-h-60 overflow-y-auto border border-gray-200">
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelEditGroup" class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="button" id="saveEditGroup" class="bg-purple-500 text-white px-5 py-2.5 rounded-xl hover:bg-purple-600 transition-colors">
+                        <i class="fa fa-check mr-2"></i>保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="userDetailPanel" class="fixed inset-0 bg-black/50 z-50 hidden">
+        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl slide-panel overflow-y-auto">
+            <div class="p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">用户详情</h3>
+                    <button id="closeDetailPanel" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="userDetailContent" class="p-6">
+            </div>
+        </div>
+    </div>
+    
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 modal-content">
+            <div class="p-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" id="confirmIcon">
+                        <i class="fa fa-question text-3xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2" id="confirmTitle">确认操作</h3>
+                    <p class="text-gray-500 text-sm" id="confirmMessage">确定要执行此操作吗？</p>
+                </div>
+                
+                <div class="mt-6 flex justify-center space-x-3">
+                    <button type="button" id="confirmCancel" class="px-5 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="button" id="confirmOk" class="px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 modal-content max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>通知中心</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="notificationList" class="p-4 overflow-y-auto flex-1"></div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script src="js/utils.js"></script>
     <script>
         let currentUser = null;
         let editingUserId = null;
+        let importedUsers = [];
+        let selectedUsers = new Set();
+        let currentPage = 1;
+        let pageSize = 10;
+        let sortField = '';
+        let sortOrder = 'asc';
         
-        document.addEventListener('DOMContentLoaded', function() {
-            DataStore.init();
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await DataService.init();
+            await checkAuth();
             initEventListeners();
-            renderUserList();
-            renderNotifications();
+            initGroupManagement();
+            initBatchImport();
+            await renderUserList();
+            await updateStats();
+            await renderNotifications();
         });
         
-        function formatDateTime(dateStr) {
-            const d = new Date(dateStr);
-            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
-        
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
-            const container = document.getElementById('notificationList');
-            const badge = document.getElementById('notificationBadge');
-            
-            const unreadCount = notifications.filter(n => !n.read).length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-            
-            if (notifications.length === 0) {
-                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i><p>暂无通知</p></div>';
-                return;
-            }
-            
-            let html = '';
-            notifications.forEach(n => {
-                let iconClass = 'fa-bell';
-                if (n.type === 'attendance') iconClass = 'fa-calendar-check-o';
-                else if (n.type === 'exam') iconClass = 'fa-file-text-o';
-                else if (n.type === 'vote') iconClass = 'fa-check-square-o';
-                
-                html += '<div class="p-4 border-b hover:bg-gray-50 cursor-pointer ' + (!n.read ? 'bg-blue-50' : '') + '" onclick="markAsRead(' + n.id + ')">';
-                html += '<div class="flex items-start">';
-                html += '<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">';
-                html += '<i class="fa ' + iconClass + ' text-primary"></i>';
-                html += '</div>';
-                html += '<div class="flex-1">';
-                html += '<p class="text-sm font-medium text-gray-800">' + n.title + '</p>';
-                html += '<p class="text-xs text-gray-500 mt-1">' + n.message + '</p>';
-                html += '<p class="text-xs text-gray-400 mt-1">' + formatDateTime(n.createdAt) + '</p>';
-                html += '</div>';
-                if (!n.read) html += '<span class="w-2 h-2 bg-red-500 rounded-full"></span>';
-                html += '</div></div>';
-            });
-            container.innerHTML = html;
-        }
-        
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
-        }
-        
-        function checkAuth() {
-            const userStr = localStorage.getItem('currentUser');
-            if (!userStr) {
+        async function checkAuth() {
+            currentUser = await DataService.getCurrentUser();
+            if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
             }
-            currentUser = JSON.parse(userStr);
             
-            if (currentUser.role !== 'admin') {
+            if (currentUser.role !== 'admin' && currentUser.role !== 'subAdmin') {
                 window.location.href = 'dashboard.html';
                 return;
             }
             
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+            if (currentUser.role === 'subAdmin') {
+                document.getElementById('adminMenu').style.display = 'none';
+            }
+            
+            document.getElementById('headerUserName').textContent = currentUser.name;
+            document.getElementById('headerUserAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+            
+            let roleText = '普通成员';
+            if (currentUser.role === 'admin') {
+                roleText = '超级管理员';
+            } else if (currentUser.role === 'subAdmin') {
+                roleText = '子管理员';
+            }
+            document.getElementById('headerUserRole').textContent = roleText;
         }
         
         function initEventListeners() {
-            document.getElementById('userMenuBtn').addEventListener('click', function() {
+            document.getElementById('userMenuBtn').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 document.getElementById('userMenu').classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', function(e) {
+                e.stopPropagation();
             });
             
             document.addEventListener('click', function(e) {
@@ -376,10 +682,10 @@
             });
             
             document.getElementById('logoutBtn').addEventListener('click', logout);
-            document.getElementById('logoutLink').addEventListener('click', logout);
-            document.getElementById('mobileLogoutBtn').addEventListener('click', logout);
+            document.getElementById('logoutMenuBtn').addEventListener('click', logout);
             
-            document.getElementById('notificationBtn').addEventListener('click', function() {
+            document.getElementById('notificationBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
                 renderNotifications();
                 document.getElementById('notificationModal').classList.remove('hidden');
             });
@@ -388,99 +694,533 @@
                 document.getElementById('notificationModal').classList.add('hidden');
             });
             
-            document.getElementById('notificationModal').addEventListener('click', function(e) {
-                if (e.target.id === 'notificationModal') {
-                    document.getElementById('notificationModal').classList.add('hidden');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            });
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', function() {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                });
+            }
+            
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
                 }
-            });
-            
-            document.getElementById('mobileSidebarToggle').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.remove('hidden');
-            });
-            
-            document.getElementById('closeMobileSidebar').addEventListener('click', function() {
-                document.getElementById('mobileSidebar').classList.add('hidden');
             });
             
             document.getElementById('addUserBtn').addEventListener('click', function() {
                 editingUserId = null;
                 document.getElementById('modalTitle').textContent = '添加用户';
                 document.getElementById('userForm').reset();
+                document.getElementById('passwordHint').textContent = '(留空默认123456)';
+                document.getElementById('avatarPreview').innerHTML = '<i class="fa fa-user"></i>';
+                clearFormErrors();
                 document.getElementById('userModal').classList.remove('hidden');
             });
             
-            document.getElementById('closeModal').addEventListener('click', function() {
-                document.getElementById('userModal').classList.add('hidden');
-            });
+            document.getElementById('closeModal').addEventListener('click', () => document.getElementById('userModal').classList.add('hidden'));
+            document.getElementById('cancelBtn').addEventListener('click', () => document.getElementById('userModal').classList.add('hidden'));
             
-            document.getElementById('cancelBtn').addEventListener('click', function() {
-                document.getElementById('userModal').classList.add('hidden');
-            });
-            
-            document.getElementById('userForm').addEventListener('submit', function(e) {
+            document.getElementById('userForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                saveUser();
+                console.log('表单提交事件触发');
+                
+                if (!validateForm()) {
+                    console.log('表单验证失败');
+                    return;
+                }
+                
+                console.log('表单验证通过，开始保存用户');
+                await saveUser();
             });
             
-            document.getElementById('searchInput').addEventListener('input', renderUserList);
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                const passwordInput = document.getElementById('userPassword');
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            document.getElementById('avatarInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('avatarPreview').innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover rounded-full">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            document.getElementById('searchInput').addEventListener('input', debounce(renderUserList, 300));
             document.getElementById('roleFilter').addEventListener('change', renderUserList);
+            document.getElementById('statusFilter').addEventListener('change', renderUserList);
+            document.getElementById('pageSize').addEventListener('change', function() {
+                pageSize = parseInt(this.value);
+                currentPage = 1;
+                renderUserList();
+            });
+            
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('.user-checkbox');
+                checkboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                    if (this.checked) {
+                        selectedUsers.add(parseInt(cb.value));
+                    } else {
+                        selectedUsers.delete(parseInt(cb.value));
+                    }
+                });
+                updateBatchActions();
+            });
+            
+            document.getElementById('batchDeleteBtn').addEventListener('click', batchDelete);
+            document.getElementById('batchEnableBtn').addEventListener('click', () => batchUpdateStatus('active'));
+            document.getElementById('batchDisableBtn').addEventListener('click', () => batchUpdateStatus('inactive'));
+            document.getElementById('cancelSelectBtn').addEventListener('click', clearSelection);
+            
+            document.getElementById('exportBtn').addEventListener('click', exportUsers);
+            
+            document.getElementById('closeDetailPanel').addEventListener('click', function() {
+                document.getElementById('userDetailPanel').classList.add('hidden');
+            });
+            
+            document.getElementById('userDetailPanel').addEventListener('click', function(e) {
+                if (e.target.id === 'userDetailPanel') {
+                    document.getElementById('userDetailPanel').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('confirmCancel').addEventListener('click', function() {
+                document.getElementById('confirmModal').classList.add('hidden');
+            });
         }
         
-        function renderUserList() {
-            const users = DataStore.getUsers();
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
+        function clearFormErrors() {
+            document.querySelectorAll('[id$="Error"]').forEach(el => el.classList.add('hidden'));
+        }
+        
+        function validateForm() {
+            clearFormErrors();
+            let isValid = true;
+            
+            const nameInput = document.getElementById('userName');
+            const usernameInput = document.getElementById('userUsername');
+            
+            if (!nameInput || !usernameInput) {
+                console.error('Form elements not found');
+                return false;
+            }
+            
+            const name = nameInput.value.trim();
+            if (!name) {
+                document.getElementById('nameError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            const username = usernameInput.value.trim();
+            if (!username || username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+                document.getElementById('usernameError').classList.remove('hidden');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        async function checkUsernameExists(username, excludeId) {
+            const users = await DataService.getUsers();
+            return users.find(u => u.username === username && u.id !== excludeId);
+        }
+        
+        async function updateStats() {
+            const users = await DataService.getUsers();
+            document.getElementById('totalUsers').textContent = users.length;
+            document.getElementById('adminCount').textContent = users.filter(u => u.role === 'admin').length;
+            document.getElementById('subAdminCount').textContent = users.filter(u => u.role === 'subAdmin').length;
+            document.getElementById('userCount').textContent = users.filter(u => u.role === 'user').length;
+        }
+        
+        async function renderUserList() {
+            const users = await DataService.getUsers();
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
             
             let filteredUsers = users.filter(user => {
                 const matchesSearch = user.name.toLowerCase().includes(searchTerm) || 
-                                     user.username.toLowerCase().includes(searchTerm);
+                                     user.username.toLowerCase().includes(searchTerm) ||
+                                     (user.department && user.department.toLowerCase().includes(searchTerm)) ||
+                                     (user.className && user.className.toLowerCase().includes(searchTerm));
                 const matchesRole = !roleFilter || user.role === roleFilter;
-                return matchesSearch && matchesRole;
+                const matchesStatus = !statusFilter || (user.status || 'active') === statusFilter;
+                return matchesSearch && matchesRole && matchesStatus;
             });
+            
+            if (sortField) {
+                filteredUsers.sort((a, b) => {
+                    let aVal = a[sortField] || '';
+                    let bVal = b[sortField] || '';
+                    if (sortField === 'status') {
+                        aVal = a.status || 'active';
+                        bVal = b.status || 'active';
+                    }
+                    if (typeof aVal === 'string') {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+                    if (sortOrder === 'asc') {
+                        return aVal > bVal ? 1 : -1;
+                    } else {
+                        return aVal < bVal ? 1 : -1;
+                    }
+                });
+            }
+            
+            document.querySelectorAll('[id^="sort-"]').forEach(el => {
+                el.classList.remove('sort-active', 'fa-sort-up', 'fa-sort-down');
+                el.classList.add('fa-sort');
+            });
+            if (sortField) {
+                const sortIcon = document.getElementById(`sort-${sortField}`);
+                if (sortIcon) {
+                    sortIcon.classList.remove('fa-sort');
+                    sortIcon.classList.add('sort-active', sortOrder === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+                }
+            }
+            
+            const totalCount = filteredUsers.length;
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+            
+            document.getElementById('totalCount').textContent = totalCount;
             
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = '';
             
-            filteredUsers.forEach(user => {
-                const roleClass = user.role === 'admin' ? 'bg-red-100 text-red-800' : 
-                                 user.role === 'subadmin' ? 'bg-orange-100 text-orange-800' : 
-                                 'bg-green-100 text-green-800';
+            if (paginatedUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <i class="fa fa-users text-4xl text-gray-300 mb-3"></i>
+                                <p class="text-gray-500">暂无用户数据</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            paginatedUsers.forEach(user => {
+                const roleClass = user.role === 'admin' ? 'bg-red-100 text-red-700' : 
+                                 user.role === 'subAdmin' ? 'bg-orange-100 text-orange-700' : 
+                                 'bg-green-100 text-green-700';
                 const roleName = user.role === 'admin' ? '管理员' : 
-                                user.role === 'subadmin' ? '子管理员' : '普通用户';
+                                user.role === 'subAdmin' ? '子管理员' : '普通用户';
+                
+                const status = user.status || 'active';
+                const statusClass = status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+                const statusName = status === 'active' ? '正常' : '已禁用';
+                const statusDotClass = status === 'active' ? 'status-active' : 'status-inactive';
                 
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50';
+                tr.className = 'table-row-hover transition-colors';
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                ${user.name.substring(0, 2).toUpperCase()}
+                    <td class="px-4 py-3">
+                        <input type="checkbox" class="user-checkbox w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" value="${user.id}" ${selectedUsers.has(user.id) ? 'checked' : ''} onchange="toggleUserSelection(${user.id})">
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center cursor-pointer" onclick="showUserDetail(${user.id})">
+                            <div class="w-10 h-10 avatar-gradient rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                                ${user.avatar ? `<img src="${user.avatar}" class="w-full h-full object-cover rounded-full">` : user.name.substring(0, 2).toUpperCase()}
                             </div>
-                            <div class="ml-4">
+                            <div class="ml-3">
                                 <div class="text-sm font-medium text-gray-900">${user.name}</div>
-                                <div class="text-sm text-gray-500">${user.email || ''}</div>
+                                <div class="text-xs text-gray-500">${user.email || ''}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.username}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full ${roleClass}">${roleName}</span>
+                    <td class="px-4 py-3 text-sm text-gray-700">${user.username}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full ${roleClass}">${roleName}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${user.department || '-'} / ${user.className || '-'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">正常</span>
+                    <td class="px-4 py-3 text-sm text-gray-500">${user.department || '-'} / ${user.className || '-'}</td>
+                    <td class="px-4 py-3">
+                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full ${statusClass}">
+                            <span class="status-dot ${statusDotClass} mr-1.5"></span>
+                            ${statusName}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <button onclick="editUser(${user.id})" class="text-primary hover:text-primary/80 mr-3"><i class="fa fa-edit"></i> 编辑</button>
-                        ${user.id !== currentUser.id ? `<button onclick="deleteUser(${user.id})" class="text-red-500 hover:text-red-600"><i class="fa fa-trash"></i> 删除</button>` : ''}
+                    <td class="px-4 py-3 text-sm text-gray-500">${formatDateTime(user.createdAt)}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center space-x-1">
+                            <button onclick="showUserDetail(${user.id})" class="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="查看详情">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                            <button onclick="editUser(${user.id})" class="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors" title="编辑">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            ${user.id !== currentUser.id ? `
+                                <button onclick="toggleUserStatus(${user.id})" class="p-2 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="${status === 'active' ? '禁用' : '启用'}">
+                                    <i class="fa ${status === 'active' ? 'fa-ban' : 'fa-check'}"></i>
+                                </button>
+                                <button onclick="resetUserPassword(${user.id})" class="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors" title="重置密码">
+                                    <i class="fa fa-key"></i>
+                                </button>
+                                <button onclick="deleteUser(${user.id})" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="删除">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+            
+            renderPagination(totalPages);
         }
         
-        function editUser(userId) {
-            const users = DataStore.getUsers();
+        function renderPagination(totalPages) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            const prevBtn = document.createElement('button');
+            prevBtn.className = `px-3 py-1 rounded-lg text-sm ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'}`;
+            prevBtn.innerHTML = '<i class="fa fa-chevron-left"></i>';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderUserList(); } };
+            pagination.appendChild(prevBtn);
+            
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            if (startPage > 1) {
+                const firstBtn = document.createElement('button');
+                firstBtn.className = 'px-3 py-1 rounded-lg text-sm text-gray-600 hover:bg-gray-100';
+                firstBtn.textContent = '1';
+                firstBtn.onclick = () => { currentPage = 1; renderUserList(); };
+                pagination.appendChild(firstBtn);
+                
+                if (startPage > 2) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 text-gray-400';
+                    dots.textContent = '...';
+                    pagination.appendChild(dots);
+                }
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `px-3 py-1 rounded-lg text-sm ${i === currentPage ? 'bg-primary text-white' : 'text-gray-600 hover:bg-gray-100'}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => { currentPage = i; renderUserList(); };
+                pagination.appendChild(pageBtn);
+            }
+            
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 text-gray-400';
+                    dots.textContent = '...';
+                    pagination.appendChild(dots);
+                }
+                
+                const lastBtn = document.createElement('button');
+                lastBtn.className = 'px-3 py-1 rounded-lg text-sm text-gray-600 hover:bg-gray-100';
+                lastBtn.textContent = totalPages;
+                lastBtn.onclick = () => { currentPage = totalPages; renderUserList(); };
+                pagination.appendChild(lastBtn);
+            }
+            
+            const nextBtn = document.createElement('button');
+            nextBtn.className = `px-3 py-1 rounded-lg text-sm ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-100'}`;
+            nextBtn.innerHTML = '<i class="fa fa-chevron-right"></i>';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderUserList(); } };
+            pagination.appendChild(nextBtn);
+        }
+        
+        function sortUsers(field) {
+            if (sortField === field) {
+                sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortOrder = 'asc';
+            }
+            renderUserList();
+        }
+        
+        function toggleUserSelection(userId) {
+            if (selectedUsers.has(userId)) {
+                selectedUsers.delete(userId);
+            } else {
+                selectedUsers.add(userId);
+            }
+            updateBatchActions();
+        }
+        
+        function updateBatchActions() {
+            const batchActions = document.getElementById('batchActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (selectedUsers.size > 0) {
+                batchActions.classList.remove('hidden');
+                batchActions.classList.add('flex');
+                selectedCount.textContent = selectedUsers.size;
+            } else {
+                batchActions.classList.add('hidden');
+                batchActions.classList.remove('flex');
+            }
+        }
+        
+        function clearSelection() {
+            selectedUsers.clear();
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('selectAll').checked = false;
+            updateBatchActions();
+        }
+        
+        async function showUserDetail(userId) {
+            const users = await DataService.getUsers();
+            const user = users.find(u => u.id === userId);
+            
+            if (!user) return;
+            
+            const roleClass = user.role === 'admin' ? 'bg-red-100 text-red-700' : 
+                             user.role === 'subAdmin' ? 'bg-orange-100 text-orange-700' : 
+                             'bg-green-100 text-green-700';
+            const roleName = user.role === 'admin' ? '管理员' : 
+                            user.role === 'subAdmin' ? '子管理员' : '普通用户';
+            
+            const status = user.status || 'active';
+            const statusClass = status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600';
+            const statusName = status === 'active' ? '正常' : '已禁用';
+            
+            const groups = await DataService.getGroups();
+            const userGroups = groups.filter(g => g.members && g.members.includes(user.id));
+            
+            document.getElementById('userDetailContent').innerHTML = `
+                <div class="text-center mb-6">
+                    <div class="w-24 h-24 avatar-gradient rounded-full flex items-center justify-center text-white text-3xl font-medium mx-auto mb-4">
+                        ${user.avatar ? `<img src="${user.avatar}" class="w-full h-full object-cover rounded-full">` : user.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800">${user.name}</h3>
+                    <p class="text-sm text-gray-500">@${user.username}</p>
+                    <div class="flex items-center justify-center gap-2 mt-3">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full ${roleClass}">${roleName}</span>
+                        <span class="px-3 py-1 text-xs font-medium rounded-full ${statusClass}">${statusName}</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">基本信息</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">账号</span>
+                                <span class="text-sm text-gray-800">${user.username}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">院系</span>
+                                <span class="text-sm text-gray-800">${user.department || '-'}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">班级</span>
+                                <span class="text-sm text-gray-800">${user.className || '-'}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">邮箱</span>
+                                <span class="text-sm text-gray-800">${user.email || '-'}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">手机</span>
+                                <span class="text-sm text-gray-800">${user.phone || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">所属分组</h4>
+                        ${userGroups.length > 0 ? `
+                            <div class="flex flex-wrap gap-2">
+                                ${userGroups.map(g => `<span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-lg">${g.name}</span>`).join('')}
+                            </div>
+                        ` : '<p class="text-sm text-gray-400">暂无分组</p>'}
+                    </div>
+                    
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">其他信息</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">创建时间</span>
+                                <span class="text-sm text-gray-800">${formatDateTime(user.createdAt)}</span>
+                            </div>
+                            ${user.remark ? `
+                            <div>
+                                <span class="text-sm text-gray-500">备注</span>
+                                <p class="text-sm text-gray-800 mt-1">${user.remark}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex gap-2">
+                    <button onclick="editUser(${user.id}); document.getElementById('userDetailPanel').classList.add('hidden');" class="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors text-sm">
+                        <i class="fa fa-edit mr-2"></i>编辑
+                    </button>
+                    ${user.id !== currentUser.id ? `
+                    <button onclick="resetUserPassword(${user.id})" class="px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm">
+                        <i class="fa fa-key mr-2"></i>重置密码
+                    </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('userDetailPanel').classList.remove('hidden');
+        }
+        
+        async function editUser(userId) {
+            const users = await DataService.getUsers();
             const user = users.find(u => u.id === userId);
             
             if (user) {
@@ -490,64 +1230,573 @@
                 document.getElementById('userName').value = user.name;
                 document.getElementById('userUsername').value = user.username;
                 document.getElementById('userPassword').value = '';
+                document.getElementById('passwordHint').textContent = '(留空保持原密码)';
                 document.getElementById('userRole').value = user.role;
                 document.getElementById('userDepartment').value = user.department || '';
                 document.getElementById('userClass').value = user.className || '';
+                document.getElementById('userEmail').value = user.email || '';
+                document.getElementById('userPhone').value = user.phone || '';
+                document.getElementById('userRemark').value = user.remark || '';
+                
+                if (user.avatar) {
+                    document.getElementById('avatarPreview').innerHTML = `<img src="${user.avatar}" class="w-full h-full object-cover rounded-full">`;
+                } else {
+                    document.getElementById('avatarPreview').innerHTML = user.name.substring(0, 2).toUpperCase();
+                }
+                
+                clearFormErrors();
                 document.getElementById('userModal').classList.remove('hidden');
             }
         }
         
-        function saveUser() {
-            const users = DataStore.getUsers();
+        async function saveUser() {
+            console.log('saveUser函数开始执行');
+            console.log('editingUserId:', editingUserId);
             
-            if (editingUserId) {
-                const userIndex = users.findIndex(u => u.id === editingUserId);
-                if (userIndex !== -1) {
-                    users[userIndex].name = document.getElementById('userName').value;
-                    users[userIndex].username = document.getElementById('userUsername').value;
-                    users[userIndex].role = document.getElementById('userRole').value;
-                    users[userIndex].department = document.getElementById('userDepartment').value;
-                    users[userIndex].className = document.getElementById('userClass').value;
+            try {
+                if (editingUserId) {
+                    console.log('更新用户模式');
+                    const updates = {
+                        name: document.getElementById('userName').value.trim(),
+                        username: document.getElementById('userUsername').value.trim(),
+                        role: document.getElementById('userRole').value,
+                        department: document.getElementById('userDepartment').value.trim(),
+                        className: document.getElementById('userClass').value.trim(),
+                        email: document.getElementById('userEmail').value.trim(),
+                        phone: document.getElementById('userPhone').value.trim(),
+                        remark: document.getElementById('userRemark').value.trim()
+                    };
                     
                     const password = document.getElementById('userPassword').value;
                     if (password) {
-                        users[userIndex].password = password;
+                        updates.password = password;
                     }
                     
-                    DataStore.saveUsers(users);
+                    console.log('更新数据:', updates);
+                    const result = await DataService.updateUser(editingUserId, updates);
+                    console.log('更新结果:', result);
                     showToast('用户更新成功', 'success');
+                } else {
+                    console.log('添加用户模式');
+                    const newUser = {
+                        name: document.getElementById('userName').value.trim(),
+                        username: document.getElementById('userUsername').value.trim(),
+                        password: document.getElementById('userPassword').value || '123456',
+                        role: document.getElementById('userRole').value,
+                        department: document.getElementById('userDepartment').value.trim(),
+                        className: document.getElementById('userClass').value.trim(),
+                        email: document.getElementById('userEmail').value.trim(),
+                        phone: document.getElementById('userPhone').value.trim(),
+                        remark: document.getElementById('userRemark').value.trim(),
+                        status: 'active'
+                    };
+                    
+                    console.log('新用户数据:', newUser);
+                    const result = await DataService.addUser(newUser);
+                    console.log('添加结果:', result);
+                    showToast('用户添加成功', 'success');
                 }
-            } else {
-                const newUser = {
-                    name: document.getElementById('userName').value,
-                    username: document.getElementById('userUsername').value,
-                    password: document.getElementById('userPassword').value || '123456',
-                    role: document.getElementById('userRole').value,
-                    department: document.getElementById('userDepartment').value,
-                    className: document.getElementById('userClass').value,
-                };
                 
-                DataStore.addUser(newUser);
-                showToast('用户添加成功', 'success');
+                document.getElementById('userModal').classList.add('hidden');
+                await renderUserList();
+                await updateStats();
+                console.log('saveUser函数执行完成');
+            } catch (error) {
+                console.error('保存用户失败:', error);
+                showToast('保存用户失败: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteUser(userId) {
+            showConfirm('删除用户', '确定要删除该用户吗？此操作不可恢复。', 'warning', async function() {
+                await DataService.deleteUser(userId);
+                selectedUsers.delete(userId);
+                updateBatchActions();
+                await renderUserList();
+                await updateStats();
+                showToast('用户删除成功', 'success');
+            });
+        }
+        
+        async function toggleUserStatus(userId) {
+            const users = await DataService.getUsers();
+            const user = users.find(u => u.id === userId);
+            
+            if (user) {
+                const newStatus = (user.status || 'active') === 'active' ? 'inactive' : 'active';
+                const action = newStatus === 'active' ? '启用' : '禁用';
+                
+                showConfirm(`${action}用户`, `确定要${action}该用户吗？`, newStatus === 'active' ? 'info' : 'warning', async function() {
+                    await DataService.updateUser(userId, { status: newStatus });
+                    await renderUserList();
+                    showToast(`用户已${action}`, 'success');
+                });
+            }
+        }
+        
+        function resetUserPassword(userId) {
+            showConfirm('重置密码', '确定要将该用户密码重置为 123456 吗？', 'warning', async function() {
+                await DataService.updateUser(userId, { password: '123456' });
+                showToast('密码已重置为 123456', 'success');
+            });
+        }
+        
+        function batchDelete() {
+            if (selectedUsers.size === 0) return;
+            
+            showConfirm('批量删除', `确定要删除选中的 ${selectedUsers.size} 个用户吗？此操作不可恢复。`, 'danger', async function() {
+                for (const userId of selectedUsers) {
+                    await DataService.deleteUser(userId);
+                }
+                clearSelection();
+                await renderUserList();
+                await updateStats();
+                showToast('批量删除成功', 'success');
+            });
+        }
+        
+        function batchUpdateStatus(status) {
+            if (selectedUsers.size === 0) return;
+            
+            const action = status === 'active' ? '启用' : '禁用';
+            showConfirm(`批量${action}`, `确定要${action}选中的 ${selectedUsers.size} 个用户吗？`, status === 'active' ? 'info' : 'warning', async function() {
+                for (const userId of selectedUsers) {
+                    await DataService.updateUser(userId, { status: status });
+                }
+                clearSelection();
+                await renderUserList();
+                showToast(`批量${action}成功`, 'success');
+            });
+        }
+        
+        async function exportUsers() {
+            const users = await DataService.getUsers();
+            if (users.length === 0) {
+                showToast('没有数据可导出', 'error');
+                return;
             }
             
-            document.getElementById('userModal').classList.add('hidden');
-            renderUserList();
+            const exportData = users.map(u => ({
+                姓名: u.name,
+                账号: u.username,
+                角色: u.role === 'admin' ? '管理员' : u.role === 'subAdmin' ? '子管理员' : '普通用户',
+                院系: u.department || '',
+                班级: u.className || '',
+                邮箱: u.email || '',
+                手机: u.phone || '',
+                状态: (u.status || 'active') === 'active' ? '正常' : '已禁用',
+                创建时间: formatDateTime(u.createdAt)
+            }));
+            
+            DataService.exportToCSV(exportData, '用户列表_' + new Date().toLocaleDateString());
+            showToast('导出成功', 'success');
         }
         
-        function deleteUser(userId) {
-            if (confirm('确定要删除该用户吗？')) {
-                const users = DataStore.getUsers();
-                const filteredUsers = users.filter(u => u.id !== userId);
-                DataStore.saveUsers(filteredUsers);
-                showToast('用户删除成功', 'success');
-                renderUserList();
+        function initGroupManagement() {
+            document.getElementById('addGroupBtn').addEventListener('click', async function() {
+                await renderGroupList();
+                document.getElementById('groupModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeGroupModal').addEventListener('click', function() {
+                document.getElementById('groupModal').classList.add('hidden');
+            });
+            
+            document.getElementById('createGroupBtn').addEventListener('click', async function() {
+                const name = document.getElementById('newGroupName').value.trim();
+                if (!name) {
+                    showToast('请输入分组名称', 'error');
+                    return;
+                }
+                
+                await DataService.addGroup({ name: name, members: [] });
+                document.getElementById('newGroupName').value = '';
+                await renderGroupList();
+                showToast('分组创建成功', 'success');
+            });
+            
+            document.getElementById('closeEditGroupModal').addEventListener('click', function() {
+                document.getElementById('editGroupModal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancelEditGroup').addEventListener('click', function() {
+                document.getElementById('editGroupModal').classList.add('hidden');
+            });
+            
+            document.getElementById('selectAllMembers').addEventListener('click', function() {
+                document.querySelectorAll('#groupMemberList input[type="checkbox"]').forEach(cb => cb.checked = true);
+            });
+            
+            document.getElementById('deselectAllMembers').addEventListener('click', function() {
+                document.querySelectorAll('#groupMemberList input[type="checkbox"]').forEach(cb => cb.checked = false);
+            });
+            
+            document.getElementById('saveEditGroup').addEventListener('click', async function() {
+                const groupId = parseInt(document.getElementById('editGroupId').value);
+                const name = document.getElementById('editGroupName').value.trim();
+                
+                if (!name) {
+                    showToast('请输入分组名称', 'error');
+                    return;
+                }
+                
+                const selectedMembers = [];
+                document.querySelectorAll('#groupMemberList input:checked').forEach(cb => {
+                    selectedMembers.push(parseInt(cb.value));
+                });
+                
+                await DataService.updateGroup(groupId, { name: name, members: selectedMembers });
+                document.getElementById('editGroupModal').classList.add('hidden');
+                await renderGroupList();
+                showToast('分组更新成功', 'success');
+            });
+        }
+        
+        async function renderGroupList() {
+            const groups = await DataService.getGroups();
+            const users = await DataService.getUsers();
+            const container = document.getElementById('groupList');
+            
+            if (groups.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">暂无分组</p>';
+                return;
+            }
+            
+            container.innerHTML = groups.map(group => {
+                const memberCount = group.members ? group.members.length : 0;
+                const memberNames = group.members ? group.members.slice(0, 3).map(id => {
+                    const user = users.find(u => u.id === id);
+                    return user ? user.name : '';
+                }).filter(n => n).join('、') : '';
+                
+                return `
+                    <div class="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-gray-800">${group.name}</h4>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    <span class="text-purple-600 font-medium">${memberCount}人</span>
+                                    ${memberNames ? ` - ${memberNames}${memberCount > 3 ? '...' : ''}` : ''}
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="editGroup(${group.id})" class="px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-sm">
+                                    <i class="fa fa-edit mr-1"></i>编辑
+                                </button>
+                                <button onclick="deleteGroup(${group.id})" class="px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors text-sm">
+                                    <i class="fa fa-trash mr-1"></i>删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function editGroup(groupId) {
+            const groups = await DataService.getGroups();
+            const group = groups.find(g => g.id === groupId);
+            const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+            
+            if (!group) return;
+            
+            document.getElementById('editGroupId').value = group.id;
+            document.getElementById('editGroupName').value = group.name;
+            
+            const memberListHtml = users.map(user => {
+                const isChecked = group.members && group.members.includes(user.id);
+                return `
+                    <label class="flex items-center p-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+                        <input type="checkbox" value="${user.id}" ${isChecked ? 'checked' : ''} class="w-4 h-4 text-purple-500 rounded border-gray-300 focus:ring-purple-500">
+                        <span class="ml-3 text-sm text-gray-700">${user.name}</span>
+                        <span class="ml-2 text-xs text-gray-400">${user.username}</span>
+                    </label>
+                `;
+            }).join('');
+            
+            document.getElementById('groupMemberList').innerHTML = memberListHtml || '<p class="text-gray-400 text-center py-4">暂无可选成员</p>';
+            document.getElementById('editGroupModal').classList.remove('hidden');
+        }
+        
+        function deleteGroup(groupId) {
+            showConfirm('删除分组', '确定要删除这个分组吗？', 'warning', async function() {
+                await DataService.deleteGroup(groupId);
+                await renderGroupList();
+                showToast('分组删除成功', 'success');
+            });
+        }
+        
+        function initBatchImport() {
+            const dropZone = document.getElementById('dropZone');
+            const importFile = document.getElementById('importFile');
+            
+            dropZone.addEventListener('click', () => importFile.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-primary', 'bg-primary/5');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-primary', 'bg-primary/5');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary', 'bg-primary/5');
+                const file = e.dataTransfer.files[0];
+                if (file) handleImportFile(file);
+            });
+            
+            importFile.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) handleImportFile(file);
+            });
+            
+            document.getElementById('batchImportBtn').addEventListener('click', function() {
+                importedUsers = [];
+                document.getElementById('importFile').value = '';
+                document.getElementById('importPreview').classList.add('hidden');
+                document.getElementById('confirmImportBtn').disabled = true;
+                document.getElementById('batchImportModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeBatchModal').addEventListener('click', function() {
+                document.getElementById('batchImportModal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancelBatchBtn').addEventListener('click', function() {
+                document.getElementById('batchImportModal').classList.add('hidden');
+            });
+            
+            document.getElementById('confirmImportBtn').addEventListener('click', async function() {
+                if (importedUsers.length === 0) return;
+                
+                let successCount = 0;
+                const existingUsers = await DataService.getUsers();
+                
+                for (const user of importedUsers) {
+                    if (!existingUsers.find(u => u.username === user.username)) {
+                        await DataService.addUser({
+                            ...user,
+                            status: 'active'
+                        });
+                        successCount++;
+                    }
+                }
+                
+                document.getElementById('batchImportModal').classList.add('hidden');
+                await renderUserList();
+                await updateStats();
+                showToast(`成功导入 ${successCount} 个用户`, 'success');
+            });
+        }
+        
+        function handleImportFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const lines = content.split('\n').filter(line => line.trim());
+                
+                importedUsers = [];
+                const errors = [];
+                
+                lines.forEach((line, index) => {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 3) {
+                        const username = parts[0];
+                        if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+                            errors.push(`第 ${index + 1} 行：账号格式不正确`);
+                            return;
+                        }
+                        
+                        importedUsers.push({
+                            username: username,
+                            password: parts[1] || '123456',
+                            name: parts[2],
+                            role: ['user', 'subAdmin', 'admin'].includes(parts[3]) ? parts[3] : 'user',
+                            department: parts[4] || '',
+                            className: parts[5] || ''
+                        });
+                    } else if (parts.length > 0 && parts[0]) {
+                        errors.push(`第 ${index + 1} 行：数据格式不正确`);
+                    }
+                });
+                
+                if (importedUsers.length > 0) {
+                    document.getElementById('importCount').textContent = importedUsers.length;
+                    document.getElementById('previewContent').innerHTML = `
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-left text-gray-500">
+                                    <th class="pb-2">账号</th>
+                                    <th class="pb-2">姓名</th>
+                                    <th class="pb-2">角色</th>
+                                    <th class="pb-2">院系</th>
+                                    <th class="pb-2">班级</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                ${importedUsers.slice(0, 10).map(u => `
+                                    <tr>
+                                        <td class="py-1">${u.username}</td>
+                                        <td class="py-1">${u.name}</td>
+                                        <td class="py-1">${u.role === 'admin' ? '管理员' : u.role === 'subAdmin' ? '子管理员' : '普通用户'}</td>
+                                        <td class="py-1">${u.department || '-'}</td>
+                                        <td class="py-1">${u.className || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                                ${importedUsers.length > 10 ? `<tr><td colspan="5" class="py-2 text-gray-400 text-center">... 还有 ${importedUsers.length - 10} 条数据</td></tr>` : ''}
+                            </tbody>
+                        </table>
+                    `;
+                    document.getElementById('importPreview').classList.remove('hidden');
+                    document.getElementById('confirmImportBtn').disabled = false;
+                    
+                    if (errors.length > 0) {
+                        document.getElementById('importErrors').innerHTML = errors.slice(0, 5).join('<br>');
+                        document.getElementById('importErrors').classList.remove('hidden');
+                    } else {
+                        document.getElementById('importErrors').classList.add('hidden');
+                    }
+                } else {
+                    showToast('没有有效的用户数据', 'error');
+                    document.getElementById('importPreview').classList.add('hidden');
+                    document.getElementById('confirmImportBtn').disabled = true;
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function showConfirm(title, message, type, onConfirm) {
+            const iconClass = {
+                warning: 'bg-orange-100 text-orange-500',
+                danger: 'bg-red-100 text-red-500',
+                info: 'bg-blue-100 text-blue-500',
+                success: 'bg-green-100 text-green-500'
+            }[type] || 'bg-gray-100 text-gray-500';
+            
+            const iconSymbol = {
+                warning: 'fa-exclamation-triangle',
+                danger: 'fa-trash',
+                info: 'fa-info-circle',
+                success: 'fa-check-circle'
+            }[type] || 'fa-question';
+            
+            document.getElementById('confirmIcon').className = `w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${iconClass}`;
+            document.getElementById('confirmIcon').innerHTML = `<i class="fa ${iconSymbol} text-3xl"></i>`;
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            
+            const confirmOk = document.getElementById('confirmOk');
+            confirmOk.className = type === 'danger' ? 'px-5 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors' : 
+                                  type === 'warning' ? 'px-5 py-2.5 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors' :
+                                  'px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors';
+            
+            confirmOk.onclick = function() {
+                document.getElementById('confirmModal').classList.add('hidden');
+                if (onConfirm) onConfirm();
+            };
+            
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgColor = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-orange-500',
+                info: 'bg-blue-500'
+            }[type] || 'bg-blue-500';
+            
+            const iconClass = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            }[type] || 'fa-info-circle';
+            
+            toast.className = `${bgColor} text-white px-5 py-3 rounded-xl shadow-lg flex items-center space-x-2 toast`;
+            toast.innerHTML = `
+                <i class="fa ${iconClass}"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
+            const container = document.getElementById('notificationList');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 py-8">暂无通知</p>';
+                return;
+            }
+            
+            container.innerHTML = notifications.map(n => {
+                const iconClass = n.type === 'success' ? 'fa-check-circle text-green-500' :
+                                 n.type === 'error' ? 'fa-times-circle text-red-500' :
+                                 n.type === 'warning' ? 'fa-exclamation-circle text-orange-500' :
+                                 'fa-info-circle text-blue-500';
+                return `
+                    <div class="p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors ${!n.read ? 'bg-blue-50/50' : ''}" onclick="markAsRead(${n.id})">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa ${iconClass}"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-800">${n.title}</p>
+                                <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                                <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
+                            </div>
+                            ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
+            await updateNotificationBadge();
+        }
+        
+        async function updateNotificationBadge() {
+            const notifications = await DataService.getNotifications();
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notificationBadge');
+            
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
         }
         
-        function logout(e) {
-            e.preventDefault();
-            localStorage.removeItem('currentUser');
+        async function logout() {
+            await DataService.clearCurrentUser();
             window.location.href = 'index.html';
         }
     </script>

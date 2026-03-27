@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 考试系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -41,16 +41,21 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -69,6 +74,7 @@
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -87,7 +93,7 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
                         <h2 class="text-xl font-semibold text-gray-800">考试系统</h2>
@@ -284,28 +290,28 @@
             <form id="createExamForm" class="p-6">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">考试名称 *</label>
-                    <input type="text" id="examName" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：期末考试">
+                    <input type="text" id="examName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：期末考试">
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
-                        <input type="datetime-local" id="examStartTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="datetime-local" id="examStartTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
-                        <input type="datetime-local" id="examEndTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="datetime-local" id="examEndTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">题目数量 *</label>
-                        <input type="number" id="questionCount" required min="1" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：20">
+                        <input type="number" id="questionCount" min="1" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：20">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">每题分数 *</label>
-                        <input type="number" id="scorePerQuestion" required min="1" value="5" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="number" id="scorePerQuestion" min="1" value="5" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">考试时长(分钟)</label>
@@ -332,6 +338,52 @@
                             <input type="checkbox" id="includeFill" checked class="w-4 h-4 text-primary rounded">
                             <span class="ml-2 text-sm text-gray-700">填空题</span>
                         </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="includeEssay" class="w-4 h-4 text-primary rounded">
+                            <span class="ml-2 text-sm text-gray-700">解答题</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="essayExamSettings" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">阅卷模式</label>
+                    <div class="space-y-2 mb-4">
+                        <label class="flex items-center">
+                            <input type="radio" name="gradingMode" value="admin" checked class="w-4 h-4 text-primary">
+                            <span class="ml-2 text-sm text-gray-700">管理员阅卷</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="gradingMode" value="peer" class="w-4 h-4 text-primary">
+                            <span class="ml-2 text-sm text-gray-700">同学互阅</span>
+                        </label>
+                    </div>
+                    
+                    <div id="peerGradingSettings" class="hidden p-4 bg-blue-50 rounded-xl">
+                        <h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-users text-blue-500 mr-2"></i>阅卷人员设置</h4>
+                        <div class="mb-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">阅卷范围</label>
+                            <select id="graderScope" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <option value="all">全体成员参与阅卷</option>
+                                <option value="group">指定分组阅卷</option>
+                                <option value="selected">指定成员阅卷</option>
+                            </select>
+                        </div>
+                        
+                        <div id="graderGroupSelectContainer" class="hidden mb-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">选择分组</label>
+                            <select id="graderSelectedGroup" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            </select>
+                        </div>
+                        
+                        <div id="graderMemberSelectContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
+                            <div id="graderMemberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2 space-y-1">
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-yellow-50 rounded-xl">
+                            <p class="text-xs text-yellow-700"><i class="fa fa-info-circle mr-1"></i>同学互阅模式下，每位阅卷人将随机分配其他考生的解答题进行评分</p>
+                        </div>
                     </div>
                 </div>
                 
@@ -349,6 +401,30 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">考试说明</label>
                     <textarea id="examDescription" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="考试相关说明"></textarea>
+                </div>
+                
+                <div class="mb-4 p-4 bg-purple-50 rounded-xl">
+                    <h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-users text-purple-500 mr-2"></i>参与成员设置</h4>
+                    <div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">参与范围</label>
+                        <select id="examParticipantScope" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <option value="all">全体成员</option>
+                            <option value="group">指定分组</option>
+                            <option value="selected">指定成员</option>
+                        </select>
+                    </div>
+                    
+                    <div id="examGroupSelectContainer" class="hidden mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">选择分组</label>
+                        <select id="examSelectedGroup" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        </select>
+                    </div>
+                    
+                    <div id="examMemberSelectContainer" class="hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
+                        <div id="examMemberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2 space-y-1">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="flex space-x-3">
@@ -372,11 +448,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">题目类型 *</label>
-                        <select id="questionType" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <select id="questionType" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                             <option value="single">单选题</option>
                             <option value="multiple">多选题</option>
                             <option value="judge">判断题</option>
                             <option value="fill">填空题</option>
+                            <option value="essay">解答题</option>
                         </select>
                     </div>
                     <div>
@@ -387,7 +464,7 @@
                 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">题目内容 *</label>
-                    <textarea id="questionContent" required rows="3" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入题目内容"></textarea>
+                    <textarea id="questionContent" rows="3" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入题目内容"></textarea>
                 </div>
                 
                 <div id="optionsContainer" class="mb-4">
@@ -395,22 +472,22 @@
                     <div id="optionsList" class="space-y-2">
                         <div class="flex items-center space-x-2">
                             <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">A</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项A" required>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项A">
                             <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">B</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项B" required>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项B">
                             <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">C</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项C" required>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项C">
                             <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
                         </div>
                         <div class="flex items-center space-x-2">
                             <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">D</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项D" required>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项D">
                             <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
                         </div>
                     </div>
@@ -437,7 +514,7 @@
                     <div id="fillAnswersContainer" class="space-y-2">
                         <div class="flex items-center space-x-2">
                             <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">1</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案" required>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案">
                             <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-600 px-2">
                                 <i class="fa fa-times"></i>
                             </button>
@@ -446,6 +523,27 @@
                     <button type="button" id="addFillAnswerBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加空格</button>
                     <div class="mt-3 p-3 bg-blue-50 rounded-xl">
                         <p class="text-xs text-blue-700"><i class="fa fa-info-circle mr-1"></i>判分规则：答案不区分大小写，自动去除首尾空格</p>
+                    </div>
+                </div>
+                
+                <div id="essayContainer" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">解答题设置</label>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">分值 *</label>
+                            <input type="number" id="essayScore" min="1" value="10" class="w-32 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">参考答案</label>
+                            <textarea id="essayReferenceAnswer" rows="4" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入参考答案供阅卷参考"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">评分标准</label>
+                            <textarea id="essayGradingStandard" rows="3" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入评分标准供阅卷参考"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 bg-purple-50 rounded-xl">
+                        <p class="text-xs text-purple-700"><i class="fa fa-info-circle mr-1"></i>解答题需要人工阅卷，考生可拍照上传或文字输入答案</p>
                     </div>
                 </div>
                 
@@ -529,7 +627,69 @@
         </div>
     </div>
     
+    <div id="mobileSidebar" class="fixed inset-0 bg-black/50 z-50 hidden md:hidden">
+        <div class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
+            <div class="p-4 border-b flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                    </div>
+                </div>
+                <button id="closeMobileSidebar" class="text-gray-500 hover:text-primary">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <nav class="p-4">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="mobileAdminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div id="qrCodeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden modal-content mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-qrcode text-primary mr-2"></i>考试二维码</h3>
+                    <button id="closeQrCodeModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div class="p-6 text-center">
+                <p class="text-sm text-gray-500 mb-4" id="qrCodeTitle"></p>
+                <div id="qrCodeContainer" class="inline-block p-4 bg-white border rounded-xl"></div>
+                <p class="text-xs text-gray-400 mt-4">扫描二维码参与考试</p>
+            </div>
+        </div>
+    </div>
     
     <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
@@ -548,12 +708,22 @@
         </div>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
         let currentUser = null;
         let currentExam = null;
         let examTimer = null;
         let userAnswers = {};
+        let qrCodeInstance = null;
         let shuffledQuestions = [];
         
         function showToast(message, type = 'info') {
@@ -574,8 +744,8 @@
             }, 3000);
         }
         
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
             const container = document.getElementById('notificationList');
             const badge = document.getElementById('notificationBadge');
             
@@ -614,14 +784,20 @@
             `).join('');
         }
         
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
         }
         
         function formatDateTime(dateStr) {
             const d = new Date(dateStr);
             return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function getLocalDateTimeString(date) {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - offset * 60 * 1000);
+            return localDate.toISOString().slice(0, 16);
         }
         
         function getExamStatus(exam) {
@@ -652,14 +828,14 @@
             return shuffled;
         }
         
-        function renderExamList() {
-            const exams = DataStore.getExams();
-            const records = DataStore.getExamRecords();
-            const questions = DataStore.getQuestions();
+        async function renderExamList() {
+            const exams = await DataService.getExams();
+            const records = await DataService.getExamRecords();
+            const questions = await DataService.getQuestions();
             const statusFilter = document.getElementById('examStatusFilter').value;
             
             let filtered = exams.filter(e => !statusFilter || getExamStatus(e) === statusFilter);
-            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            filtered.sort((a, b) => new Date(b.createdat || b.createdAt) - new Date(a.createdat || a.createdAt));
             
             const container = document.getElementById('examList');
             
@@ -708,9 +884,15 @@
                                         <i class="fa fa-eye mr-1"></i>查看成绩
                                     </button>
                                 ` : ''}
+                                <button onclick="showQrCode('exam', ${exam.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
+                                    <i class="fa fa-qrcode mr-1"></i>二维码
+                                </button>
                                 ${currentUser.role !== 'user' ? `
                                     <button onclick="viewExamStats(${exam.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
                                         <i class="fa fa-bar-chart mr-1"></i>统计
+                                    </button>
+                                    <button onclick="editExam(${exam.id})" class="text-blue-500 hover:text-blue-600 px-2">
+                                        <i class="fa fa-edit"></i>
                                     </button>
                                     <button onclick="deleteExam(${exam.id})" class="text-red-500 hover:text-red-600 px-2">
                                         <i class="fa fa-trash"></i>
@@ -732,8 +914,8 @@
             }
         }
         
-        function renderQuestionList() {
-            const questions = DataStore.getQuestions();
+        async function renderQuestionList() {
+            const questions = await DataService.getQuestions();
             const typeFilter = document.getElementById('questionTypeFilter').value;
             const searchTerm = document.getElementById('questionSearchInput').value.toLowerCase();
             
@@ -743,7 +925,7 @@
                 return matchType && matchSearch;
             });
             
-            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            filtered.sort((a, b) => new Date(b.createdat || b.createdAt) - new Date(a.createdat || a.createdAt));
             
             const container = document.getElementById('questionList');
             
@@ -757,18 +939,22 @@
                 return;
             }
             
-            const typeNames = { single: '单选题', multiple: '多选题', judge: '判断题', fill: '填空题' };
+            const typeNames = { single: '单选题', multiple: '多选题', judge: '判断题', fill: '填空题', essay: '解答题' };
             
             container.innerHTML = filtered.map((q, index) => `
                 <div class="p-4 hover:bg-gray-50 transition-colors">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
                             <div class="flex items-center space-x-2 mb-2">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">${typeNames[q.type]}</span>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">${typeNames[q.type] || q.type}</span>
                                 ${q.category ? `<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">${q.category}</span>` : ''}
+                                ${q.type === 'essay' ? `<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">${q.essayScore || 10}分</span>` : ''}
                             </div>
                             <p class="text-gray-800 mb-2">${index + 1}. ${q.content}</p>
-                            ${q.type === 'fill' ? `
+                            ${q.type === 'essay' ? `
+                                ${q.essayReferenceAnswer ? `<div class="text-sm"><span class="text-green-600 font-medium"><i class="fa fa-book mr-1"></i>参考答案：</span><span class="text-gray-700">${q.essayReferenceAnswer}</span></div>` : ''}
+                                ${q.essayGradingStandard ? `<p class="text-sm text-gray-500 mt-1"><i class="fa fa-list-alt mr-1"></i>评分标准：${q.essayGradingStandard}</p>` : ''}
+                            ` : q.type === 'fill' ? `
                                 <div class="text-sm">
                                     <span class="text-green-600 font-medium"><i class="fa fa-check mr-1"></i>正确答案：</span>
                                     <span class="text-gray-700">${Array.isArray(q.correctAnswers) ? q.correctAnswers.join(' | ') : q.correctAnswers}</span>
@@ -807,9 +993,9 @@
             `).join('');
         }
         
-        function renderRecordList() {
-            const records = DataStore.getExamRecords();
-            const exams = DataStore.getExams();
+        async function renderRecordList() {
+            const records = await DataService.getExamRecords();
+            const exams = await DataService.getExams();
             
             records.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
             
@@ -847,9 +1033,9 @@
             }).join('');
         }
         
-        function startExam(examId) {
-            const exams = DataStore.getExams();
-            const questions = DataStore.getQuestions();
+        async function startExam(examId) {
+            const exams = await DataService.getExams();
+            const questions = await DataService.getQuestions();
             currentExam = exams.find(e => e.id === examId);
             
             if (!currentExam) {
@@ -857,7 +1043,7 @@
                 return;
             }
             
-            const records = DataStore.getExamRecords();
+            const records = await DataService.getExamRecords();
             const existingRecord = records.find(r => r.examId === examId && r.userId === currentUser.id);
             if (existingRecord) {
                 showToast('您已经参加过这场考试', 'warning');
@@ -869,8 +1055,14 @@
                 if (currentExam.includeMultiple && q.type === 'multiple') return true;
                 if (currentExam.includeJudge && q.type === 'judge') return true;
                 if (currentExam.includeFill && q.type === 'fill') return true;
+                if (currentExam.includeEssay && q.type === 'essay') return true;
                 return false;
             });
+            
+            console.log('题库所有题目:', questions);
+            console.log('考试设置:', currentExam);
+            console.log('可用题目:', availableQuestions);
+            console.log('需要题目数:', currentExam.questionCount);
             
             if (availableQuestions.length < currentExam.questionCount) {
                 showToast(`题库题目不足，需要${currentExam.questionCount}题，当前只有${availableQuestions.length}题`, 'error');
@@ -884,15 +1076,24 @@
             }
             
             shuffledQuestions = shuffledQuestions.map(q => {
-                let options = q.options;
-                let optionMapping = [0, 1, 2, 3];
+                let options = q.options || [];
+                let optionMapping = [];
                 
-                if (currentExam.shuffleOptions && q.type !== 'judge') {
+                if (q.type === 'judge' && options.length === 0) {
+                    options = ['正确', '错误'];
+                }
+                
+                for (let i = 0; i < options.length; i++) {
+                    optionMapping.push(i);
+                }
+                
+                if (currentExam.shuffleOptions && q.type !== 'judge' && options.length > 0) {
                     const shuffled = shuffleArray(options.map((opt, i) => ({ opt, originalIndex: i })));
                     options = shuffled.map(s => s.opt);
                     optionMapping = shuffled.map(s => s.originalIndex);
                 }
                 
+                console.log('题目:', q.type, '选项:', options, '映射:', optionMapping);
                 return { ...q, shuffledOptions: options, optionMapping };
             });
             
@@ -914,7 +1115,7 @@
                         <span class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm font-medium mr-3">${qIndex + 1}</span>
                         <div class="flex-1">
                             <p class="text-gray-800 font-medium">${q.content}</p>
-                            <span class="text-xs text-gray-500">${q.type === 'single' ? '单选题' : q.type === 'multiple' ? '多选题' : q.type === 'fill' ? '填空题' : '判断题'}</span>
+                            <span class="text-xs text-gray-500">${q.type === 'single' ? '单选题' : q.type === 'multiple' ? '多选题' : q.type === 'fill' ? '填空题' : q.type === 'essay' ? '解答题' : '判断题'}${q.type === 'essay' ? ` (${q.essayScore || 10}分)` : ''}</span>
                         </div>
                     </div>
                     
@@ -934,6 +1135,35 @@
                                     </div>
                                 `).join('')}
                             </div>
+                        ` : q.type === 'essay' ? `
+                            <div class="space-y-4">
+                                <div class="bg-white rounded-xl p-4 border">
+                                    <div class="flex items-center space-x-2 mb-3">
+                                        <button type="button" onclick="triggerEssayPhoto(${qIndex})" class="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                                            <i class="fa fa-camera mr-2"></i>拍照上传
+                                        </button>
+                                        <span class="text-xs text-gray-400">或直接在下方输入答案</span>
+                                    </div>
+                                    
+                                    <div id="essayImagePreview${qIndex}" class="mb-3 ${userAnswers[qIndex] && userAnswers[qIndex].imageUrl ? '' : 'hidden'}">
+                                        <div class="relative inline-block">
+                                            <img id="essayImage${qIndex}" src="${userAnswers[qIndex] && userAnswers[qIndex].imageUrl ? userAnswers[qIndex].imageUrl : ''}" class="max-w-full max-h-64 rounded-lg border">
+                                            <button type="button" onclick="removeEssayImage(${qIndex})" class="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                                                <i class="fa fa-times text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <input type="file" id="essayPhoto${qIndex}" accept="image/*" capture="environment" class="hidden" onchange="handleEssayPhoto(${qIndex}, this)">
+                                    
+                                    <textarea 
+                                        class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" 
+                                        rows="6" 
+                                        placeholder="请在此输入答案，或点击上方按钮拍照上传..."
+                                        data-question="${qIndex}"
+                                        oninput="handleEssayAnswer(${qIndex}, this.value)">${userAnswers[qIndex] && userAnswers[qIndex].text ? userAnswers[qIndex].text : ''}</textarea>
+                                </div>
+                            </div>
                         ` : q.shuffledOptions.map((opt, oIndex) => `
                             <label class="question-option flex items-center p-3 border rounded-xl cursor-pointer ${userAnswers[qIndex] === oIndex || (Array.isArray(userAnswers[qIndex]) && userAnswers[qIndex].includes(oIndex)) ? 'selected' : ''}" data-question="${qIndex}" data-option="${oIndex}">
                                 <input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" name="q${qIndex}" value="${oIndex}" class="w-4 h-4 text-primary mr-3" onchange="handleAnswer(${qIndex}, ${oIndex}, '${q.type}')">
@@ -946,12 +1176,50 @@
             `).join('');
         }
         
+        function triggerEssayPhoto(qIndex) {
+            document.getElementById(`essayPhoto${qIndex}`).click();
+        }
+        
+        function handleEssayPhoto(qIndex, input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const imageUrl = e.target.result;
+                
+                if (!userAnswers[qIndex]) userAnswers[qIndex] = { text: '', imageUrl: '' };
+                userAnswers[qIndex].imageUrl = imageUrl;
+                
+                const preview = document.getElementById(`essayImagePreview${qIndex}`);
+                const img = document.getElementById(`essayImage${qIndex}`);
+                img.src = imageUrl;
+                preview.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function removeEssayImage(qIndex) {
+            if (userAnswers[qIndex]) {
+                userAnswers[qIndex].imageUrl = '';
+            }
+            const preview = document.getElementById(`essayImagePreview${qIndex}`);
+            preview.classList.add('hidden');
+            document.getElementById(`essayPhoto${qIndex}`).value = '';
+        }
+        
+        function handleEssayAnswer(qIndex, value) {
+            if (!userAnswers[qIndex]) userAnswers[qIndex] = { text: '', imageUrl: '' };
+            userAnswers[qIndex].text = value;
+        }
+        
         function handleFillAnswer(qIndex, fIndex, value) {
             if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
             userAnswers[qIndex][fIndex] = value;
         }
         
         function handleAnswer(qIndex, oIndex, type) {
+            console.log('handleAnswer called:', qIndex, oIndex, type);
             if (type === 'multiple') {
                 if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
                 const index = userAnswers[qIndex].indexOf(oIndex);
@@ -963,6 +1231,7 @@
             } else {
                 userAnswers[qIndex] = oIndex;
             }
+            console.log('userAnswers:', userAnswers);
             renderExamQuestions();
         }
         
@@ -987,19 +1256,38 @@
             examTimer = setInterval(updateTimer, 1000);
         }
         
-        function submitExam() {
+        async function submitExam() {
             if (examTimer) {
                 clearInterval(examTimer);
             }
             
             let correctCount = 0;
             const details = [];
+            const essayAnswers = [];
             
             shuffledQuestions.forEach((q, qIndex) => {
                 const userAnswer = userAnswers[qIndex];
                 let isCorrect = false;
                 
-                if (q.type === 'fill') {
+                if (q.type === 'essay') {
+                    const essayAnswer = userAnswer || { text: '', imageUrl: '' };
+                    essayAnswers.push({
+                        questionId: q.id,
+                        questionIndex: qIndex,
+                        answer: essayAnswer.text || '',
+                        imageUrl: essayAnswer.imageUrl || '',
+                        score: null,
+                        comment: ''
+                    });
+                    
+                    details.push({
+                        questionId: q.id,
+                        questionContent: q.content,
+                        userAnswer: essayAnswer.text || '[图片答案]',
+                        isCorrect: null,
+                        isEssay: true
+                    });
+                } else if (q.type === 'fill') {
                     if (Array.isArray(userAnswer) && Array.isArray(q.correctAnswers)) {
                         let allCorrect = true;
                         for (let i = 0; i < q.correctAnswers.length; i++) {
@@ -1012,6 +1300,14 @@
                         }
                         isCorrect = allCorrect;
                     }
+                    if (isCorrect) correctCount++;
+                    
+                    details.push({
+                        questionId: q.id,
+                        questionContent: q.content,
+                        userAnswer: userAnswer,
+                        isCorrect: isCorrect
+                    });
                 } else if (q.type === 'multiple') {
                     const correctOriginal = q.correctAnswers.sort().join(',');
                     const userOriginal = (Array.isArray(userAnswer) ? userAnswer : [])
@@ -1019,22 +1315,29 @@
                         .sort()
                         .join(',');
                     isCorrect = correctOriginal === userOriginal;
+                    if (isCorrect) correctCount++;
+                    
+                    details.push({
+                        questionId: q.id,
+                        questionContent: q.content,
+                        userAnswer: userAnswer,
+                        isCorrect: isCorrect
+                    });
                 } else {
                     const userOriginalIndex = userAnswer !== undefined ? q.optionMapping[userAnswer] : -1;
                     isCorrect = q.correctAnswers.includes(userOriginalIndex);
+                    if (isCorrect) correctCount++;
+                    
+                    details.push({
+                        questionId: q.id,
+                        questionContent: q.content,
+                        userAnswer: userAnswer,
+                        isCorrect: isCorrect
+                    });
                 }
-                
-                if (isCorrect) correctCount++;
-                
-                details.push({
-                    questionId: q.id,
-                    questionContent: q.content,
-                    userAnswer: userAnswer,
-                    isCorrect: isCorrect
-                });
             });
             
-            const score = correctCount * currentExam.scorePerQuestion;
+            const objectiveScore = correctCount * currentExam.scorePerQuestion;
             
             const record = {
                 examId: currentExam.id,
@@ -1042,14 +1345,15 @@
                 userId: currentUser.id,
                 username: currentUser.username,
                 userName: currentUser.name,
-                score: score,
+                score: objectiveScore,
                 correctCount: correctCount,
                 totalQuestions: currentExam.questionCount,
                 details: details,
+                essayAnswers: essayAnswers,
                 submittedAt: new Date().toISOString()
             };
             
-            DataStore.addExamRecord(record);
+            await DataService.addExamRecord(record);
             
             document.getElementById('takeExamModal').classList.add('hidden');
             
@@ -1057,16 +1361,30 @@
             renderExamList();
         }
         
-        function showResult(record) {
-            const exam = DataStore.getExams().find(e => e.id === record.examId);
+        async function showResult(record) {
+            const exam = (await DataService.getExams()).find(e => e.id === record.examId);
+            const hasEssay = record.essayAnswers && record.essayAnswers.length > 0;
+            const essayPending = hasEssay && record.essayAnswers.some(ea => ea.score === null);
+            
+            let displayScore = record.score;
+            let totalScore = exam ? exam.totalScore : 100;
+            
+            if (hasEssay && essayPending) {
+                displayScore = record.score + ' + 待阅卷';
+            }
             
             document.getElementById('resultContent').innerHTML = `
                 <div class="text-center mb-6">
-                    <div class="w-24 h-24 mx-auto mb-4 rounded-full ${record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'bg-green-100' : 'bg-red-100'} flex items-center justify-center">
-                        <span class="text-4xl font-bold ${record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-red-600'}">${record.score}</span>
+                    <div class="w-24 h-24 mx-auto mb-4 rounded-full ${!essayPending && record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'bg-green-100' : 'bg-orange-100'} flex items-center justify-center">
+                        <span class="text-3xl font-bold ${!essayPending && record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-orange-600'}">${displayScore}</span>
                     </div>
-                    <p class="text-gray-500">总分 ${exam ? exam.totalScore : 100} 分</p>
-                    <p class="text-lg font-medium mt-2">${record.score >= (exam ? exam.totalScore * 0.6 : 60) ? '恭喜通过！' : '未通过，继续努力！'}</p>
+                    <p class="text-gray-500">总分 ${totalScore} 分</p>
+                    ${essayPending ? `
+                        <p class="text-lg font-medium mt-2 text-orange-600"><i class="fa fa-clock-o mr-1"></i>解答题待阅卷</p>
+                        <p class="text-sm text-gray-500 mt-1">客观题得分：${record.score}分</p>
+                    ` : `
+                        <p class="text-lg font-medium mt-2">${record.score >= (exam ? exam.totalScore * 0.6 : 60) ? '恭喜通过！' : '未通过，继续努力！'}</p>
+                    `}
                 </div>
                 
                 <div class="grid grid-cols-3 gap-4 mb-6">
@@ -1079,10 +1397,16 @@
                         <p class="text-sm text-gray-500">正确</p>
                     </div>
                     <div class="bg-red-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-red-600">${record.totalQuestions - record.correctCount}</p>
+                        <p class="text-2xl font-bold text-red-600">${record.totalQuestions - record.correctCount - (hasEssay ? record.essayAnswers.length : 0)}</p>
                         <p class="text-sm text-gray-500">错误</p>
                     </div>
                 </div>
+                
+                ${hasEssay ? `
+                    <div class="bg-purple-50 rounded-xl p-4 mb-6">
+                        <p class="text-sm text-purple-700"><i class="fa fa-info-circle mr-1"></i>本次考试包含${record.essayAnswers.length}道解答题，请等待阅卷完成后查看最终成绩</p>
+                    </div>
+                ` : ''}
                 
                 <button onclick="document.getElementById('resultModal').classList.add('hidden')" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
                     确定
@@ -1092,18 +1416,18 @@
             document.getElementById('resultModal').classList.remove('hidden');
         }
         
-        function viewResult(recordId) {
-            const records = DataStore.getExamRecords();
+        async function viewResult(recordId) {
+            const records = await DataService.getExamRecords();
             const record = records.find(r => r.id === recordId);
             if (record) {
                 showResult(record);
             }
         }
         
-        function viewExamStats(examId) {
-            const exams = DataStore.getExams();
+        async function viewExamStats(examId) {
+            const exams = await DataService.getExams();
             const exam = exams.find(e => e.id === examId);
-            const records = DataStore.getExamRecords().filter(r => r.examId === examId);
+            const records = (await DataService.getExamRecords()).filter(r => r.examId === examId);
             
             if (records.length === 0) {
                 showToast('暂无考试记录', 'info');
@@ -1168,31 +1492,177 @@
             document.getElementById('resultModal').classList.remove('hidden');
         }
         
-        function deleteExam(examId) {
+        let editingExamId = null;
+        
+        async function loadExamGroupsAndMembers() {
+            const groups = await DataService.getGroups();
+            const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+            
+            const groupSelect = document.getElementById('examSelectedGroup');
+            groupSelect.innerHTML = '<option value="">请选择分组</option>' + 
+                groups.map(g => `<option value="${g.id}">${g.name} (${g.members ? g.members.length : 0}人)</option>`).join('');
+            
+            const memberList = document.getElementById('examMemberSelectList');
+            memberList.innerHTML = users.map(u => `
+                <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
+                    <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded">
+                    <span class="ml-2 text-sm text-gray-700">${u.name}</span>
+                    <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
+                </label>
+            `).join('');
+            
+            document.getElementById('examParticipantScope').value = 'all';
+            document.getElementById('examGroupSelectContainer').classList.add('hidden');
+            document.getElementById('examMemberSelectContainer').classList.add('hidden');
+        }
+        
+        async function editExam(examId) {
+            const exams = await DataService.getExams();
+            const exam = exams.find(e => e.id === examId);
+            if (!exam) return;
+            
+            editingExamId = examId;
+            
+            document.getElementById('examName').value = exam.name;
+            document.getElementById('examStartTime').value = exam.startTime;
+            document.getElementById('examEndTime').value = exam.endTime;
+            document.getElementById('examDuration').value = exam.duration || 60;
+            if (document.getElementById('examDescription')) {
+                document.getElementById('examDescription').value = exam.description || '';
+            }
+            
+            document.getElementById('includeSingle').checked = exam.includeSingle;
+            if (document.getElementById('singleCount')) {
+                document.getElementById('singleCount').value = exam.singleCount || 0;
+                document.getElementById('singleScore').value = exam.singleScore || 5;
+            }
+            
+            document.getElementById('includeMultiple').checked = exam.includeMultiple;
+            if (document.getElementById('multipleCount')) {
+                document.getElementById('multipleCount').value = exam.multipleCount || 0;
+                document.getElementById('multipleScore').value = exam.multipleScore || 10;
+            }
+            
+            document.getElementById('includeJudge').checked = exam.includeJudge;
+            if (document.getElementById('judgeCount')) {
+                document.getElementById('judgeCount').value = exam.judgeCount || 0;
+                document.getElementById('judgeScore').value = exam.judgeScore || 5;
+            }
+            
+            document.getElementById('includeFill').checked = exam.includeFill;
+            if (document.getElementById('fillCount')) {
+                document.getElementById('fillCount').value = exam.fillCount || 0;
+                document.getElementById('fillScore').value = exam.fillScore || 10;
+            }
+            
+            document.getElementById('includeEssay').checked = exam.includeEssay;
+            if (document.getElementById('essayCount')) {
+                document.getElementById('essayCount').value = exam.essayCount || 0;
+                document.getElementById('essayScore').value = exam.essayScore || 20;
+            }
+            
+            document.getElementById('shuffleQuestions').checked = exam.shuffleQuestions;
+            document.getElementById('shuffleOptions').checked = exam.shuffleOptions;
+            
+            const gradingModeRadio = document.querySelector(`input[name="gradingMode"][value="${exam.gradingMode || 'admin'}"]`);
+            if (gradingModeRadio) gradingModeRadio.checked = true;
+            if (exam.gradingMode === 'peer') {
+                document.getElementById('peerGradingSettings').classList.remove('hidden');
+                const graderScope = exam.graderScope || 'all';
+                const graderScopeRadio = document.querySelector(`input[name="graderScope"][value="${graderScope}"]`);
+                if (graderScopeRadio) graderScopeRadio.checked = true;
+                if (graderScope === 'group') {
+                    document.getElementById('graderGroupSelectContainer').classList.remove('hidden');
+                    const groups = await DataService.getGroups();
+                    const graderGroupSelect = document.getElementById('graderSelectedGroup');
+                    graderGroupSelect.innerHTML = '<option value="">请选择分组</option>' + 
+                        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+                    graderGroupSelect.value = exam.graderGroup || '';
+                } else if (graderScope === 'selected') {
+                    document.getElementById('graderMemberSelectContainer').classList.remove('hidden');
+                    const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+                    const graderMemberList = document.getElementById('graderMemberSelectList');
+                    graderMemberList.innerHTML = users.map(u => `
+                        <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
+                            <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded" ${(exam.graders || []).includes(u.id) ? 'checked' : ''}>
+                            <span class="ml-2 text-sm text-gray-700">${u.name}</span>
+                        </label>
+                    `).join('');
+                }
+            }
+            
+            await loadExamGroupsAndMembers();
+            
+            document.getElementById('examParticipantScope').value = exam.participantScope || 'all';
+            if (exam.participantScope === 'group') {
+                document.getElementById('examGroupSelectContainer').classList.remove('hidden');
+                document.getElementById('examSelectedGroup').value = exam.participants[0] || '';
+            } else if (exam.participantScope === 'selected') {
+                document.getElementById('examMemberSelectContainer').classList.remove('hidden');
+                const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+                const memberList = document.getElementById('examMemberSelectList');
+                memberList.innerHTML = users.map(u => `
+                    <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
+                        <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded" ${(exam.participants || []).includes(u.id) ? 'checked' : ''}>
+                        <span class="ml-2 text-sm text-gray-700">${u.name}</span>
+                        <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
+                    </label>
+                `).join('');
+            }
+            
+            document.querySelector('#createExamModal h3').innerHTML = '<i class="fa fa-edit text-primary mr-2"></i>编辑考试';
+            document.querySelector('#createExamForm button[type="submit"]').textContent = '保存修改';
+            
+            document.getElementById('createExamModal').classList.remove('hidden');
+        }
+        
+        async function deleteExam(examId) {
             if (!confirm('确定要删除这个考试吗？')) return;
             
-            let exams = DataStore.getExams();
-            exams = exams.filter(e => e.id !== examId);
-            DataStore.saveExams(exams);
+            await DataService.deleteExam(examId);
             
             showToast('删除成功', 'success');
             renderExamList();
         }
         
-        function deleteQuestion(questionId) {
+        async function showQrCode(type, id) {
+            const container = document.getElementById('qrCodeContainer');
+            container.innerHTML = '';
+            
+            const url = `${window.location.origin}${window.location.pathname.replace('exam.html', '')}participate.html?type=${type}&id=${id}`;
+            
+            if (qrCodeInstance) {
+                qrCodeInstance.clear();
+            }
+            
+            qrCodeInstance = new QRCode(container, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            const exams = await DataService.getExams();
+            const exam = exams.find(e => e.id === id);
+            document.getElementById('qrCodeTitle').textContent = exam ? exam.name : '';
+            
+            document.getElementById('qrCodeModal').classList.remove('hidden');
+        }
+        
+        async function deleteQuestion(questionId) {
             if (!confirm('确定要删除这个题目吗？')) return;
             
-            let questions = DataStore.getQuestions();
-            questions = questions.filter(q => q.id !== questionId);
-            DataStore.saveQuestions(questions);
+            await DataService.deleteQuestion(questionId);
             
             showToast('删除成功', 'success');
             renderQuestionList();
         }
         
-        function exportRecords() {
-            const records = DataStore.getExamRecords();
-            const exams = DataStore.getExams();
+        async function exportRecords() {
+            const records = await DataService.getExamRecords();
+            const exams = await DataService.getExams();
             
             if (records.length === 0) {
                 showToast('没有记录可导出', 'warning');
@@ -1212,11 +1682,11 @@
                 };
             });
             
-            DataStore.exportToCSV(data, `考试记录_${new Date().toLocaleDateString()}`);
+            DataService.exportToCSV(data, `考试记录_${new Date().toLocaleDateString()}`);
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            currentUser = DataStore.getCurrentUser();
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = await DataService.getCurrentUser();
             if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
@@ -1224,7 +1694,7 @@
             
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '超级管理员' : currentUser.role === 'subAdmin' ? '子管理员' : '普通成员';
-            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
             
             if (currentUser.role === 'user') {
                 document.getElementById('adminMenu').style.display = 'none';
@@ -1250,11 +1720,28 @@
             });
             
             document.getElementById('createExamBtn').addEventListener('click', () => {
+                editingExamId = null;
+                document.getElementById('createExamForm').reset();
+                document.querySelector('#createExamModal h3').innerHTML = '<i class="fa fa-plus-circle text-primary mr-2"></i>创建考试';
+                document.querySelector('#createExamForm button[type="submit"]').textContent = '创建考试';
                 document.getElementById('createExamModal').classList.remove('hidden');
                 const now = new Date();
-                document.getElementById('examStartTime').value = now.toISOString().slice(0, 16);
-                document.getElementById('examEndTime').value = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString().slice(0, 16);
+                document.getElementById('examStartTime').value = getLocalDateTimeString(now);
+                document.getElementById('examEndTime').value = getLocalDateTimeString(new Date(now.getTime() + 2 * 60 * 60 * 1000));
+                loadExamGroupsAndMembers();
             });
+            
+            async function loadGraders() {
+                const users = await DataService.getUsers();
+                const graders = users.filter(u => u.role === 'admin' || u.role === 'subAdmin');
+                
+                const graderSelect = document.getElementById('graderSelect');
+                if (graderSelect) {
+                    graderSelect.innerHTML = graders.map(u => 
+                        `<option value="${u.id}">${u.name} (${u.username})</option>`
+                    ).join('');
+                }
+            }
             
             document.getElementById('closeCreateExamModal').addEventListener('click', () => {
                 document.getElementById('createExamModal').classList.add('hidden');
@@ -1263,29 +1750,87 @@
                 document.getElementById('createExamModal').classList.add('hidden');
             });
             
-            document.getElementById('createExamForm').addEventListener('submit', (e) => {
+            document.getElementById('createExamForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                const questions = DataStore.getQuestions();
+                const questions = await DataService.getQuestions();
                 const includeSingle = document.getElementById('includeSingle').checked;
                 const includeMultiple = document.getElementById('includeMultiple').checked;
                 const includeJudge = document.getElementById('includeJudge').checked;
                 const includeFill = document.getElementById('includeFill').checked;
+                const includeEssay = document.getElementById('includeEssay').checked;
+                
+                const essayQuestions = questions.filter(q => q.type === 'essay');
                 
                 let availableCount = questions.filter(q => {
                     if (includeSingle && q.type === 'single') return true;
                     if (includeMultiple && q.type === 'multiple') return true;
                     if (includeJudge && q.type === 'judge') return true;
                     if (includeFill && q.type === 'fill') return true;
+                    if (includeEssay && q.type === 'essay') return true;
                     return false;
                 }).length;
                 
                 const questionCount = parseInt(document.getElementById('questionCount').value);
                 const scorePerQuestion = parseInt(document.getElementById('scorePerQuestion').value);
                 
-                if (availableCount < questionCount) {
-                    showToast(`题库题目不足，需要${questionCount}题，当前符合条件的只有${availableCount}题`, 'error');
-                    return;
+                let essayTotalScore = 0;
+                if (includeEssay) {
+                    essayQuestions.forEach(q => {
+                        essayTotalScore += q.essayScore || 10;
+                    });
+                }
+                
+                const participantScope = document.getElementById('examParticipantScope').value;
+                let participants = [];
+                
+                if (participantScope === 'group') {
+                    const groupId = parseInt(document.getElementById('examSelectedGroup').value);
+                    if (!groupId) {
+                        showToast('请选择分组', 'warning');
+                        return;
+                    }
+                    const group = await DataService.getGroupById(groupId);
+                    participants = group.members || [];
+                } else if (participantScope === 'selected') {
+                    document.querySelectorAll('#examMemberSelectList input:checked').forEach(cb => {
+                        participants.push(parseInt(cb.value));
+                    });
+                    if (participants.length === 0) {
+                        showToast('请选择至少一个成员', 'warning');
+                        return;
+                    }
+                }
+                
+                let gradingMode = 'admin';
+                let graders = [];
+                
+                if (includeEssay) {
+                    gradingMode = document.querySelector('input[name="gradingMode"]:checked').value;
+                    
+                    if (gradingMode === 'peer') {
+                        const graderScope = document.getElementById('graderScope').value;
+                        
+                        if (graderScope === 'all') {
+                            graders = participants.length > 0 ? participants : (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin').map(u => u.id);
+                        } else if (graderScope === 'group') {
+                            const groupId = parseInt(document.getElementById('graderSelectedGroup').value);
+                            if (!groupId) {
+                                showToast('请选择阅卷分组', 'warning');
+                                return;
+                            }
+                            const group = await DataService.getGroupById(groupId);
+                            graders = group.members || [];
+                        } else if (graderScope === 'selected') {
+                            document.querySelectorAll('#graderMemberSelectList input:checked').forEach(cb => {
+                                graders.push(parseInt(cb.value));
+                            });
+                            if (graders.length === 0) {
+                                showToast('请选择至少一个阅卷人', 'warning');
+                                return;
+                            }
+                        }
+                    }
                 }
                 
                 const exam = {
@@ -1294,20 +1839,42 @@
                     endTime: document.getElementById('examEndTime').value,
                     questionCount: questionCount,
                     scorePerQuestion: scorePerQuestion,
-                    totalScore: questionCount * scorePerQuestion,
+                    totalScore: questionCount * scorePerQuestion + essayTotalScore,
                     duration: parseInt(document.getElementById('examDuration').value),
                     includeSingle: includeSingle,
                     includeMultiple: includeMultiple,
                     includeJudge: includeJudge,
                     includeFill: includeFill,
+                    includeEssay: includeEssay,
+                    singleCount: document.getElementById('singleCount') ? parseInt(document.getElementById('singleCount').value) || 0 : 0,
+                    singleScore: document.getElementById('singleScore') ? parseInt(document.getElementById('singleScore').value) || 5 : 5,
+                    multipleCount: document.getElementById('multipleCount') ? parseInt(document.getElementById('multipleCount').value) || 0 : 0,
+                    multipleScore: document.getElementById('multipleScore') ? parseInt(document.getElementById('multipleScore').value) || 10 : 10,
+                    judgeCount: document.getElementById('judgeCount') ? parseInt(document.getElementById('judgeCount').value) || 0 : 0,
+                    judgeScore: document.getElementById('judgeScore') ? parseInt(document.getElementById('judgeScore').value) || 5 : 5,
+                    fillCount: document.getElementById('fillCount') ? parseInt(document.getElementById('fillCount').value) || 0 : 0,
+                    fillScore: document.getElementById('fillScore') ? parseInt(document.getElementById('fillScore').value) || 10 : 10,
+                    essayCount: document.getElementById('essayCount') ? parseInt(document.getElementById('essayCount').value) || 0 : 0,
+                    essayScore: document.getElementById('essayScore') ? parseInt(document.getElementById('essayScore').value) || 20 : 20,
                     shuffleOptions: document.getElementById('shuffleOptions').checked,
                     shuffleQuestions: document.getElementById('shuffleQuestions').checked,
-                    description: document.getElementById('examDescription').value,
+                    description: document.getElementById('examDescription')?.value || '',
+                    gradingMode: gradingMode,
+                    graders: graders,
+                    essayTotalScore: essayTotalScore,
+                    participantScope: participantScope,
+                    participants: participants,
                     createdBy: currentUser.id
                 };
                 
-                DataStore.addExam(exam);
-                showToast('考试创建成功', 'success');
+                if (editingExamId) {
+                    await DataService.updateExam(editingExamId, exam);
+                    showToast('考试修改成功', 'success');
+                    editingExamId = null;
+                } else {
+                    await DataService.addExam(exam);
+                    showToast('考试创建成功', 'success');
+                }
                 document.getElementById('createExamModal').classList.add('hidden');
                 renderExamList();
             });
@@ -1327,20 +1894,91 @@
             
             document.getElementById('questionType').addEventListener('change', updateQuestionTypeUI);
             
+            document.getElementById('examParticipantScope').addEventListener('change', (e) => {
+                const groupContainer = document.getElementById('examGroupSelectContainer');
+                const memberContainer = document.getElementById('examMemberSelectContainer');
+                
+                groupContainer.classList.add('hidden');
+                memberContainer.classList.add('hidden');
+                
+                if (e.target.value === 'group') {
+                    groupContainer.classList.remove('hidden');
+                } else if (e.target.value === 'selected') {
+                    memberContainer.classList.remove('hidden');
+                }
+            });
+            
+            document.getElementById('includeEssay').addEventListener('change', (e) => {
+                const essaySettings = document.getElementById('essayExamSettings');
+                if (e.target.checked) {
+                    essaySettings.classList.remove('hidden');
+                } else {
+                    essaySettings.classList.add('hidden');
+                }
+            });
+            
+            document.querySelectorAll('input[name="gradingMode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const peerSettings = document.getElementById('peerGradingSettings');
+                    if (e.target.value === 'peer') {
+                        peerSettings.classList.remove('hidden');
+                        loadGraderOptions();
+                    } else {
+                        peerSettings.classList.add('hidden');
+                    }
+                });
+            });
+            
+            document.getElementById('graderScope').addEventListener('change', (e) => {
+                const groupContainer = document.getElementById('graderGroupSelectContainer');
+                const memberContainer = document.getElementById('graderMemberSelectContainer');
+                
+                groupContainer.classList.add('hidden');
+                memberContainer.classList.add('hidden');
+                
+                if (e.target.value === 'group') {
+                    groupContainer.classList.remove('hidden');
+                } else if (e.target.value === 'selected') {
+                    memberContainer.classList.remove('hidden');
+                }
+            });
+            
+            async function loadGraderOptions() {
+                const groups = await DataService.getGroups();
+                const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+                
+                const groupSelect = document.getElementById('graderSelectedGroup');
+                groupSelect.innerHTML = '<option value="">请选择分组</option>' + 
+                    groups.map(g => `<option value="${g.id}">${g.name} (${g.members ? g.members.length : 0}人)</option>`).join('');
+                
+                const memberList = document.getElementById('graderMemberSelectList');
+                memberList.innerHTML = users.map(u => `
+                    <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
+                        <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded">
+                        <span class="ml-2 text-sm text-gray-700">${u.name}</span>
+                        <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
+                    </label>
+                `).join('');
+            }
+            
             function updateQuestionTypeUI() {
                 const type = document.getElementById('questionType').value;
                 const optionsContainer = document.getElementById('optionsContainer');
                 const judgeContainer = document.getElementById('judgeContainer');
                 const fillContainer = document.getElementById('fillContainer');
+                const essayContainer = document.getElementById('essayContainer');
                 
                 optionsContainer.classList.add('hidden');
                 judgeContainer.classList.add('hidden');
                 fillContainer.classList.add('hidden');
+                essayContainer.classList.add('hidden');
                 
                 if (type === 'judge') {
                     judgeContainer.classList.remove('hidden');
                 } else if (type === 'fill') {
                     fillContainer.classList.remove('hidden');
+                } else if (type === 'essay') {
+                    essayContainer.classList.remove('hidden');
                 } else {
                     optionsContainer.classList.remove('hidden');
                 }
@@ -1358,7 +1996,7 @@
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
                     <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">${String.fromCharCode(65 + count)}</span>
-                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项${String.fromCharCode(65 + count)}" required>
+                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项${String.fromCharCode(65 + count)}">
                     <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
                     <button type="button" class="text-red-500 hover:text-red-600 remove-option"><i class="fa fa-times"></i></button>
                 `;
@@ -1389,7 +2027,7 @@
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
                     <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">${count}</span>
-                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案" required>
+                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案">
                     <button type="button" onclick="this.parentElement.remove(); updateFillAnswerNumbers();" class="text-red-500 hover:text-red-600 px-2">
                         <i class="fa fa-times"></i>
                     </button>
@@ -1405,77 +2043,101 @@
                 });
             }
             
-            document.getElementById('addQuestionForm').addEventListener('submit', (e) => {
+            document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                const type = document.getElementById('questionType').value;
-                let options = [];
-                let correctAnswers = [];
-                
-                if (type === 'judge') {
-                    options = ['正确', '错误'];
-                    const judgeAnswer = document.querySelector('input[name="judgeAnswer"]:checked');
-                    if (!judgeAnswer) {
-                        showToast('请选择正确答案', 'warning');
-                        return;
-                    }
-                    correctAnswers = [judgeAnswer.value === 'true' ? 0 : 1];
-                } else if (type === 'fill') {
-                    const fillInputs = document.querySelectorAll('.fill-answer-input');
-                    fillInputs.forEach((input, i) => {
-                        if (input.value.trim()) {
-                            correctAnswers.push(input.value.trim());
+                try {
+                    const type = document.getElementById('questionType').value;
+                    let options = [];
+                    let correctAnswers = [];
+                    
+                    if (type === 'judge') {
+                        options = ['正确', '错误'];
+                        const judgeAnswer = document.querySelector('input[name="judgeAnswer"]:checked');
+                        if (!judgeAnswer) {
+                            showToast('请选择正确答案', 'warning');
+                            return;
                         }
-                    });
-                    
-                    if (correctAnswers.length === 0) {
-                        showToast('请填写正确答案', 'warning');
-                        return;
-                    }
-                    
-                    const content = document.getElementById('questionContent').value;
-                    const blankCount = (content.match(/___/g) || []).length;
-                    if (blankCount !== correctAnswers.length) {
-                        showToast(`题目中有${blankCount}个空格，但只填写了${correctAnswers.length}个答案`, 'warning');
-                        return;
-                    }
-                } else {
-                    const optionInputs = document.querySelectorAll('.option-input');
-                    const correctCheckboxes = document.querySelectorAll('.correct-checkbox');
-                    
-                    optionInputs.forEach((input, i) => {
-                        if (input.value.trim()) {
-                            options.push(input.value.trim());
-                            if (correctCheckboxes[i].checked) {
-                                correctAnswers.push(i);
+                        correctAnswers = [judgeAnswer.value === 'true' ? 0 : 1];
+                    } else if (type === 'fill') {
+                        const fillInputs = document.querySelectorAll('.fill-answer-input');
+                        fillInputs.forEach((input, i) => {
+                            if (input.value.trim()) {
+                                correctAnswers.push(input.value.trim());
                             }
+                        });
+                        
+                        if (correctAnswers.length === 0) {
+                            showToast('请填写正确答案', 'warning');
+                            return;
                         }
-                    });
-                    
-                    if (correctAnswers.length === 0) {
-                        showToast('请选择正确答案', 'warning');
-                        return;
+                        
+                        const content = document.getElementById('questionContent').value;
+                        const blankCount = (content.match(/___/g) || []).length;
+                        if (blankCount !== correctAnswers.length) {
+                            showToast(`题目中有${blankCount}个空格，但只填写了${correctAnswers.length}个答案`, 'warning');
+                            return;
+                        }
+                    } else if (type === 'essay') {
+                        // 解答题不需要选项和正确答案
+                    } else {
+                        const optionInputs = document.querySelectorAll('.option-input');
+                        const correctCheckboxes = document.querySelectorAll('.correct-checkbox');
+                        
+                        optionInputs.forEach((input, i) => {
+                            if (input.value.trim()) {
+                                options.push(input.value.trim());
+                                if (correctCheckboxes[i].checked) {
+                                    correctAnswers.push(i);
+                                }
+                            }
+                        });
+                        
+                        if (correctAnswers.length === 0) {
+                            showToast('请选择正确答案', 'warning');
+                            return;
+                        }
+                        
+                        if (type === 'single' && correctAnswers.length > 1) {
+                            showToast('单选题只能有一个正确答案', 'warning');
+                            return;
+                        }
                     }
                     
-                    if (type === 'single' && correctAnswers.length > 1) {
-                        showToast('单选题只能有一个正确答案', 'warning');
-                        return;
+                    let essayScore = null;
+                    let essayReferenceAnswer = '';
+                    let essayGradingStandard = '';
+                    
+                    if (type === 'essay') {
+                        essayScore = parseInt(document.getElementById('essayScore').value);
+                        if (!essayScore || essayScore < 1) {
+                            showToast('请填写解答题分值', 'warning');
+                            return;
+                        }
+                        essayReferenceAnswer = document.getElementById('essayReferenceAnswer').value;
+                        essayGradingStandard = document.getElementById('essayGradingStandard').value;
                     }
+                    
+                    const question = {
+                        type: type,
+                        category: document.getElementById('questionCategory').value,
+                        content: document.getElementById('questionContent').value,
+                        options: options,
+                        correctAnswers: correctAnswers,
+                        explanation: document.getElementById('questionExplanation').value,
+                        essayScore: essayScore,
+                        essayReferenceAnswer: essayReferenceAnswer,
+                        essayGradingStandard: essayGradingStandard
+                    };
+                    
+                    await DataService.addQuestion(question);
+                    showToast('题目添加成功', 'success');
+                    document.getElementById('addQuestionModal').classList.add('hidden');
+                    renderQuestionList();
+                } catch (error) {
+                    console.error('添加题目失败:', error);
+                    showToast('添加题目失败，请重试', 'error');
                 }
-                
-                const question = {
-                    type: type,
-                    category: document.getElementById('questionCategory').value,
-                    content: document.getElementById('questionContent').value,
-                    options: options,
-                    correctAnswers: correctAnswers,
-                    explanation: document.getElementById('questionExplanation').value
-                };
-                
-                DataStore.addQuestion(question);
-                showToast('题目添加成功', 'success');
-                document.getElementById('addQuestionModal').classList.add('hidden');
-                renderQuestionList();
             });
             
             document.getElementById('importQuestionsBtn').addEventListener('click', () => {
@@ -1489,7 +2151,7 @@
                 document.getElementById('importModal').classList.add('hidden');
             });
             
-            document.getElementById('confirmImportBtn').addEventListener('click', () => {
+            document.getElementById('confirmImportBtn').addEventListener('click', async () => {
                 const file = document.getElementById('importFile').files[0];
                 if (!file) {
                     showToast('请选择文件', 'warning');
@@ -1497,7 +2159,7 @@
                 }
                 
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                     const content = e.target.result;
                     const lines = content.split('\n');
                     let imported = 0;
@@ -1524,7 +2186,7 @@
                             correctAnswers = [answerStr.toUpperCase().charCodeAt(0) - 65];
                         }
                         
-                        DataStore.addQuestion({
+                        await DataService.addQuestion({
                             type: type,
                             category: '',
                             content: content,
@@ -1557,7 +2219,8 @@
             document.getElementById('questionSearchInput').addEventListener('input', renderQuestionList);
             document.getElementById('exportRecordsBtn').addEventListener('click', exportRecords);
             
-            document.getElementById('notificationBtn').addEventListener('click', () => {
+            document.getElementById('notificationBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
                 renderNotifications();
                 document.getElementById('notificationModal').classList.remove('hidden');
             });
@@ -1572,20 +2235,61 @@
                 }
             });
             
-            document.getElementById('userMenuBtn').addEventListener('click', () => {
-                document.getElementById('userMenu').classList.toggle('hidden');
+            document.getElementById('closeQrCodeModal').addEventListener('click', () => {
+                document.getElementById('qrCodeModal').classList.add('hidden');
+            });
+            
+            document.getElementById('qrCodeModal').addEventListener('click', (e) => {
+                if (e.target.id === 'qrCodeModal') {
+                    document.getElementById('qrCodeModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('userMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const menu = document.getElementById('userMenu');
+                menu.classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', (e) => {
+                e.stopPropagation();
             });
             
             document.getElementById('logoutBtn').addEventListener('click', (e) => {
                 e.preventDefault();
-                DataStore.clearCurrentUser();
+                DataService.clearCurrentUser();
                 window.location.href = 'index.html';
             });
             
             document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
                 e.preventDefault();
-                DataStore.clearCurrentUser();
+                DataService.clearCurrentUser();
                 window.location.href = 'index.html';
+            });
+            
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', toggleSidebar);
+            }
+            
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
             });
             
             document.addEventListener('click', (e) => {

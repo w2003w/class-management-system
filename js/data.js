@@ -3,10 +3,19 @@ const DataStore = {
         if (!localStorage.getItem('db_initialized')) {
             this.initializeData();
             localStorage.setItem('db_initialized', 'true');
+        } else {
+            this.ensureDataIntegrity();
         }
     },
     
-    initializeData: function() {
+    ensureDataIntegrity: function() {
+        const users = this.getUsers();
+        if (!users || users.length === 0) {
+            this.initializeUsers();
+        }
+    },
+    
+    initializeUsers: function() {
         const defaultUsers = [
             { 
                 id: 1, 
@@ -55,6 +64,10 @@ const DataStore = {
             }
         ];
         localStorage.setItem('users', JSON.stringify(defaultUsers));
+    },
+    
+    initializeData: function() {
+        this.initializeUsers();
         
         localStorage.setItem('attendances', JSON.stringify([]));
         localStorage.setItem('attendanceRecords', JSON.stringify([]));
@@ -71,6 +84,8 @@ const DataStore = {
         localStorage.setItem('passwordResetRequests', JSON.stringify([]));
         
         localStorage.setItem('notifications', JSON.stringify([]));
+        
+        localStorage.setItem('groups', JSON.stringify([]));
     },
     
     getUsers: function() {
@@ -117,6 +132,47 @@ const DataStore = {
         const filtered = users.filter(u => u.id !== id);
         this.saveUsers(filtered);
         return filtered.length < users.length;
+    },
+    
+    getGroups: function() {
+        return JSON.parse(localStorage.getItem('groups') || '[]');
+    },
+    
+    saveGroups: function(groups) {
+        localStorage.setItem('groups', JSON.stringify(groups));
+    },
+    
+    addGroup: function(group) {
+        const groups = this.getGroups();
+        const maxId = groups.length > 0 ? Math.max(...groups.map(g => g.id)) : 0;
+        group.id = maxId + 1;
+        group.createdAt = new Date().toISOString();
+        groups.push(group);
+        this.saveGroups(groups);
+        return group;
+    },
+    
+    updateGroup: function(id, updates) {
+        const groups = this.getGroups();
+        const index = groups.findIndex(g => g.id === id);
+        if (index !== -1) {
+            groups[index] = { ...groups[index], ...updates };
+            this.saveGroups(groups);
+            return groups[index];
+        }
+        return null;
+    },
+    
+    deleteGroup: function(id) {
+        const groups = this.getGroups();
+        const filtered = groups.filter(g => g.id !== id);
+        this.saveGroups(filtered);
+        return filtered.length < groups.length;
+    },
+    
+    getGroupById: function(id) {
+        const groups = this.getGroups();
+        return groups.find(g => g.id === id);
     },
     
     getAttendances: function() {
@@ -171,6 +227,13 @@ const DataStore = {
         questions.push(question);
         this.saveQuestions(questions);
         return question;
+    },
+    
+    deleteQuestion: function(id) {
+        let questions = this.getQuestions();
+        questions = questions.filter(q => q.id !== id);
+        this.saveQuestions(questions);
+        return true;
     },
     
     getExams: function() {
@@ -404,6 +467,122 @@ const DataStore = {
         link.href = URL.createObjectURL(blob);
         link.download = filename + '.csv';
         link.click();
+    },
+    
+    getPermissionSettings: function() {
+        const defaultSettings = {
+            attendance: {
+                showMemberList: true,
+                showSignedCount: true,
+                showUnsignedList: false
+            },
+            exam: {
+                showMemberList: true,
+                showScores: false,
+                showAnswers: false,
+                showRanking: false
+            },
+            vote: {
+                showMemberList: true,
+                showVoteCount: true,
+                showVoteDetails: false
+            },
+            lottery: {
+                showMemberList: true,
+                showPrizeList: true,
+                showWinnerList: false
+            }
+        };
+        
+        const saved = localStorage.getItem('permissionSettings');
+        return saved ? JSON.parse(saved) : defaultSettings;
+    },
+    
+    savePermissionSettings: function(settings) {
+        localStorage.setItem('permissionSettings', JSON.stringify(settings));
+    },
+    
+    canView: function(module, permission) {
+        const user = this.getCurrentUser();
+        if (!user) return false;
+        
+        if (user.role === 'admin' || user.role === 'subAdmin') {
+            return true;
+        }
+        
+        const settings = this.getPermissionSettings();
+        if (settings[module] && settings[module][permission] !== undefined) {
+            return settings[module][permission];
+        }
+        
+        return false;
+    },
+    
+    // 问卷相关方法
+    getQuestionnaires: function() {
+        const data = localStorage.getItem('questionnaires');
+        return data ? JSON.parse(data) : [];
+    },
+    
+    saveQuestionnaires: function(questionnaires) {
+        localStorage.setItem('questionnaires', JSON.stringify(questionnaires));
+    },
+    
+    getQuestionnaireById: function(id) {
+        const questionnaires = this.getQuestionnaires();
+        return questionnaires.find(q => q.id === id);
+    },
+    
+    addQuestionnaire: function(questionnaire) {
+        const questionnaires = this.getQuestionnaires();
+        const maxId = questionnaires.length > 0 ? Math.max(...questionnaires.map(q => parseInt(q.id) || 0)) : 0;
+        questionnaire.id = maxId + 1;
+        questionnaire.createdat = new Date().toISOString();
+        questionnaires.push(questionnaire);
+        this.saveQuestionnaires(questionnaires);
+        return questionnaire;
+    },
+    
+    updateQuestionnaire: function(id, updates) {
+        const questionnaires = this.getQuestionnaires();
+        const index = questionnaires.findIndex(q => q.id === id);
+        if (index !== -1) {
+            questionnaires[index] = { ...questionnaires[index], ...updates };
+            this.saveQuestionnaires(questionnaires);
+            return questionnaires[index];
+        }
+        return null;
+    },
+    
+    deleteQuestionnaire: function(id) {
+        const questionnaires = this.getQuestionnaires();
+        const index = questionnaires.findIndex(q => q.id === id);
+        if (index !== -1) {
+            questionnaires.splice(index, 1);
+            this.saveQuestionnaires(questionnaires);
+            return true;
+        }
+        return false;
+    },
+    
+    getQuestionnaireRecords: function() {
+        const data = localStorage.getItem('questionnaire_records');
+        return data ? JSON.parse(data) : [];
+    },
+    
+    saveQuestionnaireRecords: function(records) {
+        localStorage.setItem('questionnaire_records', JSON.stringify(records));
+    },
+    
+    addQuestionnaireRecord: function(record) {
+        const records = this.getQuestionnaireRecords();
+        const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
+        record.id = maxId + 1;
+        record.submittedAt = new Date().toISOString();
+        record.createdat = new Date().toISOString();
+        records.push(record);
+        this.saveQuestionnaireRecords(records);
+        return record;
     },
     
     resetDatabase: function() {

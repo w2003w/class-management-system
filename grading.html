@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>班级管理系统 - 考试阅卷</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E40AF',
+                        secondary: '#3B82F6',
+                        accent: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .sidebar-link { transition: all 0.2s ease; }
+        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
+        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
+        .modal-overlay { animation: fadeIn 0.2s ease; }
+        .modal-content { animation: slideUp 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
+                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 overflow-y-auto">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="adminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+        
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white shadow-sm z-10">
+                <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                            <i class="fa fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800">考试阅卷</h2>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="relative">
+                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
+                                <i class="fa fa-bell text-xl"></i>
+                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
+                            </button>
+                        </div>
+                        
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center">
+                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
+                                <div class="ml-2 hidden md:block text-left">
+                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
+                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                                </div>
+                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
+                            </button>
+                            
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
+                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
+                                <div class="border-t my-1"></div>
+                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800">阅卷任务</h3>
+                            <p class="text-sm text-gray-500">查看和管理需要阅卷的考试任务</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-tasks text-blue-500 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">待阅卷任务</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="pendingCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-check text-green-500 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">已完成阅卷</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="completedCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-xl p-4 shadow-sm">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <i class="fa fa-file-text-o text-purple-500 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm text-gray-500">总阅卷数</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="totalCount">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-gray-800">考试列表</h4>
+                            <select id="statusFilter" class="px-3 py-1 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                <option value="">全部状态</option>
+                                <option value="pending">待阅卷</option>
+                                <option value="completed">已完成</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="examList" class="divide-y">
+                        <p class="text-gray-500 text-center py-8">暂无阅卷任务</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="mobileSidebar" class="fixed inset-0 bg-black/50 z-50 hidden md:hidden">
+        <div class="w-64 h-full bg-white">
+            <div class="p-4 border-b flex items-center justify-between">
+                <h3 class="font-semibold text-gray-800">菜单</h3>
+                <button id="closeMobileSidebar" class="text-gray-500"><i class="fa fa-times text-xl"></i></button>
+            </div>
+            <nav class="p-4">
+                <div class="mb-6">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
+                    <ul class="space-y-1">
+                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
+                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
+                        <li><a href="exam.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
+                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
+                    </ul>
+                </div>
+                
+                <div class="mb-6" id="mobileAdminMenu">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
+                    <ul class="space-y-1">
+                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
+                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
+                    <ul class="space-y-1">
+                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
+                        <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <div id="gradingModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden modal-content mx-4 flex flex-col">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800" id="gradingExamTitle">阅卷</h3>
+                    <button id="closeGradingModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1" id="gradingContent">
+            </div>
+            
+            <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+                <div class="text-sm text-gray-500">
+                    <span id="gradingProgress">0/0</span> 已完成
+                </div>
+                <div class="space-x-2">
+                    <button id="prevAnswerBtn" class="px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fa fa-arrow-left mr-1"></i>上一份
+                    </button>
+                    <button id="nextAnswerBtn" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors">
+                        下一份<i class="fa fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="detailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden modal-content mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800" id="detailTitle">阅卷详情</h3>
+                    <button id="closeDetailModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-6 overflow-y-auto" id="detailContent">
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    
+    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
+            <div class="p-4 border-b sticky top-0 bg-white z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
+                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            <div id="notificationList" class="overflow-y-auto max-h-96">
+                <div class="p-8 text-center text-gray-500">
+                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                    <p>暂无通知</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
+    <script>
+        let currentUser = null;
+        let currentExam = null;
+        let currentAnswerIndex = 0;
+        let gradingAnswers = [];
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 
+                           type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
+            
+            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2`;
+            toast.innerHTML = `
+                <i class="fa fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation' : 'info'}-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function formatDateTime(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
+            const container = document.getElementById('notificationList');
+            const badge = document.getElementById('notificationBadge');
+            
+            const unreadCount = notifications.filter(n => !n.read).length;
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-gray-500">
+                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
+                        <p>暂无通知</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = notifications.map(n => `
+                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
+                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
+                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
+                        </div>
+                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
+        }
+        
+        async function checkAuth() {
+            currentUser = await DataService.getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
+            
+            let roleText = '普通成员';
+            if (currentUser.role === 'admin') {
+                roleText = '超级管理员';
+            } else if (currentUser.role === 'subAdmin') {
+                roleText = '子管理员';
+            }
+            document.getElementById('userRole').textContent = roleText;
+            
+            return true;
+        }
+        
+        async function renderExamList() {
+            const exams = await DataService.getExams();
+            const examRecords = await DataService.getExamRecords();
+            const questions = await DataService.getQuestions();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const essayExams = exams.filter(e => e.includeEssay);
+            
+            let filteredExams = essayExams.filter(exam => {
+                const examQuestions = questions.filter(q => 
+                    (exam.includeSingle && q.type === 'single') ||
+                    (exam.includeMultiple && q.type === 'multiple') ||
+                    (exam.includeJudge && q.type === 'judge') ||
+                    (exam.includeFill && q.type === 'fill') ||
+                    (exam.includeEssay && q.type === 'essay')
+                );
+                const essayQs = examQuestions.filter(q => q.type === 'essay');
+                
+                if (essayQs.length === 0) return false;
+                
+                if (currentUser.role !== 'admin' && currentUser.role !== 'subAdmin') {
+                    if (exam.gradingMode === 'admin') return false;
+                    if (!exam.graders || !exam.graders.includes(currentUser.id)) return false;
+                }
+                
+                return true;
+            });
+            
+            const container = document.getElementById('examList');
+            
+            if (filteredExams.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无阅卷任务</p>';
+                document.getElementById('pendingCount').textContent = '0';
+                document.getElementById('completedCount').textContent = '0';
+                document.getElementById('totalCount').textContent = '0';
+                return;
+            }
+            
+            let totalPending = 0;
+            let totalCompleted = 0;
+            let totalTotal = 0;
+            
+            container.innerHTML = filteredExams.map(exam => {
+                const records = examRecords.filter(r => r.examId === exam.id);
+                const now = new Date();
+                const endTime = new Date(exam.endTime);
+                const isEnded = now > endTime;
+                
+                let pendingCount = 0;
+                let completedCount = 0;
+                
+                records.forEach(record => {
+                    if (record.essayAnswers && record.essayAnswers.length > 0) {
+                        record.essayAnswers.forEach(ea => {
+                            if (ea.score === undefined || ea.score === null) {
+                                pendingCount++;
+                            } else {
+                                completedCount++;
+                            }
+                        });
+                    }
+                });
+                
+                totalPending += pendingCount;
+                totalCompleted += completedCount;
+                totalTotal += pendingCount + completedCount;
+                
+                const status = !isEnded ? '进行中' : pendingCount > 0 ? '待阅卷' : '已完成';
+                const statusClass = !isEnded ? 'bg-blue-100 text-blue-800' : 
+                                   pendingCount > 0 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800';
+                
+                if (statusFilter === 'pending' && pendingCount === 0) return '';
+                if (statusFilter === 'completed' && pendingCount > 0) return '';
+                
+                return `
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="px-2 py-1 ${statusClass} text-xs font-medium rounded-full">${status}</span>
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">
+                                        ${exam.gradingMode === 'admin' ? '管理员阅卷' : '同学互阅'}
+                                    </span>
+                                </div>
+                                <h4 class="font-semibold text-gray-800">${exam.name}</h4>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(exam.startTime)} - ${formatDateTime(exam.endTime)}</span>
+                                    <span><i class="fa fa-users mr-1"></i>${records.length}人已考</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2 ml-4">
+                                <div class="text-right mr-4">
+                                    <p class="text-sm text-gray-500">阅卷进度</p>
+                                    <p class="text-lg font-bold ${pendingCount > 0 ? 'text-orange-500' : 'text-green-500'}">
+                                        ${completedCount}/${pendingCount + completedCount}
+                                    </p>
+                                </div>
+                                ${pendingCount > 0 ? `
+                                    <button onclick="startGrading(${exam.id})" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
+                                        <i class="fa fa-edit mr-1"></i>开始阅卷
+                                    </button>
+                                ` : `
+                                    <button onclick="showDetail(${exam.id})" class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+                                        <i class="fa fa-eye mr-1"></i>查看详情
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('pendingCount').textContent = totalPending;
+            document.getElementById('completedCount').textContent = totalCompleted;
+            document.getElementById('totalCount').textContent = totalTotal;
+        }
+        
+        async function startGrading(examId) {
+            const exams = await DataService.getExams();
+            const examRecords = await DataService.getExamRecords();
+            const questions = await DataService.getQuestions();
+            
+            currentExam = exams.find(e => e.id === examId);
+            if (!currentExam) return;
+            
+            const examQuestions = questions.filter(q => 
+                (currentExam.includeSingle && q.type === 'single') ||
+                (currentExam.includeMultiple && q.type === 'multiple') ||
+                (currentExam.includeJudge && q.type === 'judge') ||
+                (currentExam.includeFill && q.type === 'fill') ||
+                (currentExam.includeEssay && q.type === 'essay')
+            );
+            
+            const essayQuestions = examQuestions.filter(q => q.type === 'essay');
+            
+            gradingAnswers = [];
+            
+            const records = examRecords.filter(r => r.examId === examId);
+            records.forEach(record => {
+                if (record.essayAnswers && record.essayAnswers.length > 0) {
+                    record.essayAnswers.forEach((ea, idx) => {
+                        if (ea.score === undefined || ea.score === null) {
+                            gradingAnswers.push({
+                                recordId: record.id,
+                                userId: record.userId,
+                                userName: record.userName,
+                                questionIndex: ea.questionIndex,
+                                questionId: ea.questionId,
+                                answer: ea.answer,
+                                imageUrl: ea.imageUrl,
+                                question: essayQuestions.find(q => q.id === ea.questionId)
+                            });
+                        }
+                    });
+                }
+            });
+            
+            if (gradingAnswers.length === 0) {
+                showToast('没有需要阅卷的答案', 'warning');
+                return;
+            }
+            
+            currentAnswerIndex = 0;
+            document.getElementById('gradingExamTitle').textContent = currentExam.name + ' - 阅卷';
+            renderGradingContent();
+            document.getElementById('gradingModal').classList.remove('hidden');
+        }
+        
+        function renderGradingContent() {
+            if (gradingAnswers.length === 0) {
+                document.getElementById('gradingContent').innerHTML = '<p class="text-gray-500 text-center py-8">没有需要阅卷的答案</p>';
+                return;
+            }
+            
+            const answer = gradingAnswers[currentAnswerIndex];
+            const question = answer.question;
+            
+            document.getElementById('gradingProgress').textContent = `${currentAnswerIndex + 1}/${gradingAnswers.length}`;
+            
+            let html = `
+                <div class="space-y-6">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-medium text-gray-500">考生信息</span>
+                            <span class="text-sm text-gray-500">题目 ${currentAnswerIndex + 1}</span>
+                        </div>
+                        <p class="font-semibold text-gray-800">${answer.userName}</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-2">题目内容</h4>
+                        <p class="text-gray-700 whitespace-pre-wrap">${question ? question.content : '题目不存在'}</p>
+                        ${question && question.essayReferenceAnswer ? `
+                            <div class="mt-4 pt-4 border-t border-blue-200">
+                                <h5 class="text-sm font-medium text-gray-600 mb-2">参考答案</h5>
+                                <p class="text-sm text-gray-600 whitespace-pre-wrap">${question.essayReferenceAnswer}</p>
+                            </div>
+                        ` : ''}
+                        ${question && question.essayGradingStandard ? `
+                            <div class="mt-3 pt-3 border-t border-blue-200">
+                                <h5 class="text-sm font-medium text-gray-600 mb-2">评分标准</h5>
+                                <p class="text-sm text-gray-600 whitespace-pre-wrap">${question.essayGradingStandard}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="bg-white border rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">考生答案</h4>
+                        ${answer.imageUrl ? `
+                            <div class="mb-4">
+                                <img src="${answer.imageUrl}" alt="考生答案图片" class="max-w-full rounded-lg border cursor-pointer" onclick="window.open(this.src, '_blank')">
+                            </div>
+                        ` : ''}
+                        <div class="whitespace-pre-wrap text-gray-700">${answer.answer || '未作答'}</div>
+                    </div>
+                    
+                    <div class="bg-purple-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-4">评分</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">得分（满分 ${question ? question.essayScore : 10} 分）</label>
+                                <input type="number" id="essayScoreInput" min="0" max="${question ? question.essayScore : 10}" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入分数">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-2">评语（选填）</label>
+                                <input type="text" id="essayCommentInput" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入评语">
+                            </div>
+                        </div>
+                        <button onclick="submitScore()" class="mt-4 w-full bg-primary text-white py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-check mr-2"></i>提交评分
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('gradingContent').innerHTML = html;
+            
+            document.getElementById('prevAnswerBtn').disabled = currentAnswerIndex === 0;
+            document.getElementById('nextAnswerBtn').disabled = currentAnswerIndex === gradingAnswers.length - 1;
+        }
+        
+        async function submitScore() {
+            const score = parseInt(document.getElementById('essayScoreInput').value);
+            const comment = document.getElementById('essayCommentInput').value;
+            
+            if (isNaN(score)) {
+                showToast('请输入分数', 'warning');
+                return;
+            }
+            
+            const answer = gradingAnswers[currentAnswerIndex];
+            const question = answer.question;
+            const maxScore = question ? question.essayScore : 10;
+            
+            if (score < 0 || score > maxScore) {
+                showToast(`分数必须在0-${maxScore}之间`, 'warning');
+                return;
+            }
+            
+            const examRecords = await DataService.getExamRecords();
+            const record = examRecords.find(r => r.id === answer.recordId);
+            
+            console.log('提交评分 - recordId:', answer.recordId, 'record:', record);
+            
+            if (record && record.essayAnswers) {
+                const essayAnswer = record.essayAnswers.find(ea => ea.questionId === answer.questionId);
+                if (essayAnswer) {
+                    essayAnswer.score = score;
+                    essayAnswer.comment = comment;
+                    essayAnswer.gradedBy = currentUser.id;
+                    essayAnswer.gradedAt = new Date().toISOString();
+                    
+                    console.log('更新后的 essayAnswer:', essayAnswer);
+                    
+                    let totalEssayScore = 0;
+                    let allGraded = true;
+                    record.essayAnswers.forEach(ea => {
+                        if (ea.score !== undefined && ea.score !== null) {
+                            totalEssayScore += ea.score;
+                        } else {
+                            allGraded = false;
+                        }
+                    });
+                    
+                    console.log('totalEssayScore:', totalEssayScore, 'allGraded:', allGraded);
+                    
+                    if (allGraded) {
+                        const questions = await DataService.getQuestions();
+                        const examQuestions = questions.filter(q => 
+                            (currentExam.includeSingle && q.type === 'single') ||
+                            (currentExam.includeMultiple && q.type === 'multiple') ||
+                            (currentExam.includeJudge && q.type === 'judge') ||
+                            (currentExam.includeFill && q.type === 'fill') ||
+                            (currentExam.includeEssay && q.type === 'essay')
+                        );
+                        
+                        const essayQuestions = examQuestions.filter(q => q.type === 'essay');
+                        const objectiveQuestions = examQuestions.filter(q => q.type !== 'essay');
+                        
+                        let objectiveScore = 0;
+                        objectiveQuestions.forEach((q, idx) => {
+                            if (record.answers && record.answers[idx] !== undefined) {
+                                const userAnswer = record.answers[idx];
+                                let isCorrect = false;
+                                
+                                if (q.type === 'single' || q.type === 'judge') {
+                                    isCorrect = userAnswer === q.correctAnswers[0];
+                                } else if (q.type === 'multiple') {
+                                    isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correctAnswers.sort());
+                                } else if (q.type === 'fill') {
+                                    isCorrect = userAnswer === q.correctAnswers[idx];
+                                }
+                                
+                                if (isCorrect) {
+                                    objectiveScore += currentExam.scorePerQuestion;
+                                }
+                            }
+                        });
+                        
+                        record.score = objectiveScore + totalEssayScore;
+                        record.totalScore = currentExam.totalScore;
+                        
+                        console.log('最终分数 - objectiveScore:', objectiveScore, 'totalEssayScore:', totalEssayScore, 'record.score:', record.score);
+                    }
+                    
+                    console.log('保存 examRecord:', record);
+                    await DataService.saveExamRecords(examRecords);
+                    showToast('评分成功', 'success');
+                    
+                    gradingAnswers.splice(currentAnswerIndex, 1);
+                    
+                    if (gradingAnswers.length === 0) {
+                        document.getElementById('gradingModal').classList.add('hidden');
+                        renderExamList();
+                    } else {
+                        if (currentAnswerIndex >= gradingAnswers.length) {
+                            currentAnswerIndex = gradingAnswers.length - 1;
+                        }
+                        renderGradingContent();
+                    }
+                }
+            }
+        }
+        
+        async function showDetail(examId) {
+            const exams = await DataService.getExams();
+            const examRecords = await DataService.getExamRecords();
+            const users = await DataService.getUsers();
+            
+            const exam = exams.find(e => e.id === examId);
+            if (!exam) return;
+            
+            const records = examRecords.filter(r => r.examId === examId);
+            
+            let html = `
+                <div class="space-y-4">
+                    <div class="bg-gray-50 rounded-xl p-4">
+                        <h4 class="font-semibold text-gray-800 mb-2">${exam.name}</h4>
+                        <p class="text-sm text-gray-500">考试时间：${formatDateTime(exam.startTime)} - ${formatDateTime(exam.endTime)}</p>
+                        <p class="text-sm text-gray-500">阅卷模式：${exam.gradingMode === 'admin' ? '管理员阅卷' : '同学互阅'}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">成绩列表</h4>
+                        <div class="max-h-64 overflow-y-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-left text-gray-500 border-b">
+                                        <th class="pb-2">姓名</th>
+                                        <th class="pb-2">客观题</th>
+                                        <th class="pb-2">主观题</th>
+                                        <th class="pb-2">总分</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    ${records.map(r => {
+                                        let objectiveScore = r.score || 0;
+                                        let essayScore = 0;
+                                        
+                                        if (r.essayAnswers) {
+                                            r.essayAnswers.forEach(ea => {
+                                                if (ea.score !== undefined && ea.score !== null) {
+                                                    essayScore += ea.score;
+                                                }
+                                            });
+                                            objectiveScore = (r.score || 0) - essayScore;
+                                        }
+                                        
+                                        return `
+                                            <tr>
+                                                <td class="py-2">${r.userName}</td>
+                                                <td class="py-2">${objectiveScore}</td>
+                                                <td class="py-2">${essayScore}</td>
+                                                <td class="py-2 font-semibold ${r.score >= (exam.totalScore * 0.6) ? 'text-green-600' : 'text-red-600'}">${r.score || 0}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('detailContent').innerHTML = html;
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await checkAuth()) return;
+            
+            renderExamList();
+            renderNotifications();
+            
+            document.getElementById('statusFilter').addEventListener('change', renderExamList);
+            
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', toggleSidebar);
+            }
+            
+            document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
+            });
+            
+            document.getElementById('userMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const menu = document.getElementById('userMenu');
+                menu.classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            
+            document.getElementById('notificationBtn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                renderNotifications();
+                document.getElementById('notificationModal').classList.remove('hidden');
+            });
+            
+            document.getElementById('closeNotificationModal').addEventListener('click', () => {
+                document.getElementById('notificationModal').classList.add('hidden');
+            });
+            
+            document.getElementById('notificationModal').addEventListener('click', (e) => {
+                if (e.target.id === 'notificationModal') {
+                    document.getElementById('notificationModal').classList.add('hidden');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
+                    document.getElementById('userMenu').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                DataService.logout();
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                DataService.logout();
+                window.location.href = 'index.html';
+            });
+            
+            document.getElementById('closeGradingModal').addEventListener('click', () => {
+                document.getElementById('gradingModal').classList.add('hidden');
+                renderExamList();
+            });
+            
+            document.getElementById('prevAnswerBtn').addEventListener('click', () => {
+                if (currentAnswerIndex > 0) {
+                    currentAnswerIndex--;
+                    renderGradingContent();
+                }
+            });
+            
+            document.getElementById('nextAnswerBtn').addEventListener('click', () => {
+                if (currentAnswerIndex < gradingAnswers.length - 1) {
+                    currentAnswerIndex++;
+                    renderGradingContent();
+                }
+            });
+            
+            document.getElementById('closeDetailModal').addEventListener('click', () => {
+                document.getElementById('detailModal').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -2,10 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 签到管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -25,33 +26,31 @@
         .sidebar-link { transition: all 0.2s ease; }
         .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
         .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
-        .card { transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
         .modal-overlay { animation: fadeIn 0.2s ease; }
         .modal-content { animation: slideUp 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .toast { animation: slideIn 0.3s ease; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .progress-ring { transition: stroke-dashoffset 0.5s ease; }
-        .pulse-dot { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .location-marker { animation: bounce 1s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div class="flex h-screen overflow-hidden">
-        <aside class="w-64 bg-white shadow-lg hidden md:flex flex-col">
+        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
             <div class="p-4 border-b">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
+                            <i class="fa fa-graduation-cap text-white text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
+                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
+                        </div>
                     </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                        <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                    </div>
+                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
                 </div>
             </div>
             
@@ -70,6 +69,7 @@
                     <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
                     <ul class="space-y-1">
                         <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
+                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
                         <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
                     </ul>
                 </div>
@@ -88,7 +88,7 @@
             <header class="bg-white shadow-sm z-10">
                 <div class="flex items-center justify-between p-4">
                     <div class="flex items-center">
-                        <button id="mobileSidebarToggle" class="md:hidden text-gray-500 hover:text-primary mr-4">
+                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
                             <i class="fa fa-bars text-xl"></i>
                         </button>
                         <h2 class="text-xl font-semibold text-gray-800">签到管理</h2>
@@ -203,11 +203,9 @@
                         <div class="p-4 border-b">
                             <div class="flex items-center justify-between">
                                 <h3 class="font-semibold text-gray-800">签到列表</h3>
-                                <div class="flex items-center space-x-2">
-                                    <button id="exportBtn" class="text-sm text-primary hover:text-secondary flex items-center">
-                                        <i class="fa fa-download mr-1"></i>导出数据
-                                    </button>
-                                </div>
+                                <button id="exportBtn" class="text-sm text-primary hover:text-secondary flex items-center px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                                    <i class="fa fa-download mr-1"></i>导出数据
+                                </button>
                             </div>
                         </div>
                         
@@ -236,7 +234,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">签到名称 *</label>
-                        <input type="text" id="attendanceName" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：班级例会签到">
+                        <input type="text" id="attendanceName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：班级例会签到">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">签到类型</label>
@@ -270,8 +268,8 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">签到中心位置</label>
                         <div class="flex items-center space-x-2 mb-2">
-                            <input type="text" id="latitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="纬度" readonly>
-                            <input type="text" id="longitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="经度" readonly>
+                            <input type="text" id="latitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50" placeholder="纬度" readonly>
+                            <input type="text" id="longitude" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 bg-gray-50" placeholder="经度" readonly>
                         </div>
                         <button type="button" id="getLocationBtn" class="w-full bg-green-500 text-white px-4 py-2 rounded-xl font-medium hover:bg-green-600 transition-colors">
                             <i class="fa fa-location-arrow mr-2"></i>获取当前位置
@@ -283,38 +281,120 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
-                        <input type="datetime-local" id="startTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="datetime-local" id="startTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
-                        <input type="datetime-local" id="endTime" required class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <input type="datetime-local" id="endTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                    </div>
+                </div>
+                
+                <div class="mb-4 p-4 bg-orange-50 rounded-xl">
+                    <div class="flex items-center mb-3">
+                        <input type="checkbox" id="isRepeat" class="w-4 h-4 text-primary rounded">
+                        <label for="isRepeat" class="ml-2 text-sm font-medium text-gray-700"><i class="fa fa-repeat mr-1"></i>重复签到</label>
+                    </div>
+                    
+                    <div id="repeatSettings" class="hidden mt-3 space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">重复类型</label>
+                                <select id="repeatType" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                    <option value="daily">每天</option>
+                                    <option value="weekdays">工作日</option>
+                                    <option value="weekly">每周</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">重复结束日期</label>
+                                <input type="date" id="repeatEndDate" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">每日开始时间</label>
+                                <input type="time" id="dailyStartTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">每日结束时间</label>
+                                <input type="time" id="dailyEndTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        
+                        <div id="customDaysContainer" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">选择重复日期</label>
+                            <div class="flex flex-wrap gap-2">
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="0" class="repeat-day mr-1">周日
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="1" class="repeat-day mr-1">周一
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="2" class="repeat-day mr-1">周二
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="3" class="repeat-day mr-1">周三
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="4" class="repeat-day mr-1">周四
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="5" class="repeat-day mr-1">周五
+                                </label>
+                                <label class="flex items-center px-3 py-1 bg-white rounded-lg border cursor-pointer hover:bg-gray-50">
+                                    <input type="checkbox" value="6" class="repeat-day mr-1">周六
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">签到说明</label>
-                    <textarea id="description" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="签到相关说明或备注"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">参与人员</label>
+                    <select id="participantScope" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <option value="all">所有成员</option>
+                        <option value="group">指定分组</option>
+                        <option value="selected">指定成员</option>
+                    </select>
+                </div>
+                
+                <div id="groupSelectContainer" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择分组</label>
+                    <select id="selectedGroup" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
+                        <option value="">请选择分组</option>
+                    </select>
+                </div>
+                
+                <div id="memberSelectContainer" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
+                    <div id="memberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2">
+                    </div>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">自定义填写内容</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">自定义字段</label>
                     <div id="customFields" class="space-y-2">
                         <div class="flex items-center space-x-2">
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" placeholder="如：今日学习内容">
-                            <button type="button" class="remove-field-btn text-red-500 hover:text-red-600"><i class="fa fa-times"></i></button>
+                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" placeholder="如：学号、班级等">
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-field-btn p-2"><i class="fa fa-times"></i></button>
                         </div>
                     </div>
                     <button type="button" id="addFieldBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加字段</button>
                 </div>
                 
-                <div class="flex items-center mb-4">
-                    <input type="checkbox" id="allowLate" class="w-4 h-4 text-primary rounded">
-                    <label for="allowLate" class="ml-2 text-sm text-gray-700">允许迟到签到</label>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="allowLate" class="w-4 h-4 text-primary rounded">
+                        <span class="ml-2 text-sm text-gray-700">允许补签</span>
+                    </label>
                 </div>
                 
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelCreateBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
-                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">创建签到</button>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" id="cancelCreateBtn" class="px-6 py-2 border rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-primary text-white rounded-xl hover:bg-secondary transition-colors">创建签到</button>
                 </div>
             </form>
         </div>
@@ -329,33 +409,33 @@
                 </div>
             </div>
             
-            <div id="signContent" class="p-6">
-                <div class="text-center mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800" id="signAttendanceName">班级例会签到</h4>
-                    <p class="text-sm text-gray-500" id="signLocationName">教学楼A101</p>
+            <div class="p-6">
+                <div class="mb-4">
+                    <p class="text-sm text-gray-500">签到名称</p>
+                    <p class="font-semibold text-gray-800" id="signAttendanceName">-</p>
                 </div>
                 
-                <div id="locationStatus" class="mb-6">
-                    <div class="flex items-center justify-center mb-4">
-                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center location-marker">
-                            <i class="fa fa-map-marker text-blue-500 text-3xl"></i>
-                        </div>
+                <div id="locationStatus" class="mb-4 p-4 bg-blue-50 rounded-xl">
+                    <div class="flex items-center mb-2">
+                        <i class="fa fa-map-marker text-red-500 mr-2"></i>
+                        <span class="font-medium text-gray-800">位置验证</span>
                     </div>
-                    <p class="text-center text-gray-600" id="locationMessage">正在获取您的位置...</p>
-                    <p class="text-center text-sm text-gray-500 mt-2" id="distanceInfo"></p>
+                    <p class="text-sm text-gray-600" id="signLocationName">-</p>
+                    <p class="text-sm mt-2" id="locationMessage">正在获取位置...</p>
+                    <p class="text-xs text-gray-500 mt-1" id="distanceInfo"></p>
                 </div>
                 
-                <div id="customFieldsContainer" class="mb-6 hidden">
-                    <h5 class="font-medium text-gray-700 mb-3">请填写以下信息</h5>
-                    <div id="signCustomFields" class="space-y-3"></div>
+                <div id="customFieldsContainer" class="mb-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">补充信息</label>
+                    <div id="signCustomFields" class="space-y-2"></div>
                 </div>
                 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">备注（选填）</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">备注（可选）</label>
                     <textarea id="signRemark" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="签到备注"></textarea>
                 </div>
                 
-                <button id="confirmSignBtn" class="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                <button id="confirmSignBtn" class="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
                     <i class="fa fa-check mr-2"></i>确认签到
                 </button>
             </div>
@@ -363,7 +443,7 @@
     </div>
     
     <div id="detailModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto modal-content mx-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
             <div class="p-6 border-b sticky top-0 bg-white z-10">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-info-circle text-primary mr-2"></i>签到详情</h3>
@@ -372,6 +452,23 @@
             </div>
             
             <div id="detailContent" class="p-6">
+            </div>
+        </div>
+    </div>
+    
+    <div id="qrCodeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md modal-content mx-4">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-qrcode text-primary mr-2"></i>签到二维码</h3>
+                    <button id="closeQrCodeModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="p-6 text-center">
+                <div id="qrCodeContainer" class="inline-block mb-4"></div>
+                <p class="text-sm text-gray-500">扫描二维码快速签到</p>
+                <p class="text-lg font-semibold text-gray-800 mt-2" id="qrCodeTitle"></p>
             </div>
         </div>
     </div>
@@ -395,11 +492,20 @@
     
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script>
         let currentUser = null;
         let currentAttendance = null;
         let userLocation = null;
+        let qrCodeInstance = null;
         
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
@@ -419,8 +525,8 @@
             }, 3000);
         }
         
-        function renderNotifications() {
-            const notifications = DataStore.getNotifications();
+        async function renderNotifications() {
+            const notifications = await DataService.getNotifications();
             const container = document.getElementById('notificationList');
             const badge = document.getElementById('notificationBadge');
             
@@ -433,12 +539,7 @@
             }
             
             if (notifications.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无通知</p>
-                    </div>
-                `;
+                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i><p>暂无通知</p></div>';
                 return;
             }
             
@@ -459,9 +560,9 @@
             `).join('');
         }
         
-        function markAsRead(id) {
-            DataStore.markNotificationRead(id);
-            renderNotifications();
+        async function markAsRead(id) {
+            await DataService.markNotificationRead(id);
+            await renderNotifications();
         }
         
         function formatDateTime(dateStr) {
@@ -474,8 +575,48 @@
             return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
         }
         
+        function getLocalDateTimeString(date) {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - offset * 60 * 1000);
+            return localDate.toISOString().slice(0, 16);
+        }
+        
         function getAttendanceStatus(attendance) {
             const now = new Date();
+            
+            if (attendance.isRepeat) {
+                const today = now.getDay();
+                const currentDate = now.toISOString().split('T')[0];
+                
+                if (attendance.repeatEndDate && new Date(attendance.repeatEndDate) < now) {
+                    return 'completed';
+                }
+                
+                let shouldCheckToday = false;
+                if (attendance.repeatType === 'daily') {
+                    shouldCheckToday = true;
+                } else if (attendance.repeatType === 'weekdays') {
+                    shouldCheckToday = today >= 1 && today <= 5;
+                } else if (attendance.repeatType === 'weekly') {
+                    const startDay = new Date(attendance.startTime).getDay();
+                    shouldCheckToday = today === startDay;
+                } else if (attendance.repeatType === 'custom' && attendance.repeatDays) {
+                    shouldCheckToday = attendance.repeatDays.includes(today);
+                }
+                
+                if (!shouldCheckToday) {
+                    return 'pending';
+                }
+                
+                const currentTime = now.toTimeString().slice(0, 5);
+                const dailyStart = attendance.dailyStartTime || '00:00';
+                const dailyEnd = attendance.dailyEndTime || '23:59';
+                
+                if (currentTime < dailyStart) return 'pending';
+                if (currentTime > dailyEnd) return 'completed';
+                return 'active';
+            }
+            
             const start = new Date(attendance.startTime);
             const end = new Date(attendance.endTime);
             
@@ -504,10 +645,10 @@
             return R * c;
         }
         
-        function renderAttendanceList() {
-            const attendances = DataStore.getAttendances();
-            const records = DataStore.getAttendanceRecords();
-            const users = DataStore.getUsers();
+        async function renderAttendanceList() {
+            const attendances = await DataService.getAttendances();
+            const records = await DataService.getAttendanceRecords();
+            const users = await DataService.getUsers();
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusFilter = document.getElementById('statusFilter').value;
             
@@ -520,15 +661,20 @@
             
             filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             
+            const totalCount = attendances.length;
+            const activeCount = attendances.filter(a => getAttendanceStatus(a) === 'active').length;
+            const pendingCount = attendances.filter(a => getAttendanceStatus(a) === 'pending').length;
+            const completedCount = attendances.filter(a => getAttendanceStatus(a) === 'completed').length;
+            
+            document.getElementById('totalCount').textContent = totalCount;
+            document.getElementById('activeCount').textContent = activeCount;
+            document.getElementById('pendingCount').textContent = pendingCount;
+            document.getElementById('completedCount').textContent = completedCount;
+            
             const container = document.getElementById('attendanceList');
             
             if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-calendar-check-o text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无签到数据</p>
-                    </div>
-                `;
+                container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fa fa-calendar-check-o text-4xl mb-2 text-gray-300"></i><p>暂无签到数据</p></div>';
                 return;
             }
             
@@ -542,6 +688,19 @@
                 const userRecord = records.find(r => r.attendanceId === attendance.id && r.userId === currentUser.id);
                 const hasSigned = !!userRecord;
                 
+                let timeDisplay = '';
+                if (attendance.isRepeat) {
+                    const repeatText = {
+                        'daily': '每天',
+                        'weekdays': '工作日',
+                        'weekly': '每周',
+                        'custom': '自定义'
+                    }[attendance.repeatType] || '循环';
+                    timeDisplay = `<span><i class="fa fa-repeat mr-1"></i>${repeatText} ${attendance.dailyStartTime} - ${attendance.dailyEndTime}</span>`;
+                } else {
+                    timeDisplay = `<span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(attendance.startTime)} - ${formatTime(attendance.endTime)}</span>`;
+                }
+                
                 return `
                     <div class="p-4 hover:bg-gray-50 transition-colors">
                         <div class="flex items-start justify-between">
@@ -552,167 +711,112 @@
                                 </div>
                                 <h4 class="font-semibold text-gray-800">${attendance.name}</h4>
                                 <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(attendance.startTime)} - ${formatTime(attendance.endTime)}</span>
-                                    ${attendance.locationName ? `<span><i class="fa fa-map-marker mr-1 text-red-500"></i>${attendance.locationName}</span>` : ''}
+                                    ${timeDisplay}
+                                    ${attendance.type === 'location' ? `<span><i class="fa fa-map-marker mr-1 text-red-500"></i>${attendance.locationName || '未设置位置'}</span>` : ''}
                                 </div>
-                                ${attendance.description ? `<p class="text-sm text-gray-500 mt-1">${attendance.description}</p>` : ''}
+                                <div class="mt-3">
+                                    <div class="flex items-center justify-between text-sm mb-1">
+                                        <span class="text-gray-500">签到进度</span>
+                                        <span class="font-medium">${signedCount}/${totalUsers} (${progress}%)</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+                                    </div>
+                                </div>
                             </div>
-                            
                             <div class="flex items-center space-x-2 ml-4">
-                                ${status === 'active' && !hasSigned ? `
-                                    <button onclick="openSignModal(${attendance.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
-                                        <i class="fa fa-check mr-1"></i>签到
-                                    </button>
-                                ` : ''}
-                                <button onclick="openDetailModal(${attendance.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
-                                    <i class="fa fa-eye mr-1"></i>详情
-                                </button>
-                                ${currentUser.role !== 'user' ? `
-                                    <button onclick="deleteAttendance(${attendance.id})" class="text-red-500 hover:text-red-600 px-2">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <div class="flex items-center justify-between text-sm mb-1">
-                                <span class="text-gray-500">签到进度</span>
-                                <span class="font-medium">${signedCount}/${totalUsers} (${progress}%)</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-primary rounded-full h-2 transition-all" style="width: ${progress}%"></div>
+                                ${status === 'active' && !hasSigned ? `<button onclick="openSignModal(${attendance.id})" class="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"><i class="fa fa-check mr-1"></i>签到</button>` : ''}
+                                ${status === 'active' && hasSigned ? `<span class="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm">已签到</span>` : ''}
+                                <button onclick="showQrCode(${attendance.id})" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="二维码"><i class="fa fa-qrcode"></i></button>
+                                <button onclick="showDetail(${attendance.id})" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="详情"><i class="fa fa-info-circle"></i></button>
+                                ${status !== 'completed' ? `<button onclick="editAttendance(${attendance.id})" class="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors" title="编辑"><i class="fa fa-edit"></i></button><button onclick="deleteAttendance(${attendance.id})" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition-colors" title="删除"><i class="fa fa-trash"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
-            
-            document.getElementById('totalCount').textContent = attendances.length;
-            document.getElementById('activeCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'active').length;
-            document.getElementById('pendingCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'pending').length;
-            document.getElementById('completedCount').textContent = attendances.filter(a => getAttendanceStatus(a) === 'completed').length;
         }
         
-        function openCreateModal() {
-            document.getElementById('createModal').classList.remove('hidden');
-            
-            const now = new Date();
-            const startTime = new Date(now.getTime() + 5 * 60000);
-            const endTime = new Date(now.getTime() + 35 * 60000);
-            
-            document.getElementById('startTime').value = startTime.toISOString().slice(0, 16);
-            document.getElementById('endTime').value = endTime.toISOString().slice(0, 16);
-            
-            document.getElementById('createAttendanceForm').reset();
-            document.getElementById('latitude').value = '';
-            document.getElementById('longitude').value = '';
-        }
-        
-        function closeCreateModal() {
-            document.getElementById('createModal').classList.add('hidden');
-        }
-        
-        function openSignModal(attendanceId) {
-            const attendances = DataStore.getAttendances();
+        async function openSignModal(attendanceId) {
+            const attendances = await DataService.getAttendances();
             currentAttendance = attendances.find(a => a.id === attendanceId);
-            
-            if (!currentAttendance) {
-                showToast('签到不存在', 'error');
-                return;
-            }
+            if (!currentAttendance) return;
             
             document.getElementById('signAttendanceName').textContent = currentAttendance.name;
-            document.getElementById('signLocationName').textContent = currentAttendance.locationName || '普通签到';
-            document.getElementById('locationMessage').textContent = '正在获取您的位置...';
-            document.getElementById('distanceInfo').textContent = '';
-            document.getElementById('confirmSignBtn').disabled = true;
+            document.getElementById('signLocationName').textContent = currentAttendance.locationName || '';
             document.getElementById('signRemark').value = '';
-            
-            const customFieldsContainer = document.getElementById('customFieldsContainer');
-            const signCustomFields = document.getElementById('signCustomFields');
+            document.getElementById('confirmSignBtn').disabled = true;
             
             if (currentAttendance.customFields && currentAttendance.customFields.length > 0) {
-                customFieldsContainer.classList.remove('hidden');
-                signCustomFields.innerHTML = currentAttendance.customFields.map((field, index) => `
+                document.getElementById('customFieldsContainer').classList.remove('hidden');
+                document.getElementById('signCustomFields').innerHTML = currentAttendance.customFields.map(field => `
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">${field}</label>
                         <input type="text" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-value" data-field="${field}">
                     </div>
                 `).join('');
             } else {
-                customFieldsContainer.classList.add('hidden');
+                document.getElementById('customFieldsContainer').classList.add('hidden');
+            }
+            
+            if (currentAttendance.type === 'location') {
+                document.getElementById('locationStatus').classList.remove('hidden');
+                document.getElementById('locationMessage').textContent = '正在获取您的位置...';
+                document.getElementById('distanceInfo').textContent = '';
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            userLocation = {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude
+                            };
+                            
+                            const distance = calculateDistance(
+                                userLocation.lat, userLocation.lng,
+                                currentAttendance.latitude, currentAttendance.longitude
+                            );
+                            
+                            const rangeMeters = parseInt(currentAttendance.rangeMeters) || 200;
+                            
+                            if (distance <= rangeMeters) {
+                                document.getElementById('locationMessage').innerHTML = '<span class="text-green-600 font-medium"><i class="fa fa-check-circle mr-1"></i>位置验证通过</span>';
+                                document.getElementById('distanceInfo').textContent = `您距离签到点约 ${Math.round(distance)} 米`;
+                                document.getElementById('confirmSignBtn').disabled = false;
+                            } else {
+                                document.getElementById('locationMessage').innerHTML = '<span class="text-red-600 font-medium"><i class="fa fa-times-circle mr-1"></i>位置验证失败</span>';
+                                document.getElementById('distanceInfo').textContent = `您距离签到点约 ${Math.round(distance)} 米，需在 ${rangeMeters} 米范围内`;
+                            }
+                        },
+                        (error) => {
+                            document.getElementById('locationMessage').innerHTML = '<span class="text-red-600"><i class="fa fa-times-circle mr-1"></i>无法获取位置</span>';
+                            document.getElementById('distanceInfo').textContent = '请确保已授权位置权限';
+                        },
+                        { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                } else {
+                    document.getElementById('locationMessage').textContent = '您的浏览器不支持定位功能';
+                }
+            } else {
+                document.getElementById('locationStatus').classList.add('hidden');
+                document.getElementById('confirmSignBtn').disabled = false;
             }
             
             document.getElementById('signModal').classList.remove('hidden');
-            
-            if (currentAttendance.type === 'location') {
-                getUserLocation();
-            } else {
-                document.getElementById('locationMessage').textContent = '普通签到，无需定位';
-                document.getElementById('confirmSignBtn').disabled = false;
-            }
         }
         
         function closeSignModal() {
             document.getElementById('signModal').classList.add('hidden');
             currentAttendance = null;
+            userLocation = null;
         }
         
-        function getUserLocation() {
-            if (!navigator.geolocation) {
-                document.getElementById('locationMessage').textContent = '您的浏览器不支持定位功能';
-                return;
-            }
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    
-                    if (currentAttendance && currentAttendance.latitude) {
-                        const distance = calculateDistance(
-                            userLocation.lat, userLocation.lng,
-                            currentAttendance.latitude, currentAttendance.longitude
-                        );
-                        
-                        const range = currentAttendance.rangeMeters || 200;
-                        
-                        if (distance <= range) {
-                            document.getElementById('locationMessage').innerHTML = '<span class="text-green-600 font-medium"><i class="fa fa-check-circle mr-1"></i>您在签到范围内</span>';
-                            document.getElementById('distanceInfo').textContent = `距离签到点约 ${Math.round(distance)} 米`;
-                            document.getElementById('confirmSignBtn').disabled = false;
-                        } else {
-                            document.getElementById('locationMessage').innerHTML = '<span class="text-red-600 font-medium"><i class="fa fa-times-circle mr-1"></i>您不在签到范围内</span>';
-                            document.getElementById('distanceInfo').textContent = `距离签到点约 ${Math.round(distance)} 米，需要在 ${range} 米范围内`;
-                            document.getElementById('confirmSignBtn').disabled = true;
-                        }
-                    }
-                },
-                (error) => {
-                    let message = '无法获取您的位置';
-                    if (error.code === 1) message = '请授权位置权限';
-                    if (error.code === 2) message = '位置信息不可用';
-                    if (error.code === 3) message = '获取位置超时';
-                    document.getElementById('locationMessage').textContent = message;
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        }
-        
-        function confirmSign() {
+        async function confirmSign() {
             if (!currentAttendance) return;
             
-            const records = DataStore.getAttendanceRecords();
-            const existingRecord = records.find(r => r.attendanceId === currentAttendance.id && r.userId === currentUser.id);
-            
-            if (existingRecord) {
-                showToast('您已经签到过了', 'warning');
-                closeSignModal();
-                return;
-            }
+            const btn = document.getElementById('confirmSignBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>签到中...';
             
             const customFieldValues = {};
             document.querySelectorAll('.custom-field-value').forEach(input => {
@@ -720,128 +824,108 @@
             });
             
             const record = {
+                id: Date.now(),
                 attendanceId: currentAttendance.id,
-                attendanceName: currentAttendance.name,
                 userId: currentUser.id,
-                username: currentUser.username,
-                name: currentUser.name,
-                latitude: userLocation ? userLocation.lat : null,
-                longitude: userLocation ? userLocation.lng : null,
-                customFields: customFieldValues,
+                userName: currentUser.name,
+                signTime: new Date().toISOString(),
+                location: currentAttendance.type === 'location' ? userLocation : null,
                 remark: document.getElementById('signRemark').value,
-                signedAt: new Date().toISOString()
+                customFields: customFieldValues,
+                status: 'normal'
             };
             
-            DataStore.addAttendanceRecord(record);
+            await DataService.addAttendanceRecord(record);
             
             showToast('签到成功！', 'success');
             closeSignModal();
             renderAttendanceList();
         }
         
-        function openDetailModal(attendanceId) {
-            const attendances = DataStore.getAttendances();
+        async function showDetail(attendanceId) {
+            const attendances = await DataService.getAttendances();
             const attendance = attendances.find(a => a.id === attendanceId);
+            if (!attendance) return;
             
-            if (!attendance) {
-                showToast('签到不存在', 'error');
-                return;
-            }
-            
-            const records = DataStore.getAttendanceRecords();
+            const records = await DataService.getAttendanceRecords();
             const attendanceRecords = records.filter(r => r.attendanceId === attendanceId);
-            const users = DataStore.getUsers();
-            const allMembers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+            const users = await DataService.getUsers();
+            const allUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
             
             const signedUsers = attendanceRecords.map(r => r.userId);
-            const unsignedUsers = allMembers.filter(u => !signedUsers.includes(u.id));
+            const unsignedUsers = allUsers.filter(u => !signedUsers.includes(u.id));
             
-            const status = getAttendanceStatus(attendance);
+            let timeDisplay = '';
+            if (attendance.isRepeat) {
+                const repeatText = {
+                    'daily': '每天',
+                    'weekdays': '工作日',
+                    'weekly': '每周',
+                    'custom': '自定义'
+                }[attendance.repeatType] || '循环';
+                timeDisplay = `${repeatText} ${attendance.dailyStartTime} - ${attendance.dailyEndTime}`;
+            } else {
+                timeDisplay = `${formatDateTime(attendance.startTime)} - ${formatDateTime(attendance.endTime)}`;
+            }
             
-            document.getElementById('detailContent').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-gray-50 rounded-xl p-4">
-                        <h4 class="font-semibold text-gray-800 mb-3"><i class="fa fa-info-circle text-primary mr-2"></i>签到信息</h4>
-                        <div class="space-y-2 text-sm">
-                            <p><span class="text-gray-500">名称：</span>${attendance.name}</p>
-                            <p><span class="text-gray-500">状态：</span>${getStatusBadge(status)}</p>
-                            <p><span class="text-gray-500">时间：</span>${formatDateTime(attendance.startTime)} - ${formatTime(attendance.endTime)}</p>
-                            ${attendance.locationName ? `<p><span class="text-gray-500">地点：</span>${attendance.locationName}</p>` : ''}
-                            ${attendance.rangeMeters ? `<p><span class="text-gray-500">范围：</span>${attendance.rangeMeters}米</p>` : ''}
-                            ${attendance.description ? `<p><span class="text-gray-500">说明：</span>${attendance.description}</p>` : ''}
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-50 rounded-xl p-4">
-                        <h4 class="font-semibold text-gray-800 mb-3"><i class="fa fa-bar-chart text-primary mr-2"></i>签到统计</h4>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="text-center">
-                                <p class="text-3xl font-bold text-green-600">${attendanceRecords.length}</p>
-                                <p class="text-sm text-gray-500">已签到</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-3xl font-bold text-red-600">${unsignedUsers.length}</p>
-                                <p class="text-sm text-gray-500">未签到</p>
-                            </div>
-                        </div>
+            let exportBtnHtml = '';
+            if (currentUser.role !== 'user') {
+                exportBtnHtml = `<button onclick="exportAttendanceRecords(${attendanceId})" class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-secondary transition-colors"><i class="fa fa-download mr-1"></i>导出记录</button>`;
+            }
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-2">${attendance.name}</h4>
+                    <div class="text-sm text-gray-500 space-y-1">
+                        <p><i class="fa fa-clock-o mr-2"></i>${timeDisplay}</p>
+                        ${attendance.type === 'location' ? `<p><i class="fa fa-map-marker mr-2 text-red-500"></i>${attendance.locationName || '未设置位置'}</p>` : ''}
+                        <p><i class="fa fa-users mr-2"></i>已签到 ${attendanceRecords.length}/${allUsers.length} 人</p>
                     </div>
                 </div>
                 
                 <div class="mb-6">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-800"><i class="fa fa-check-circle text-green-500 mr-2"></i>已签到成员 (${attendanceRecords.length})</h4>
-                        <button onclick="exportAttendanceData(${attendanceId}, 'signed')" class="text-sm text-primary hover:text-secondary">
-                            <i class="fa fa-download mr-1"></i>导出
-                        </button>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
+                    <h5 class="font-medium text-gray-800 mb-3">已签到成员 (${attendanceRecords.length})</h5>
+                    <div class="max-h-40 overflow-y-auto border rounded-xl p-2">
                         ${attendanceRecords.length > 0 ? `
                             <table class="w-full text-sm">
                                 <thead>
-                                    <tr class="text-left text-gray-500">
+                                    <tr class="text-left text-gray-500 border-b">
                                         <th class="pb-2">姓名</th>
-                                        <th class="pb-2">账号</th>
                                         <th class="pb-2">签到时间</th>
-                                        <th class="pb-2">备注</th>
+                                        <th class="pb-2">状态</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y">
                                     ${attendanceRecords.map(r => `
                                         <tr>
-                                            <td class="py-2">${r.name}</td>
-                                            <td class="py-2 text-gray-500">${r.username}</td>
-                                            <td class="py-2 text-gray-500">${formatTime(r.signedAt)}</td>
-                                            <td class="py-2 text-gray-500">${r.remark || '-'}</td>
+                                            <td class="py-2">${r.userName}</td>
+                                            <td class="py-2 text-gray-500">${formatTime(r.signTime)}</td>
+                                            <td class="py-2"><span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">已签到</span></td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
                             </table>
-                        ` : '<p class="text-gray-500 text-center">暂无签到记录</p>'}
+                        ` : '<p class="text-gray-500 text-center py-4">暂无签到记录</p>'}
                     </div>
                 </div>
                 
-                <div>
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="font-semibold text-gray-800"><i class="fa fa-times-circle text-red-500 mr-2"></i>未签到成员 (${unsignedUsers.length})</h4>
-                        <button onclick="exportAttendanceData(${attendanceId}, 'unsigned')" class="text-sm text-primary hover:text-secondary">
-                            <i class="fa fa-download mr-1"></i>导出
-                        </button>
-                    </div>
-                    <div class="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
+                <div class="mb-6">
+                    <h5 class="font-medium text-gray-800 mb-3">未签到成员 (${unsignedUsers.length})</h5>
+                    <div class="max-h-40 overflow-y-auto border rounded-xl p-2">
                         ${unsignedUsers.length > 0 ? `
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                ${unsignedUsers.map(u => `
-                                    <div class="bg-white rounded-lg p-2 text-center">
-                                        <p class="font-medium text-gray-800">${u.name}</p>
-                                        <p class="text-xs text-gray-500">${u.username}</p>
-                                    </div>
-                                `).join('')}
+                            <div class="flex flex-wrap gap-2">
+                                ${unsignedUsers.map(u => `<span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">${u.name}</span>`).join('')}
                             </div>
-                        ` : '<p class="text-gray-500 text-center">全部已签到</p>'}
+                        ` : '<p class="text-gray-500 text-center py-4">全部已签到</p>'}
                     </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    ${exportBtnHtml}
                 </div>
             `;
             
+            document.getElementById('detailContent').innerHTML = html;
             document.getElementById('detailModal').classList.remove('hidden');
         }
         
@@ -849,80 +933,299 @@
             document.getElementById('detailModal').classList.add('hidden');
         }
         
-        function deleteAttendance(attendanceId) {
+        async function exportAttendanceRecords(attendanceId) {
+            const attendances = await DataService.getAttendances();
+            const attendance = attendances.find(a => a.id === attendanceId);
+            const records = (await DataService.getAttendanceRecords()).filter(r => r.attendanceId === attendanceId);
+            
+            if (records.length === 0) {
+                showToast('没有记录可导出', 'warning');
+                return;
+            }
+            
+            const data = records.map(r => ({
+                姓名: r.userName,
+                签到时间: formatDateTime(r.signTime),
+                备注: r.remark || ''
+            }));
+            
+            DataService.exportToCSV(data, `签到记录_${attendance.name}_${new Date().toLocaleDateString()}`);
+            showToast('导出成功', 'success');
+        }
+        
+        async function showQrCode(attendanceId) {
+            const attendances = await DataService.getAttendances();
+            const attendance = attendances.find(a => a.id === attendanceId);
+            if (!attendance) return;
+            
+            document.getElementById('qrCodeTitle').textContent = attendance.name;
+            document.getElementById('qrCodeContainer').innerHTML = '';
+            
+            const qrUrl = `${window.location.origin}${window.location.pathname.replace('attendance.html', '')}index.html?attendance=${attendanceId}`;
+            
+            qrCodeInstance = new QRCode(document.getElementById('qrCodeContainer'), {
+                text: qrUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#1E40AF',
+                colorLight: '#ffffff'
+            });
+            
+            document.getElementById('qrCodeModal').classList.remove('hidden');
+        }
+        
+        let editingAttendanceId = null;
+        
+        async function editAttendance(attendanceId) {
+            const attendances = await DataService.getAttendances();
+            const attendance = attendances.find(a => a.id === attendanceId);
+            if (!attendance) return;
+            
+            editingAttendanceId = attendanceId;
+            
+            document.getElementById('attendanceName').value = attendance.name;
+            document.getElementById('attendanceType').value = attendance.type;
+            document.getElementById('startTime').value = attendance.startTime;
+            document.getElementById('endTime').value = attendance.endTime;
+            
+            if (attendance.type === 'location') {
+                document.getElementById('locationSettings').classList.remove('hidden');
+                document.getElementById('locationName').value = attendance.locationName || '';
+                document.getElementById('latitude').value = attendance.latitude || '';
+                document.getElementById('longitude').value = attendance.longitude || '';
+                document.getElementById('rangeMeters').value = attendance.rangeMeters || 100;
+            } else {
+                document.getElementById('locationSettings').classList.add('hidden');
+            }
+            
+            document.getElementById('isRepeat').checked = attendance.isRepeat || false;
+            if (attendance.isRepeat) {
+                document.getElementById('repeatSettings').classList.remove('hidden');
+                document.getElementById('repeatType').value = attendance.repeatType || 'daily';
+                document.getElementById('repeatEndDate').value = attendance.repeatEndDate || '';
+                
+                if (attendance.repeatType === 'weekly' && attendance.repeatDays) {
+                    document.getElementById('customDaysContainer').classList.remove('hidden');
+                    attendance.repeatDays.forEach(day => {
+                        const checkbox = document.querySelector(`input[name="repeatDay"][value="${day}"]`);
+                        if (checkbox) checkbox.checked = true;
+                    });
+                }
+            } else {
+                document.getElementById('repeatSettings').classList.add('hidden');
+            }
+            
+            await loadGroupsAndMembers();
+            
+            document.getElementById('participantScope').value = attendance.participantScope || 'all';
+            if (attendance.participantScope === 'group') {
+                document.getElementById('groupSelectContainer').classList.remove('hidden');
+                document.getElementById('selectedGroup').value = attendance.participants[0] || '';
+            } else if (attendance.participantScope === 'selected') {
+                document.getElementById('memberSelectContainer').classList.remove('hidden');
+                const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
+                const memberList = document.getElementById('memberSelectList');
+                memberList.innerHTML = users.map(u => `
+                    <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                        <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded" ${(attendance.participants || []).includes(u.id) ? 'checked' : ''}>
+                        <span class="ml-2 text-sm text-gray-700">${u.name}</span>
+                        <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
+                    </label>
+                `).join('');
+            }
+            
+            document.getElementById('allowLate').checked = attendance.allowLate || false;
+            
+            if (attendance.customFields && attendance.customFields.length > 0) {
+                const container = document.getElementById('customFieldsContainer');
+                container.innerHTML = attendance.customFields.map(f => `
+                    <div class="flex items-center space-x-2">
+                        <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" value="${f}">
+                        <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                    </div>
+                `).join('');
+            }
+            
+            document.querySelector('#createModal h3').innerHTML = '<i class="fa fa-edit text-primary mr-2"></i>编辑签到';
+            document.querySelector('#createAttendanceForm button[type="submit"]').textContent = '保存修改';
+            
+            document.getElementById('createModal').classList.remove('hidden');
+        }
+        
+        async function deleteAttendance(attendanceId) {
             if (!confirm('确定要删除这个签到吗？')) return;
             
-            let attendances = DataStore.getAttendances();
-            attendances = attendances.filter(a => a.id !== attendanceId);
-            DataStore.saveAttendances(attendances);
-            
-            let records = DataStore.getAttendanceRecords();
-            records = records.filter(r => r.attendanceId !== attendanceId);
-            DataStore.saveAttendanceRecords(records);
+            await DataService.deleteAttendance(attendanceId);
             
             showToast('删除成功', 'success');
+            await renderAttendanceList();
+        }
+        
+        function openCreateModal() {
+            editingAttendanceId = null;
+            document.getElementById('createModal').classList.remove('hidden');
+            document.getElementById('createAttendanceForm').reset();
+            document.getElementById('locationSettings').classList.remove('hidden');
+            document.getElementById('repeatSettings').classList.add('hidden');
+            document.getElementById('customDaysContainer').classList.add('hidden');
+            document.getElementById('groupSelectContainer').classList.add('hidden');
+            document.getElementById('memberSelectContainer').classList.add('hidden');
+            document.querySelector('#createModal h3').innerHTML = '<i class="fa fa-plus-circle text-primary mr-2"></i>创建签到';
+            document.querySelector('#createAttendanceForm button[type="submit"]').textContent = '创建签到';
+            
+            const now = new Date();
+            document.getElementById('startTime').value = getLocalDateTimeString(now);
+            document.getElementById('endTime').value = getLocalDateTimeString(new Date(now.getTime() + 2 * 60 * 60 * 1000));
+        }
+        
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.add('hidden');
+        }
+        
+        async function createAttendance(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('attendanceName').value.trim();
+            const type = document.getElementById('attendanceType').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!name) {
+                showToast('请输入签到名称', 'warning');
+                return;
+            }
+            
+            if (type === 'location') {
+                const lat = document.getElementById('latitude').value;
+                const lng = document.getElementById('longitude').value;
+                const locName = document.getElementById('locationName').value.trim();
+                
+                if (!lat || !lng) {
+                    showToast('请获取签到位置', 'warning');
+                    return;
+                }
+                if (!locName) {
+                    showToast('请输入签到地点名称', 'warning');
+                    return;
+                }
+            }
+            
+            const isRepeat = document.getElementById('isRepeat').checked;
+            let repeatDays = [];
+            
+            if (isRepeat && document.getElementById('repeatType').value === 'custom') {
+                document.querySelectorAll('.repeat-day:checked').forEach(cb => {
+                    repeatDays.push(parseInt(cb.value));
+                });
+            }
+            
+            const participantScope = document.getElementById('participantScope').value;
+            let participants = [];
+            
+            if (participantScope === 'selected') {
+                document.querySelectorAll('#memberSelectList input:checked').forEach(cb => {
+                    participants.push(parseInt(cb.value));
+                });
+            }
+            
+            const customFields = [];
+            document.querySelectorAll('.custom-field-input').forEach(input => {
+                const value = input.value.trim();
+                if (value) customFields.push(value);
+            });
+            
+            const attendance = {
+                name: name,
+                type: type,
+                startTime: startTime,
+                endTime: endTime,
+                locationName: type === 'location' ? document.getElementById('locationName').value.trim() : null,
+                latitude: type === 'location' && document.getElementById('latitude').value ? parseFloat(document.getElementById('latitude').value) : null,
+                longitude: type === 'location' && document.getElementById('longitude').value ? parseFloat(document.getElementById('longitude').value) : null,
+                rangeMeters: type === 'location' && document.getElementById('rangeMeters').value ? parseInt(document.getElementById('rangeMeters').value) : null,
+                isRepeat: isRepeat,
+                repeatType: isRepeat ? document.getElementById('repeatType').value : null,
+                repeatDays: isRepeat && document.getElementById('repeatType').value === 'custom' ? repeatDays : null,
+                repeatEndDate: isRepeat ? document.getElementById('repeatEndDate').value : null,
+                dailyStartTime: isRepeat ? document.getElementById('dailyStartTime').value : null,
+                dailyEndTime: isRepeat ? document.getElementById('dailyEndTime').value : null,
+                participantScope: participantScope,
+                participants: participants,
+                customFields: customFields,
+                allowLate: document.getElementById('allowLate').checked,
+                createdBy: currentUser.id
+            };
+            
+            if (editingAttendanceId) {
+                await DataService.updateAttendance(editingAttendanceId, attendance);
+                showToast('签到修改成功！', 'success');
+                editingAttendanceId = null;
+            } else {
+                attendance.id = Date.now();
+                attendance.createdat = new Date().toISOString();
+                await DataService.addAttendance(attendance);
+                showToast('签到创建成功！', 'success');
+            }
+            closeCreateModal();
             renderAttendanceList();
         }
         
-        function exportAttendanceData(attendanceId, type) {
-            const attendances = DataStore.getAttendances();
-            const attendance = attendances.find(a => a.id === attendanceId);
-            const records = DataStore.getAttendanceRecords();
-            const users = DataStore.getUsers();
-            const allMembers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+        async function exportAllData() {
+            const attendances = await DataService.getAttendances();
+            const records = await DataService.getAttendanceRecords();
             
-            let data = [];
+            let data = '签到名称,签到类型,签到时间,地点,参与人数\n';
             
-            if (type === 'signed') {
-                const attendanceRecords = records.filter(r => r.attendanceId === attendanceId);
-                data = attendanceRecords.map(r => ({
-                    姓名: r.name,
-                    账号: r.username,
-                    签到时间: formatDateTime(r.signedAt),
-                    备注: r.remark || ''
-                }));
-            } else {
-                const signedUsers = records.filter(r => r.attendanceId === attendanceId).map(r => r.userId);
-                const unsignedUsers = allMembers.filter(u => !signedUsers.includes(u.id));
-                data = unsignedUsers.map(u => ({
-                    姓名: u.name,
-                    账号: u.username
-                }));
-            }
-            
-            if (data.length === 0) {
-                showToast('没有数据可导出', 'warning');
-                return;
-            }
-            
-            DataStore.exportToCSV(data, `${attendance.name}_${type === 'signed' ? '已签到' : '未签到'}_${new Date().toLocaleDateString()}`);
-        }
-        
-        function exportAllData() {
-            const attendances = DataStore.getAttendances();
-            const records = DataStore.getAttendanceRecords();
-            
-            if (attendances.length === 0) {
-                showToast('没有签到数据可导出', 'warning');
-                return;
-            }
-            
-            const data = records.map(r => {
-                const attendance = attendances.find(a => a.id === r.attendanceId);
-                return {
-                    签到名称: attendance ? attendance.name : '',
-                    姓名: r.name,
-                    账号: r.username,
-                    签到时间: formatDateTime(r.signedAt),
-                    备注: r.remark || ''
-                };
+            attendances.forEach(a => {
+                const count = records.filter(r => r.attendanceId === a.id).length;
+                data += `"${a.name}","${a.type === 'location' ? '定位签到' : '普通签到'}","${formatDateTime(a.startTime)} - ${formatTime(a.endTime)}","${a.locationName || ''}",${count}\n`;
             });
             
-            DataStore.exportToCSV(data, `签到记录_${new Date().toLocaleDateString()}`);
+            const blob = new Blob(['\ufeff' + data], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `签到记录_${new Date().toLocaleDateString()}.csv`;
+            link.click();
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            currentUser = DataStore.getCurrentUser();
+        async function initMemberSelect() {
+            const users = await DataService.getUsers();
+            const groups = await DataService.getGroups();
+            
+            const groupSelect = document.getElementById('selectedGroup');
+            groupSelect.innerHTML = '<option value="">选择分组</option>' + 
+                groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            
+            const memberList = document.getElementById('memberSelectList');
+            const eligibleUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+            memberList.innerHTML = eligibleUsers.map(u => `
+                <label class="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" value="${u.id}" class="member-checkbox mr-2">
+                    <span>${u.name}</span>
+                </label>
+            `).join('');
+        }
+        
+        async function loadGroupsAndMembers() {
+            const users = await DataService.getUsers();
+            const groups = await DataService.getGroups();
+            
+            const groupSelect = document.getElementById('selectedGroup');
+            groupSelect.innerHTML = '<option value="">选择分组</option>' + 
+                groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            
+            const memberList = document.getElementById('memberSelectList');
+            const eligibleUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
+            memberList.innerHTML = eligibleUsers.map(u => `
+                <label class="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                    <input type="checkbox" value="${u.id}" class="member-checkbox mr-2">
+                    <span>${u.name}</span>
+                </label>
+            `).join('');
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = await DataService.getCurrentUser();
             if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
@@ -930,29 +1233,51 @@
             
             document.getElementById('userName').textContent = currentUser.name;
             document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '超级管理员' : currentUser.role === 'subAdmin' ? '子管理员' : '普通成员';
-            document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
             
             if (currentUser.role === 'user') {
                 document.getElementById('adminMenu').style.display = 'none';
-                document.getElementById('mobileAdminMenu').style.display = 'none';
                 document.getElementById('createAttendanceBtn').style.display = 'none';
                 document.getElementById('exportBtn').style.display = 'none';
             }
             
             renderAttendanceList();
+            renderNotifications();
+            initMemberSelect();
             
             document.getElementById('createAttendanceBtn').addEventListener('click', openCreateModal);
             document.getElementById('closeCreateModal').addEventListener('click', closeCreateModal);
             document.getElementById('cancelCreateBtn').addEventListener('click', closeCreateModal);
+            document.getElementById('createAttendanceForm').addEventListener('submit', createAttendance);
             
             document.getElementById('closeSignModal').addEventListener('click', closeSignModal);
             document.getElementById('confirmSignBtn').addEventListener('click', confirmSign);
             
             document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
             
-            document.getElementById('getLocationBtn').addEventListener('click', () => {
+            document.getElementById('attendanceType').addEventListener('change', (e) => {
+                if (e.target.value === 'location') {
+                    document.getElementById('locationSettings').classList.remove('hidden');
+                } else {
+                    document.getElementById('locationSettings').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('getLocationBtn').addEventListener('click', async () => {
                 if (!navigator.geolocation) {
                     showToast('您的浏览器不支持定位功能', 'error');
+                    return;
+                }
+                
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    showToast('地理位置需要HTTPS环境，请使用localhost或配置HTTPS', 'warning');
+                    const lat = prompt('请手动输入纬度（如：39.9042）：');
+                    const lng = prompt('请手动输入经度（如：116.4074）：');
+                    if (lat && lng) {
+                        document.getElementById('latitude').value = parseFloat(lat).toFixed(6);
+                        document.getElementById('longitude').value = parseFloat(lng).toFixed(6);
+                        showToast('位置已手动设置', 'success');
+                    }
                     return;
                 }
                 
@@ -963,14 +1288,66 @@
                         document.getElementById('latitude').value = position.coords.latitude.toFixed(6);
                         document.getElementById('longitude').value = position.coords.longitude.toFixed(6);
                         showToast('位置获取成功', 'success');
+                        
+                        if (position.coords.accuracy) {
+                            document.getElementById('rangeMeters').value = Math.max(100, Math.round(position.coords.accuracy));
+                        }
                     },
                     (error) => {
                         let message = '无法获取位置';
-                        if (error.code === 1) message = '请授权位置权限';
+                        if (error.code === 1) {
+                            message = '请授权位置权限，或在浏览器设置中允许位置访问';
+                        } else if (error.code === 2) {
+                            message = '位置信息不可用，请检查设备定位是否开启';
+                        } else if (error.code === 3) {
+                            message = '获取位置超时，请重试';
+                        }
                         showToast(message, 'error');
+                        
+                        const lat = prompt('获取位置失败，请手动输入纬度（如：39.9042）：');
+                        const lng = prompt('请手动输入经度（如：116.4074）：');
+                        if (lat && lng) {
+                            document.getElementById('latitude').value = parseFloat(lat).toFixed(6);
+                            document.getElementById('longitude').value = parseFloat(lng).toFixed(6);
+                            showToast('位置已手动设置', 'success');
+                        }
                     },
-                    { enableHighAccuracy: true, timeout: 10000 }
+                    { 
+                        enableHighAccuracy: true, 
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
                 );
+            });
+            
+            document.getElementById('isRepeat').addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    document.getElementById('repeatSettings').classList.remove('hidden');
+                } else {
+                    document.getElementById('repeatSettings').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('repeatType').addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    document.getElementById('customDaysContainer').classList.remove('hidden');
+                } else {
+                    document.getElementById('customDaysContainer').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('participantScope').addEventListener('change', (e) => {
+                const groupContainer = document.getElementById('groupSelectContainer');
+                const memberContainer = document.getElementById('memberSelectContainer');
+                
+                groupContainer.classList.add('hidden');
+                memberContainer.classList.add('hidden');
+                
+                if (e.target.value === 'group') {
+                    groupContainer.classList.remove('hidden');
+                } else if (e.target.value === 'selected') {
+                    memberContainer.classList.remove('hidden');
+                }
             });
             
             document.getElementById('addFieldBtn').addEventListener('click', () => {
@@ -979,7 +1356,7 @@
                 div.className = 'flex items-center space-x-2';
                 div.innerHTML = `
                     <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-input" placeholder="字段名称">
-                    <button type="button" class="remove-field-btn text-red-500 hover:text-red-600"><i class="fa fa-times"></i></button>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-field-btn p-2"><i class="fa fa-times"></i></button>
                 `;
                 container.appendChild(div);
                 
@@ -995,63 +1372,14 @@
                 }
             });
             
-            document.getElementById('createAttendanceForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const type = document.getElementById('attendanceType').value;
-                const latitude = document.getElementById('latitude').value;
-                const longitude = document.getElementById('longitude').value;
-                
-                if (type === 'location' && (!latitude || !longitude)) {
-                    showToast('定位签到需要获取签到中心位置', 'warning');
-                    return;
-                }
-                
-                const customFields = [];
-                document.querySelectorAll('.custom-field-input').forEach(input => {
-                    if (input.value.trim()) {
-                        customFields.push(input.value.trim());
-                    }
-                });
-                
-                const attendance = {
-                    name: document.getElementById('attendanceName').value,
-                    type: type,
-                    locationName: document.getElementById('locationName').value,
-                    latitude: latitude ? parseFloat(latitude) : null,
-                    longitude: longitude ? parseFloat(longitude) : null,
-                    rangeMeters: parseInt(document.getElementById('rangeMeters').value),
-                    startTime: document.getElementById('startTime').value,
-                    endTime: document.getElementById('endTime').value,
-                    description: document.getElementById('description').value,
-                    customFields: customFields,
-                    allowLate: document.getElementById('allowLate').checked,
-                    createdBy: currentUser.id,
-                    createdByName: currentUser.name
-                };
-                
-                DataStore.addAttendance(attendance);
-                
-                showToast('签到创建成功', 'success');
-                closeCreateModal();
-                renderAttendanceList();
-            });
-            
-            document.getElementById('attendanceType').addEventListener('change', (e) => {
-                const locationSettings = document.getElementById('locationSettings');
-                if (e.target.value === 'location') {
-                    locationSettings.style.display = 'block';
-                } else {
-                    locationSettings.style.display = 'none';
-                }
-            });
-            
             document.getElementById('searchInput').addEventListener('input', renderAttendanceList);
             document.getElementById('statusFilter').addEventListener('change', renderAttendanceList);
             document.getElementById('refreshBtn').addEventListener('click', renderAttendanceList);
             document.getElementById('exportBtn').addEventListener('click', exportAllData);
             
-            document.getElementById('notificationBtn').addEventListener('click', () => {
+            document.getElementById('notificationBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 renderNotifications();
                 document.getElementById('notificationModal').classList.remove('hidden');
             });
@@ -1066,23 +1394,62 @@
                 }
             });
             
-            document.getElementById('userMenuBtn').addEventListener('click', () => {
-                document.getElementById('userMenu').classList.toggle('hidden');
+            document.getElementById('closeQrCodeModal').addEventListener('click', () => {
+                document.getElementById('qrCodeModal').classList.add('hidden');
             });
             
-            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            document.getElementById('qrCodeModal').addEventListener('click', (e) => {
+                if (e.target.id === 'qrCodeModal') {
+                    document.getElementById('qrCodeModal').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('userMenuBtn').addEventListener('click', (e) => {
                 e.preventDefault();
-                DataStore.clearCurrentUser();
+                e.stopPropagation();
+                const menu = document.getElementById('userMenu');
+                menu.classList.toggle('hidden');
+            });
+            
+            document.getElementById('userMenu').addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+                e.preventDefault();
+                await DataService.clearCurrentUser();
                 window.location.href = 'index.html';
             });
             
-            document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
+            document.getElementById('logoutMenuBtn').addEventListener('click', async (e) => {
                 e.preventDefault();
-                DataStore.clearCurrentUser();
+                await DataService.clearCurrentUser();
                 window.location.href = 'index.html';
             });
+            
+            const sidebar = document.getElementById('sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('-translate-x-full');
+                sidebar.classList.toggle('translate-x-0');
+            }
+            
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            if (closeSidebarBtn) {
+                closeSidebarBtn.addEventListener('click', toggleSidebar);
+            }
             
             document.addEventListener('click', (e) => {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                    }
+                }
+                
                 if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
                     document.getElementById('userMenu').classList.add('hidden');
                 }

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 参与</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -129,6 +129,57 @@
                 </div>
             </div>
             
+            <div id="attendanceContent" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+                    <div class="mb-6">
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">签到</span>
+                        <h2 class="text-xl font-bold text-gray-800 mt-3" id="attendanceTitle"></h2>
+                        <p class="text-gray-500 mt-1" id="attendanceDescription"></p>
+                    </div>
+                    
+                    <div id="attendanceLocationInfo" class="mb-6 hidden">
+                        <div class="p-4 bg-blue-50 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-2"><i class="fa fa-map-marker text-red-500 mr-2"></i>签到地点：<span id="attendanceLocationName"></span></p>
+                            <p class="text-sm text-gray-600"><i class="fa fa-bullseye text-blue-500 mr-2"></i>有效范围：<span id="attendanceRange"></span>米</p>
+                        </div>
+                    </div>
+                    
+                    <form id="attendanceForm">
+                        <div id="attendanceLocationCheck" class="mb-4 hidden">
+                            <button type="button" id="getLocationBtn" class="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors">
+                                <i class="fa fa-location-arrow mr-2"></i>获取位置并签到
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2 text-center">点击获取您的当前位置进行签到</p>
+                        </div>
+                        
+                        <div id="attendanceExtraFields" class="space-y-4 mb-6"></div>
+                        
+                        <button type="submit" id="attendanceSubmitBtn" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors hidden">
+                            <i class="fa fa-check mr-2"></i>确认签到
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="examContent" class="hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+                    <div class="mb-6">
+                        <span class="px-3 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">考试</span>
+                        <h2 class="text-xl font-bold text-gray-800 mt-3" id="examTitle"></h2>
+                        <p class="text-gray-500 mt-1" id="examDescription"></p>
+                        <p class="text-sm text-gray-500 mt-2" id="examTimeInfo"></p>
+                    </div>
+                    
+                    <form id="examForm">
+                        <div id="examQuestions" class="space-y-6 mb-6"></div>
+                        
+                        <button type="submit" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                            <i class="fa fa-paper-plane mr-2"></i>提交试卷
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
             <div id="resultContent" class="hidden">
                 <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
                     <div id="resultIcon" class="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center text-5xl"></div>
@@ -150,47 +201,60 @@
         <span id="toastMessage"></span>
     </div>
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-service.js"></script>
+    <script src="js/leancloud-config.js"></script>
+    <script src="js/leancloud-service.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
+    <script src="js/data-service.js"></script>
     <script>
         let currentUser = null;
         let activityType = null;
         let activityId = null;
         let currentActivity = null;
         
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            await DataService.init();
             const params = new URLSearchParams(window.location.search);
             activityType = params.get('type');
             activityId = parseInt(params.get('id'));
             
-            currentUser = DataStore.getCurrentUser();
+            currentUser = await DataService.getCurrentUser();
             
             if (!activityType || !activityId) {
                 showError('缺少活动参数');
                 return;
             }
             
-            loadActivity();
+            await loadActivity();
             bindEvents();
         });
         
-        function loadActivity() {
+        async function loadActivity() {
             document.getElementById('loadingState').classList.remove('hidden');
             
-            setTimeout(() => {
+            setTimeout(async () => {
                 document.getElementById('loadingState').classList.add('hidden');
                 
                 if (activityType === 'vote') {
-                    loadVote();
+                    await loadVote();
                 } else if (activityType === 'lottery') {
-                    loadLottery();
+                    await loadLottery();
+                } else if (activityType === 'attendance') {
+                    await loadAttendance();
+                } else if (activityType === 'exam') {
+                    await loadExam();
                 } else {
                     showError('未知的活动类型');
                 }
             }, 500);
         }
         
-        function loadVote() {
-            const votes = DataStore.getVotes();
+        async function loadVote() {
+            const votes = await DataService.getVotes();
             const vote = votes.find(v => v.id === activityId);
             
             if (!vote) {
@@ -212,7 +276,7 @@
                 return;
             }
             
-            const records = DataStore.getVoteRecords();
+            const records = await DataService.getVoteRecords();
             const hasVoted = currentUser && records.some(r => r.voteId === activityId && r.userId === currentUser.id);
             
             if (hasVoted) {
@@ -272,8 +336,8 @@
             document.getElementById('voteContent').classList.remove('hidden');
         }
         
-        function loadLottery() {
-            const lotteries = DataStore.getLotteries();
+        async function loadLottery() {
+            const lotteries = await DataService.getLotteries();
             const lottery = lotteries.find(l => l.id === activityId);
             
             if (!lottery) {
@@ -295,7 +359,7 @@
                 return;
             }
             
-            const records = DataStore.getLotteryRecords();
+            const records = await DataService.getLotteryRecords();
             const hasDrawn = currentUser && records.some(r => r.lotteryId === activityId && r.userId === currentUser.id);
             
             if (hasDrawn) {
@@ -348,6 +412,155 @@
             document.getElementById('lotteryContent').classList.remove('hidden');
         }
         
+        async function loadAttendance() {
+            const attendances = await DataService.getAttendances();
+            const attendance = attendances.find(a => a.id === activityId);
+            
+            if (!attendance) {
+                showError('签到不存在');
+                return;
+            }
+            
+            const now = new Date();
+            const start = new Date(attendance.startTime);
+            const end = new Date(attendance.endTime);
+            
+            if (now < start) {
+                showError('签到尚未开始');
+                return;
+            }
+            
+            if (now > end) {
+                showError('签到已结束');
+                return;
+            }
+            
+            const records = await DataService.getAttendanceRecords();
+            const hasSigned = currentUser && records.some(r => r.attendanceId === activityId && r.userId === currentUser.id);
+            
+            if (hasSigned) {
+                showResult(true, '已签到', '您已经完成签到');
+                return;
+            }
+            
+            currentActivity = attendance;
+            
+            if (!currentUser) {
+                showLoginPrompt(attendance.name, '请先登录后再签到');
+                return;
+            }
+            
+            document.getElementById('attendanceTitle').textContent = attendance.name;
+            document.getElementById('attendanceDescription').textContent = attendance.description || '暂无说明';
+            
+            if (attendance.type === 'location') {
+                document.getElementById('attendanceLocationInfo').classList.remove('hidden');
+                document.getElementById('attendanceLocationName').textContent = attendance.locationName || '未设置';
+                document.getElementById('attendanceRange').textContent = attendance.rangeMeters || 200;
+                document.getElementById('attendanceLocationCheck').classList.remove('hidden');
+            } else {
+                document.getElementById('attendanceSubmitBtn').classList.remove('hidden');
+            }
+            
+            let extraFields = '';
+            if (attendance.customFields && attendance.customFields.length > 0) {
+                attendance.customFields.forEach((field, idx) => {
+                    extraFields += `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">${field}</label>
+                            <input type="text" id="customField_${idx}" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入${field}">
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('attendanceExtraFields').innerHTML = extraFields;
+            
+            document.getElementById('attendanceContent').classList.remove('hidden');
+        }
+        
+        async function loadExam() {
+            const exams = await DataService.getExams();
+            const exam = exams.find(e => e.id === activityId);
+            
+            if (!exam) {
+                showError('考试不存在');
+                return;
+            }
+            
+            const now = new Date();
+            const start = new Date(exam.startTime);
+            const end = new Date(exam.endTime);
+            
+            if (now < start) {
+                showError('考试尚未开始');
+                return;
+            }
+            
+            if (now > end) {
+                showError('考试已结束');
+                return;
+            }
+            
+            const results = await DataService.getExamResults();
+            const hasSubmitted = currentUser && results.some(r => r.examId === activityId && r.userId === currentUser.id);
+            
+            if (hasSubmitted) {
+                showResult(true, '已提交', '您已经完成考试');
+                return;
+            }
+            
+            currentActivity = exam;
+            
+            if (!currentUser) {
+                showLoginPrompt(exam.title, '请先登录后再参加考试');
+                return;
+            }
+            
+            document.getElementById('examTitle').textContent = exam.title;
+            document.getElementById('examDescription').textContent = exam.description || '暂无说明';
+            document.getElementById('examTimeInfo').textContent = `考试时长：${exam.duration || 60}分钟`;
+            
+            let questionsHtml = '';
+            if (exam.questions && exam.questions.length > 0) {
+                exam.questions.forEach((q, qIdx) => {
+                    questionsHtml += `
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="font-medium text-gray-800 mb-3">${qIdx + 1}. ${q.question}</p>
+                            <div class="space-y-2">
+                    `;
+                    
+                    if (q.type === 'single') {
+                        q.options.forEach((opt, oIdx) => {
+                            questionsHtml += `
+                                <label class="flex items-center p-3 bg-white rounded-lg cursor-pointer border hover:border-primary">
+                                    <input type="radio" name="question_${qIdx}" value="${oIdx}" class="w-4 h-4 text-primary mr-3">
+                                    <span>${opt}</span>
+                                </label>
+                            `;
+                        });
+                    } else if (q.type === 'multiple') {
+                        q.options.forEach((opt, oIdx) => {
+                            questionsHtml += `
+                                <label class="flex items-center p-3 bg-white rounded-lg cursor-pointer border hover:border-primary">
+                                    <input type="checkbox" name="question_${qIdx}" value="${oIdx}" class="w-4 h-4 text-primary mr-3">
+                                    <span>${opt}</span>
+                                </label>
+                            `;
+                        });
+                    } else if (q.type === 'text') {
+                        questionsHtml += `
+                            <textarea name="question_${qIdx}" rows="3" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入答案"></textarea>
+                        `;
+                    }
+                    
+                    questionsHtml += '</div></div>';
+                });
+            }
+            document.getElementById('examQuestions').innerHTML = questionsHtml;
+            
+            document.getElementById('examContent').classList.remove('hidden');
+        }
+        
         function showLoginPrompt(title, desc) {
             document.getElementById('activityTitle').textContent = title;
             document.getElementById('activityDesc').textContent = desc;
@@ -391,7 +604,7 @@
         }
         
         function bindEvents() {
-            document.getElementById('loginSubmitBtn').addEventListener('click', function() {
+            document.getElementById('loginSubmitBtn').addEventListener('click', async function() {
                 const username = document.getElementById('loginUsername').value.trim();
                 const password = document.getElementById('loginPassword').value;
                 
@@ -400,25 +613,29 @@
                     return;
                 }
                 
-                const user = DataStore.getUserByUsername(username);
+                const user = await DataService.getUserByUsername(username);
                 if (!user || user.password !== password) {
                     showToast('账号或密码错误', 'error');
                     return;
                 }
                 
-                DataStore.setCurrentUser(user);
+                await DataService.setCurrentUser(user);
                 currentUser = user;
                 
                 document.getElementById('loginPrompt').classList.add('hidden');
                 
                 if (activityType === 'vote') {
-                    loadVote();
+                    await loadVote();
                 } else if (activityType === 'lottery') {
-                    loadLottery();
+                    await loadLottery();
+                } else if (activityType === 'attendance') {
+                    await loadAttendance();
+                } else if (activityType === 'exam') {
+                    await loadExam();
                 }
             });
             
-            document.getElementById('voteForm').addEventListener('submit', function(e) {
+            document.getElementById('voteForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const selectedOptions = [];
@@ -442,13 +659,13 @@
                     participatedAt: new Date().toISOString()
                 };
                 
-                DataStore.addVoteRecord(record);
+                await DataService.addVoteRecord(record);
                 
                 document.getElementById('voteContent').classList.add('hidden');
                 showResult(true, '投票成功', '感谢您的参与！');
             });
             
-            document.getElementById('lotteryForm').addEventListener('submit', function(e) {
+            document.getElementById('lotteryForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 let prize = null;
@@ -473,7 +690,7 @@
                     participatedAt: new Date().toISOString()
                 };
                 
-                DataStore.addLotteryRecord(record);
+                await DataService.addLotteryRecord(record);
                 
                 document.getElementById('lotteryContent').classList.add('hidden');
                 
@@ -483,6 +700,118 @@
                     showResult(false, '很遗憾', '未中奖，下次再接再厉！');
                 }
             });
+            
+            document.getElementById('getLocationBtn').addEventListener('click', function() {
+                if (!navigator.geolocation) {
+                    showToast('您的浏览器不支持定位功能', 'error');
+                    return;
+                }
+                
+                showToast('正在获取位置...', 'info');
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        const targetLat = currentActivity.latitude;
+                        const targetLng = currentActivity.longitude;
+                        const range = currentActivity.rangeMeters || 200;
+                        
+                        const distance = calculateDistance(userLat, userLng, targetLat, targetLng);
+                        
+                        if (distance <= range) {
+                            document.getElementById('attendanceLocationCheck').classList.add('hidden');
+                            document.getElementById('attendanceSubmitBtn').classList.remove('hidden');
+                            showToast('位置验证成功，请确认签到', 'success');
+                        } else {
+                            showToast(`您当前位置距离签到点${Math.round(distance)}米，超出有效范围${range}米`, 'error');
+                        }
+                    },
+                    (error) => {
+                        let message = '无法获取位置';
+                        if (error.code === 1) message = '请授权位置权限';
+                        showToast(message, 'error');
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+            
+            document.getElementById('attendanceForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const customFieldValues = {};
+                if (currentActivity.customFields) {
+                    currentActivity.customFields.forEach((field, idx) => {
+                        customFieldValues[field] = document.getElementById(`customField_${idx}`)?.value || '';
+                    });
+                }
+                
+                const record = {
+                    attendanceId: currentActivity.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    customFields: customFieldValues,
+                    signedAt: new Date().toISOString()
+                };
+                
+                await DataService.addAttendanceRecord(record);
+                
+                document.getElementById('attendanceContent').classList.add('hidden');
+                showResult(true, '签到成功', '您已完成签到');
+            });
+            
+            document.getElementById('examForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const answers = [];
+                if (currentActivity.questions) {
+                    currentActivity.questions.forEach((q, qIdx) => {
+                        if (q.type === 'single') {
+                            const selected = document.querySelector(`input[name="question_${qIdx}"]:checked`);
+                            answers.push(selected ? parseInt(selected.value) : -1);
+                        } else if (q.type === 'multiple') {
+                            const selected = document.querySelectorAll(`input[name="question_${qIdx}"]:checked`);
+                            answers.push(Array.from(selected).map(s => parseInt(s.value)));
+                        } else if (q.type === 'text') {
+                            answers.push(document.querySelector(`textarea[name="question_${qIdx}"]`)?.value || '');
+                        }
+                    });
+                }
+                
+                let score = 0;
+                currentActivity.questions.forEach((q, qIdx) => {
+                    if (q.type === 'single' && answers[qIdx] === q.correctAnswer) {
+                        score += q.score || 0;
+                    } else if (q.type === 'multiple' && JSON.stringify(answers[qIdx].sort()) === JSON.stringify(q.correctAnswer.sort())) {
+                        score += q.score || 0;
+                    }
+                });
+                
+                const result = {
+                    examId: currentActivity.id,
+                    userId: currentUser.id,
+                    username: currentUser.username,
+                    answers: answers,
+                    score: score,
+                    submittedAt: new Date().toISOString()
+                };
+                
+                await DataService.addExamResult(result);
+                
+                document.getElementById('examContent').classList.add('hidden');
+                showResult(true, '提交成功', `您的得分：${score}分`);
+            });
+        }
+        
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
     </script>
 </body>
