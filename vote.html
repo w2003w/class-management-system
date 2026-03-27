@@ -449,12 +449,18 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">奖项设置 *</label>
                     <div id="prizeList" class="space-y-2">
-                        <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl prize-item">
-                            <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称">
-                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1">
-                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100">
-                            <span class="text-sm text-gray-500">%</span>
-                            <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                        <div class="p-3 bg-gray-50 rounded-xl prize-item">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称">
+                                <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1">
+                                <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100">
+                                <span class="text-sm text-gray-500">%</span>
+                                <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                            </div>
+                            <div class="prize-assigned-members hidden">
+                                <label class="block text-xs text-gray-600 mb-1"><i class="fa fa-user-secret text-red-500 mr-1"></i>指定中奖成员（仅超级管理员可见）</label>
+                                <div class="prize-member-select-container max-h-32 overflow-y-auto border rounded-lg p-2 bg-white text-sm"></div>
+                            </div>
                         </div>
                     </div>
                     <button type="button" id="addPrizeBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加奖项</button>
@@ -585,6 +591,12 @@
                 <div id="questionnaireMemberSelectContainer" class="mb-4 hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
                     <div id="questionnaireMemberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2"></div>
+                </div>
+                
+                <div id="questionnaireCustomFieldsContainer" class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">需填写信息</label>
+                    <div id="questionnaireCustomFieldsList" class="space-y-2"></div>
+                    <button type="button" id="addQuestionnaireCustomFieldBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加字段</button>
                 </div>
                 
                 <div class="mb-4">
@@ -944,6 +956,7 @@
                             
                             <div class="flex items-center space-x-2 ml-4">
                                 ${status === 'active' && !userVoted ? `<button onclick="participateVote(${vote.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"><i class="fa fa-check mr-1"></i>参与投票</button>` : ''}
+                                ${userVoted ? `<button onclick="showMyVoteRecord(${vote.id})" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"><i class="fa fa-eye mr-1"></i>我的投票</button>` : ''}
                                 <button onclick="showQrCode('vote', ${vote.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-qrcode mr-1"></i>二维码</button>
                                 ${currentUser.role !== 'user' ? `<button onclick="showVoteDetail(${vote.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-bar-chart mr-1"></i>统计</button><button onclick="editVote(${vote.id})" class="text-blue-500 hover:text-blue-600 px-2"><i class="fa fa-edit"></i></button><button onclick="deleteVote(${vote.id})" class="text-red-500 hover:text-red-600 px-2"><i class="fa fa-trash"></i></button>` : ''}
                             </div>
@@ -999,6 +1012,7 @@
                             
                             <div class="flex items-center space-x-2 ml-4">
                                 ${canDraw ? `<button onclick="participateLottery(${lottery.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors"><i class="fa fa-gift mr-1"></i>参与抽奖</button>` : ''}
+                                ${userRecords.length > 0 ? `<button onclick="showMyLotteryRecord(${lottery.id})" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"><i class="fa fa-eye mr-1"></i>我的抽奖</button>` : ''}
                                 <button onclick="showQrCode('lottery', ${lottery.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-qrcode mr-1"></i>二维码</button>
                                 ${currentUser.role !== 'user' ? `<button onclick="showLotteryRecords(${lottery.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-list mr-1"></i>记录</button><button onclick="editLottery(${lottery.id})" class="text-blue-500 hover:text-blue-600 px-2"><i class="fa fa-edit"></i></button><button onclick="deleteLottery(${lottery.id})" class="text-red-500 hover:text-red-600 px-2"><i class="fa fa-trash"></i></button>` : ''}
                             </div>
@@ -1067,6 +1081,25 @@
             const infoContainer = document.getElementById('lotteryParticipantInfoContainer');
             let infoHtml = `<p class="text-sm text-gray-500 mb-3">剩余抽奖次数：${maxDraws - userRecords.length}次</p>`;
             
+            if (currentLottery.prizes && currentLottery.prizes.length > 0) {
+                infoHtml += `
+                    <div class="mb-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border border-yellow-200">
+                        <h4 class="font-medium text-gray-800 mb-2"><i class="fa fa-gift text-yellow-500 mr-2"></i>奖品信息</h4>
+                        <div class="space-y-2">
+                            ${currentLottery.prizes.map(p => `
+                                <div class="flex items-center justify-between text-sm bg-white rounded-lg p-2">
+                                    <span class="font-medium text-gray-700">${p.name}</span>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-gray-500">数量: <span class="text-primary font-medium">${p.count || 1}</span></span>
+                                        <span class="text-gray-500">概率: <span class="text-green-600 font-medium">${p.probability}%</span></span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
             if (currentLottery.needName) {
                 infoHtml += `<div><label class="block text-sm font-medium text-gray-700 mb-1">姓名 *</label><input type="text" id="lotteryParticipantName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" value="${currentUser.name}"></div>`;
             }
@@ -1121,6 +1154,42 @@
             document.getElementById('qrCodeModal').classList.remove('hidden');
         }
         
+        async function showMyVoteRecord(voteId) {
+            const votes = await DataService.getVotes();
+            const vote = votes.find(v => v.id === voteId);
+            const records = (await DataService.getVoteRecords()).filter(r => r.voteId === voteId && r.userId === currentUser.id);
+            
+            if (!vote) return;
+            
+            const myRecord = records[0];
+            if (!myRecord) {
+                showToast('未找到您的投票记录', 'warning');
+                return;
+            }
+            
+            const selectedOptions = myRecord.selectedOptions.map(i => vote.options[i]).join('、');
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">${vote.title}</h4>
+                    <div class="p-4 bg-blue-50 rounded-xl">
+                        <p class="text-sm text-gray-600 mb-2">您的选择：</p>
+                        <p class="font-medium text-primary">${selectedOptions}</p>
+                        <p class="text-xs text-gray-500 mt-2">投票时间：${formatDateTime(myRecord.participatedAt)}</p>
+                    </div>
+                    ${myRecord.customFields && Object.keys(myRecord.customFields).length > 0 ? `
+                        <div class="mt-4 p-4 bg-gray-50 rounded-xl">
+                            <p class="text-sm text-gray-600 mb-2">填写信息：</p>
+                            ${Object.entries(myRecord.customFields).map(([key, value]) => `<p class="text-sm"><span class="text-gray-500">${key}：</span>${value || '-'}</p>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('voteDetailContent').innerHTML = html;
+            document.getElementById('voteDetailModal').classList.remove('hidden');
+        }
+        
         async function showVoteDetail(voteId) {
             const votes = await DataService.getVotes();
             const vote = votes.find(v => v.id === voteId);
@@ -1163,6 +1232,54 @@
             
             document.getElementById('voteDetailContent').innerHTML = html;
             document.getElementById('voteDetailModal').classList.remove('hidden');
+        }
+        
+        async function showMyLotteryRecord(lotteryId) {
+            const lotteries = await DataService.getLotteries();
+            const lottery = lotteries.find(l => l.id === lotteryId);
+            const records = (await DataService.getLotteryRecords()).filter(r => r.lotteryId === lotteryId && r.userId === currentUser.id);
+            
+            if (!lottery) return;
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">${lottery.title}</h4>
+                    <div class="space-y-3">
+            `;
+            
+            records.forEach((r, i) => {
+                html += `
+                    <div class="p-4 ${r.prize ? 'bg-yellow-50 border-yellow-200' : 'bg-gray-50 border-gray-200'} rounded-xl border">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-500">第${i + 1}次抽奖</span>
+                            <span class="text-xs text-gray-400">${formatDateTime(r.participatedAt)}</span>
+                        </div>
+                        ${r.prize ? `
+                            <div class="flex items-center">
+                                <i class="fa fa-trophy text-yellow-500 mr-2"></i>
+                                <span class="font-medium text-yellow-700">${r.prize}</span>
+                            </div>
+                        ` : `
+                            <div class="flex items-center text-gray-500">
+                                <i class="fa fa-meh-o mr-2"></i>
+                                <span>未中奖</span>
+                            </div>
+                        `}
+                        ${r.participantName ? `<p class="text-xs text-gray-500 mt-2">姓名：${r.participantName}</p>` : ''}
+                        ${r.participantPhone ? `<p class="text-xs text-gray-500">手机：${r.participantPhone}</p>` : ''}
+                        ${r.customFields && Object.keys(r.customFields).length > 0 ? `
+                            <div class="mt-2 pt-2 border-t border-gray-200">
+                                ${Object.entries(r.customFields).map(([key, value]) => `<p class="text-xs text-gray-500">${key}：${value || '-'}</p>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `</div></div>`;
+            
+            document.getElementById('lotteryDetailContent').innerHTML = html;
+            document.getElementById('lotteryDetailModal').classList.remove('hidden');
         }
         
         async function showLotteryRecords(lotteryId) {
@@ -1380,16 +1497,34 @@
             document.getElementById('lotteryNeedPhone').checked = lottery.needPhone;
             document.getElementById('lotteryMaxDraws').value = lottery.maxDraws || 1;
             
+            const users = await DataService.getUsers();
             const prizeList = document.getElementById('prizeList');
-            prizeList.innerHTML = lottery.prizes.map((p, i) => `
-                <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl prize-item">
-                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称" value="${p.name}">
-                    <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="${p.count || 1}">
-                    <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100" value="${p.probability}">
-                    <span class="text-sm text-gray-500">%</span>
-                    <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
-                </div>
-            `).join('');
+            prizeList.innerHTML = lottery.prizes.map((p, i) => {
+                let memberSelectHtml = '';
+                if (currentUser.role === 'admin') {
+                    memberSelectHtml = `
+                        <div class="prize-assigned-members mt-2">
+                            <label class="block text-xs text-gray-600 mb-1"><i class="fa fa-user-secret text-red-500 mr-1"></i>指定中奖成员（仅超级管理员可见）</label>
+                            <div class="prize-member-select-container max-h-32 overflow-y-auto border rounded-lg p-2 bg-white text-sm">
+                                ${users.map(u => `<label class="flex items-center py-1 hover:bg-gray-50 px-1 rounded"><input type="checkbox" class="prize-member-checkbox w-4 h-4 text-primary rounded mr-2" value="${u.id}" ${(p.assignedMembers || []).includes(u.id) ? 'checked' : ''}><span>${u.username}</span></label>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="p-3 bg-gray-50 rounded-xl prize-item">
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称" value="${p.name}">
+                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="${p.count || 1}">
+                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100" value="${p.probability}">
+                            <span class="text-sm text-gray-500">%</span>
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                        </div>
+                        ${memberSelectHtml}
+                    </div>
+                `;
+            }).join('');
             
             await loadLotteryGroupsAndMembers();
             
@@ -1463,6 +1598,7 @@
                             
                             <div class="flex items-center space-x-2 ml-4">
                                 ${status === 'active' && !userParticipated ? `<button onclick="participateQuestionnaire(${q.id})" class="bg-purple-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-purple-600 transition-colors"><i class="fa fa-edit mr-1"></i>填写问卷</button>` : ''}
+                                ${userParticipated ? `<button onclick="showMyQuestionnaireRecord(${q.id})" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors"><i class="fa fa-eye mr-1"></i>我的问卷</button>` : ''}
                                 ${currentUser.role !== 'user' ? `<button onclick="showQuestionnaireStats(${q.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-bar-chart mr-1"></i>统计</button>` : ''}
                                 <button onclick="showQrCode('questionnaire', ${q.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border"><i class="fa fa-qrcode mr-1"></i>二维码</button>
                                 ${currentUser.role !== 'user' ? `<button onclick="editQuestionnaire(${q.id})" class="text-blue-500 hover:text-blue-600 px-2"><i class="fa fa-edit"></i></button><button onclick="deleteQuestionnaire(${q.id})" class="text-red-500 hover:text-red-600 px-2"><i class="fa fa-trash"></i></button>` : ''}
@@ -1684,8 +1820,18 @@
                 participantScope,
                 participants,
                 questions,
+                customFields: [],
                 createdBy: currentUser.id
             };
+            
+            document.querySelectorAll('.questionnaire-custom-field').forEach(field => {
+                const name = field.querySelector('.custom-field-name').value.trim();
+                const type = field.querySelector('.custom-field-type').value;
+                const required = field.querySelector('.custom-field-required').checked;
+                if (name) {
+                    questionnaireData.customFields.push({ name, type, required });
+                }
+            });
             
             try {
                 if (editingQuestionnaireId) {
@@ -1718,7 +1864,23 @@
             document.getElementById('participateQuestionnaireDesc').textContent = currentQuestionnaire.description || '';
             
             const container = document.getElementById('questionnaireQuestionsContainer');
-            container.innerHTML = currentQuestionnaire.questions.map((q, qIndex) => {
+            let html = '';
+            
+            if (currentQuestionnaire.customFields && currentQuestionnaire.customFields.length > 0) {
+                html += '<div class="mb-6 p-4 bg-blue-50 rounded-xl"><h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-user text-blue-500 mr-2"></i>填写信息</h4>';
+                currentQuestionnaire.customFields.forEach((field, index) => {
+                    html += `<div class="mb-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">${field.name}${field.required ? ' *' : ''}</label>
+                        <input type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" 
+                            id="questionnaireCustomField_${index}" 
+                            class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            ${field.required ? 'required' : ''}>
+                    </div>`;
+                });
+                html += '</div>';
+            }
+            
+            html += currentQuestionnaire.questions.map((q, qIndex) => {
                 let questionHtml = `
                     <div class="question-item" data-question-id="${q.id}">
                         <div class="flex items-start mb-2">
@@ -1777,6 +1939,8 @@
                 questionHtml += `</div>`;
                 return questionHtml;
             }).join('');
+            
+            container.innerHTML = html;
             
             container.querySelectorAll('.rating-star').forEach(star => {
                 star.addEventListener('click', function() {
@@ -1853,8 +2017,18 @@
                 userId: currentQuestionnaire.anonymous ? null : currentUser.id,
                 username: currentQuestionnaire.anonymous ? null : currentUser.username,
                 answers,
+                customFields: {},
                 submittedAt: new Date().toISOString()
             };
+            
+            if (currentQuestionnaire.customFields && currentQuestionnaire.customFields.length > 0) {
+                currentQuestionnaire.customFields.forEach((field, index) => {
+                    const input = document.getElementById(`questionnaireCustomField_${index}`);
+                    if (input) {
+                        recordData.customFields[field.name] = input.value;
+                    }
+                });
+            }
             
             try {
                 await DataService.addQuestionnaireRecord(recordData);
@@ -1869,6 +2043,67 @@
                 console.error('Submit questionnaire error:', error);
                 showToast('提交失败，请重试', 'error');
             }
+        }
+        
+        async function showMyQuestionnaireRecord(questionnaireId) {
+            const questionnaires = await DataService.getQuestionnaires();
+            const questionnaire = questionnaires.find(q => q.id === questionnaireId);
+            const records = (await DataService.getQuestionnaireRecords()).filter(r => r.questionnaireId === questionnaireId && r.userId === currentUser.id);
+            
+            if (!questionnaire) return;
+            
+            const myRecord = records[0];
+            if (!myRecord) {
+                showToast('未找到您的问卷记录', 'warning');
+                return;
+            }
+            
+            let html = `
+                <div class="mb-6">
+                    <h4 class="font-semibold text-gray-800 mb-3">${questionnaire.title}</h4>
+                    <div class="space-y-4">
+            `;
+            
+            questionnaire.questions.forEach((q, i) => {
+                const answer = myRecord.answers.find(a => a.questionId === q.id);
+                let answerText = '';
+                
+                if (answer) {
+                    if (q.type === 'single') {
+                        answerText = q.options[answer.value] || '-';
+                    } else if (q.type === 'multiple') {
+                        answerText = answer.value.map(idx => q.options[idx]).join('、') || '-';
+                    } else if (q.type === 'rating') {
+                        answerText = answer.value ? `${answer.value}分` : '-';
+                    } else {
+                        answerText = answer.value || '-';
+                    }
+                }
+                
+                html += `
+                    <div class="p-3 bg-gray-50 rounded-xl">
+                        <p class="font-medium text-gray-800 mb-2">${i + 1}. ${q.title}</p>
+                        <p class="text-sm text-primary">${answerText}</p>
+                    </div>
+                `;
+            });
+            
+            if (myRecord.customFields && Object.keys(myRecord.customFields).length > 0) {
+                html += `
+                    <div class="p-3 bg-blue-50 rounded-xl">
+                        <p class="font-medium text-gray-800 mb-2">填写信息</p>
+                        ${Object.entries(myRecord.customFields).map(([key, value]) => `<p class="text-sm"><span class="text-gray-500">${key}：</span>${value || '-'}</p>`).join('')}
+                    </div>
+                `;
+            }
+            
+            html += `
+                    <p class="text-xs text-gray-500 mt-2">提交时间：${formatDateTime(myRecord.submittedAt)}</p>
+                </div>
+            `;
+            
+            document.getElementById('questionnaireStatsContent').innerHTML = html;
+            document.getElementById('questionnaireStatsModal').classList.remove('hidden');
         }
         
         async function showQuestionnaireStats(questionnaireId) {
@@ -2057,6 +2292,16 @@
             
             await loadQuestionnaireGroupsAndMembers();
             
+            document.getElementById('questionnaireAnonymous').checked = questionnaire.anonymous || false;
+            document.getElementById('questionnaireShowResults').checked = questionnaire.showResults || false;
+            
+            const customFieldsContainer = document.getElementById('questionnaireCustomFieldsContainer');
+            if (questionnaire.anonymous) {
+                customFieldsContainer.classList.add('hidden');
+            } else {
+                customFieldsContainer.classList.remove('hidden');
+            }
+            
             document.getElementById('questionnaireParticipantScope').value = questionnaire.participantScope || 'all';
             if (questionnaire.participantScope === 'group') {
                 document.getElementById('questionnaireGroupSelectContainer').classList.remove('hidden');
@@ -2200,6 +2445,32 @@
                 document.getElementById('createVoteModal').classList.add('hidden');
             });
             
+            document.getElementById('addVoteCustomFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('voteCustomFieldsList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 vote-custom-field';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-name" placeholder="字段名称">
+                    <select class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-type">
+                        <option value="text">文本</option>
+                        <option value="number">数字</option>
+                        <option value="date">日期</option>
+                    </select>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="custom-field-required w-4 h-4 text-primary rounded mr-1">
+                        必填
+                    </label>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('voteCustomFieldsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-custom-field')) {
+                    e.target.closest('.vote-custom-field').remove();
+                }
+            });
+            
             document.getElementById('addVoteOptionBtn').addEventListener('click', () => {
                 const container = document.getElementById('voteOptionsList');
                 const count = container.children.length + 1;
@@ -2290,17 +2561,34 @@
                 await renderVoteList();
             });
             
-            document.getElementById('createLotteryBtn').addEventListener('click', () => {
+            document.getElementById('createLotteryBtn').addEventListener('click', async () => {
                 editingLotteryId = null;
                 document.getElementById('createLotteryForm').reset();
                 document.getElementById('lotteryMaxDraws').value = 1;
+                
+                let memberSelectHtml = '';
+                if (currentUser.role === 'admin') {
+                    const users = await DataService.getUsers();
+                    memberSelectHtml = `
+                        <div class="prize-assigned-members mt-2">
+                            <label class="block text-xs text-gray-600 mb-1"><i class="fa fa-user-secret text-red-500 mr-1"></i>指定中奖成员（仅超级管理员可见）</label>
+                            <div class="prize-member-select-container max-h-32 overflow-y-auto border rounded-lg p-2 bg-white text-sm">
+                                ${users.map(u => `<label class="flex items-center py-1 hover:bg-gray-50 px-1 rounded"><input type="checkbox" class="prize-member-checkbox w-4 h-4 text-primary rounded mr-2" value="${u.id}"><span>${u.username}</span></label>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
                 document.getElementById('prizeList').innerHTML = `
-                    <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-xl prize-item">
-                        <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称">
-                        <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1">
-                        <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100">
-                        <span class="text-sm text-gray-500">%</span>
-                        <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                    <div class="p-3 bg-gray-50 rounded-xl prize-item">
+                        <div class="flex items-center space-x-2">
+                            <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称">
+                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1">
+                            <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100">
+                            <span class="text-sm text-gray-500">%</span>
+                            <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                        </div>
+                        ${memberSelectHtml}
                     </div>
                 `;
                 document.querySelector('#createLotteryModal h3').innerHTML = '<i class="fa fa-gift text-orange-500 mr-2"></i>创建抽奖';
@@ -2333,11 +2621,60 @@
                 document.getElementById('createLotteryModal').classList.add('hidden');
             });
             
-            document.getElementById('addPrizeBtn').addEventListener('click', () => {
+            document.getElementById('addLotteryCustomFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('lotteryCustomFieldsList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 lottery-custom-field';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-name" placeholder="字段名称">
+                    <select class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-type">
+                        <option value="text">文本</option>
+                        <option value="number">数字</option>
+                        <option value="date">日期</option>
+                    </select>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="custom-field-required w-4 h-4 text-primary rounded mr-1">
+                        必填
+                    </label>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('lotteryCustomFieldsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-custom-field')) {
+                    e.target.closest('.lottery-custom-field').remove();
+                }
+            });
+            
+            document.getElementById('addPrizeBtn').addEventListener('click', async () => {
                 const container = document.getElementById('prizeList');
                 const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2 p-3 bg-gray-50 rounded-xl prize-item';
-                div.innerHTML = `<input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称"><input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1"><input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100"><span class="text-sm text-gray-500">%</span><button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>`;
+                div.className = 'p-3 bg-gray-50 rounded-xl prize-item';
+                
+                let memberSelectHtml = '';
+                if (currentUser.role === 'admin') {
+                    const users = await DataService.getUsers();
+                    memberSelectHtml = `
+                        <div class="prize-assigned-members mt-2">
+                            <label class="block text-xs text-gray-600 mb-1"><i class="fa fa-user-secret text-red-500 mr-1"></i>指定中奖成员（仅超级管理员可见）</label>
+                            <div class="prize-member-select-container max-h-32 overflow-y-auto border rounded-lg p-2 bg-white text-sm">
+                                ${users.map(u => `<label class="flex items-center py-1 hover:bg-gray-50 px-1 rounded"><input type="checkbox" class="prize-member-checkbox w-4 h-4 text-primary rounded mr-2" value="${u.id}"><span>${u.username}</span></label>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-name" placeholder="奖项名称">
+                        <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-count" placeholder="数量" min="1" value="1">
+                        <input type="number" class="w-16 px-2 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 prize-probability" placeholder="概率%" min="0" max="100">
+                        <span class="text-sm text-gray-500">%</span>
+                        <button type="button" class="text-red-500 hover:text-red-600 remove-prize-btn"><i class="fa fa-times"></i></button>
+                    </div>
+                    ${memberSelectHtml}
+                `;
                 container.appendChild(div);
             });
             
@@ -2358,8 +2695,17 @@
                     const name = item.querySelector('.prize-name').value.trim();
                     const count = parseInt(item.querySelector('.prize-count').value) || 1;
                     const probability = parseFloat(item.querySelector('.prize-probability').value) || 0;
+                    const assignedMembers = [];
+                    
+                    if (currentUser.role === 'admin') {
+                        const checkboxes = item.querySelectorAll('.prize-member-checkbox:checked');
+                        checkboxes.forEach(cb => {
+                            assignedMembers.push(parseInt(cb.value));
+                        });
+                    }
+                    
                     if (name) {
-                        prizes.push({ name, count, probability });
+                        prizes.push({ name, count, probability, assignedMembers });
                     }
                 });
                 
@@ -2489,14 +2835,26 @@
                 }
                 
                 let prize = null;
-                const random = Math.random() * 100;
-                let cumulative = 0;
                 
-                for (const p of currentLottery.prizes) {
-                    cumulative += p.probability;
-                    if (random < cumulative) {
-                        prize = p.name;
-                        break;
+                if (currentLottery.prizes) {
+                    for (const p of currentLottery.prizes) {
+                        if (p.assignedMembers && p.assignedMembers.includes(currentUser.id)) {
+                            prize = p.name;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!prize) {
+                    const random = Math.random() * 100;
+                    let cumulative = 0;
+                    
+                    for (const p of currentLottery.prizes) {
+                        cumulative += p.probability;
+                        if (random < cumulative) {
+                            prize = p.name;
+                            break;
+                        }
                     }
                 }
                 
@@ -2666,11 +3024,47 @@
                 }
             });
             
+            document.getElementById('questionnaireAnonymous').addEventListener('change', (e) => {
+                const customFieldsContainer = document.getElementById('questionnaireCustomFieldsContainer');
+                if (e.target.checked) {
+                    customFieldsContainer.classList.add('hidden');
+                    document.getElementById('questionnaireCustomFieldsList').innerHTML = '';
+                } else {
+                    customFieldsContainer.classList.remove('hidden');
+                }
+            });
+            
             document.getElementById('closeCreateQuestionnaireModal').addEventListener('click', () => {
                 document.getElementById('createQuestionnaireModal').classList.add('hidden');
             });
             document.getElementById('cancelCreateQuestionnaireBtn').addEventListener('click', () => {
                 document.getElementById('createQuestionnaireModal').classList.add('hidden');
+            });
+            
+            document.getElementById('addQuestionnaireCustomFieldBtn').addEventListener('click', () => {
+                const container = document.getElementById('questionnaireCustomFieldsList');
+                const div = document.createElement('div');
+                div.className = 'flex items-center space-x-2 questionnaire-custom-field';
+                div.innerHTML = `
+                    <input type="text" class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-name" placeholder="字段名称">
+                    <select class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 custom-field-type">
+                        <option value="text">文本</option>
+                        <option value="number">数字</option>
+                        <option value="date">日期</option>
+                    </select>
+                    <label class="flex items-center text-sm">
+                        <input type="checkbox" class="custom-field-required w-4 h-4 text-primary rounded mr-1">
+                        必填
+                    </label>
+                    <button type="button" class="text-red-500 hover:text-red-600 remove-custom-field"><i class="fa fa-times"></i></button>
+                `;
+                container.appendChild(div);
+            });
+            
+            document.getElementById('questionnaireCustomFieldsList').addEventListener('click', (e) => {
+                if (e.target.closest('.remove-custom-field')) {
+                    e.target.closest('.questionnaire-custom-field').remove();
+                }
             });
             
             document.querySelectorAll('.add-question-btn').forEach(btn => {

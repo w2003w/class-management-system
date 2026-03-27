@@ -1363,27 +1363,81 @@
         
         async function showResult(record) {
             const exam = (await DataService.getExams()).find(e => e.id === record.examId);
+            const questions = await DataService.getQuestions();
             const hasEssay = record.essayAnswers && record.essayAnswers.length > 0;
             const essayPending = hasEssay && record.essayAnswers.some(ea => ea.score === null);
             
-            let displayScore = record.score;
             let totalScore = exam ? exam.totalScore : 100;
+            let objectiveScore = record.score || 0;
+            let essayScore = 0;
             
-            if (hasEssay && essayPending) {
-                displayScore = record.score + ' + 待阅卷';
+            if (hasEssay && !essayPending) {
+                essayScore = record.essayAnswers.reduce((sum, ea) => sum + (ea.score || 0), 0);
+            }
+            
+            let finalScore = objectiveScore + essayScore;
+            let displayScore = essayPending ? `${objectiveScore} + 待阅卷` : finalScore;
+            
+            let detailsHtml = '';
+            if (record.details && record.details.length > 0) {
+                const examQuestions = questions.filter(q => exam.questionIds.includes(q.id));
+                detailsHtml = `
+                    <div class="mt-6">
+                        <h4 class="font-semibold text-gray-800 mb-3">答题详情</h4>
+                        <div class="max-h-64 overflow-y-auto space-y-3">
+                            ${record.details.map((d, i) => {
+                                const q = examQuestions.find(eq => eq.id === d.questionId);
+                                let answerDisplay = '';
+                                let correctDisplay = '';
+                                
+                                if (d.isEssay) {
+                                    const essayAnswer = record.essayAnswers ? record.essayAnswers.find(ea => ea.questionId === d.questionId) : null;
+                                    answerDisplay = d.userAnswer || (essayAnswer?.imageUrl ? '[图片答案]' : '-');
+                                    correctDisplay = essayAnswer?.score !== null ? `${essayAnswer?.score || 0}分` : '待阅卷';
+                                } else if (q) {
+                                    if (q.type === 'single' || q.type === 'judge') {
+                                        answerDisplay = d.userAnswer !== undefined ? q.options[d.userAnswer] : '-';
+                                    } else if (q.type === 'multiple') {
+                                        answerDisplay = Array.isArray(d.userAnswer) ? d.userAnswer.map(idx => q.options[idx]).join('、') : '-';
+                                    } else if (q.type === 'fill') {
+                                        answerDisplay = Array.isArray(d.userAnswer) ? d.userAnswer.join(' | ') : '-';
+                                    }
+                                    correctDisplay = d.isCorrect ? '✓ 正确' : '✗ 错误';
+                                }
+                                
+                                return `
+                                    <div class="p-3 ${d.isCorrect ? 'bg-green-50' : d.isEssay ? 'bg-purple-50' : 'bg-red-50'} rounded-xl">
+                                        <div class="flex justify-between items-start">
+                                            <p class="font-medium text-gray-800">${i + 1}. ${d.questionContent || ''}</p>
+                                            <span class="text-sm ${d.isCorrect ? 'text-green-600' : d.isEssay ? 'text-purple-600' : 'text-red-600'}">${correctDisplay}</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">您的答案：${answerDisplay}</p>
+                                        ${!d.isEssay && q && (q.type === 'single' || q.type === 'multiple' || q.type === 'judge') ? `
+                                            <p class="text-sm text-green-600 mt-1">正确答案：${Array.isArray(q.correctAnswers) ? q.correctAnswers.map(idx => q.options[idx]).join('、') : '-'}</p>
+                                        ` : ''}
+                                        ${d.isEssay && essayAnswer?.comment ? `
+                                            <p class="text-sm text-gray-500 mt-1">评语：${essayAnswer.comment}</p>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
             }
             
             document.getElementById('resultContent').innerHTML = `
                 <div class="text-center mb-6">
-                    <div class="w-24 h-24 mx-auto mb-4 rounded-full ${!essayPending && record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'bg-green-100' : 'bg-orange-100'} flex items-center justify-center">
-                        <span class="text-3xl font-bold ${!essayPending && record.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-orange-600'}">${displayScore}</span>
+                    <div class="w-24 h-24 mx-auto mb-4 rounded-full ${!essayPending && finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? 'bg-green-100' : 'bg-orange-100'} flex items-center justify-center">
+                        <span class="text-3xl font-bold ${!essayPending && finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-orange-600'}">${displayScore}</span>
                     </div>
                     <p class="text-gray-500">总分 ${totalScore} 分</p>
                     ${essayPending ? `
                         <p class="text-lg font-medium mt-2 text-orange-600"><i class="fa fa-clock-o mr-1"></i>解答题待阅卷</p>
-                        <p class="text-sm text-gray-500 mt-1">客观题得分：${record.score}分</p>
+                        <p class="text-sm text-gray-500 mt-1">客观题得分：${objectiveScore}分</p>
                     ` : `
-                        <p class="text-lg font-medium mt-2">${record.score >= (exam ? exam.totalScore * 0.6 : 60) ? '恭喜通过！' : '未通过，继续努力！'}</p>
+                        <p class="text-lg font-medium mt-2">${finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? '恭喜通过！' : '未通过，继续努力！'}</p>
+                        ${hasEssay ? `<p class="text-sm text-gray-500 mt-1">客观题：${objectiveScore}分 + 解答题：${essayScore}分</p>` : ''}
                     `}
                 </div>
                 
@@ -1404,11 +1458,13 @@
                 
                 ${hasEssay ? `
                     <div class="bg-purple-50 rounded-xl p-4 mb-6">
-                        <p class="text-sm text-purple-700"><i class="fa fa-info-circle mr-1"></i>本次考试包含${record.essayAnswers.length}道解答题，请等待阅卷完成后查看最终成绩</p>
+                        <p class="text-sm text-purple-700"><i class="fa fa-info-circle mr-1"></i>本次考试包含${record.essayAnswers.length}道解答题${essayPending ? '，请等待阅卷完成后查看最终成绩' : '，已阅卷完成'}</p>
                     </div>
                 ` : ''}
                 
-                <button onclick="document.getElementById('resultModal').classList.add('hidden')" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                ${detailsHtml}
+                
+                <button onclick="document.getElementById('resultModal').classList.add('hidden')" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors mt-4">
                     确定
                 </button>
             `;
@@ -1434,10 +1490,23 @@
                 return;
             }
             
-            const avgScore = Math.round(records.reduce((sum, r) => sum + r.score, 0) / records.length);
-            const maxScore = Math.max(...records.map(r => r.score));
-            const minScore = Math.min(...records.map(r => r.score));
-            const passCount = records.filter(r => r.score >= exam.totalScore * 0.6).length;
+            const questions = await DataService.getQuestions();
+            
+            records.forEach(r => {
+                const hasEssay = r.essayAnswers && r.essayAnswers.length > 0;
+                const essayPending = hasEssay && r.essayAnswers.some(ea => ea.score === null);
+                let essayScore = 0;
+                if (hasEssay && !essayPending) {
+                    essayScore = r.essayAnswers.reduce((sum, ea) => sum + (ea.score || 0), 0);
+                }
+                r.finalScore = (r.score || 0) + essayScore;
+                r.essayPending = essayPending;
+            });
+            
+            const avgScore = Math.round(records.reduce((sum, r) => sum + r.finalScore, 0) / records.length);
+            const maxScore = Math.max(...records.map(r => r.finalScore));
+            const minScore = Math.min(...records.map(r => r.finalScore));
+            const passCount = records.filter(r => r.finalScore >= exam.totalScore * 0.6).length;
             
             let details = `
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1472,6 +1541,7 @@
                                 <th class="pb-2">账号</th>
                                 <th class="pb-2">分数</th>
                                 <th class="pb-2">提交时间</th>
+                                <th class="pb-2">操作</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y">
@@ -1479,8 +1549,9 @@
                                 <tr>
                                     <td class="py-2">${r.userName}</td>
                                     <td class="py-2 text-gray-500">${r.username}</td>
-                                    <td class="py-2 font-medium ${r.score >= exam.totalScore * 0.6 ? 'text-green-600' : 'text-red-600'}">${r.score}</td>
+                                    <td class="py-2 font-medium ${r.essayPending ? 'text-orange-600' : r.finalScore >= exam.totalScore * 0.6 ? 'text-green-600' : 'text-red-600'}">${r.essayPending ? r.score + '+待阅卷' : r.finalScore}</td>
                                     <td class="py-2 text-gray-500">${formatDateTime(r.submittedAt)}</td>
+                                    <td class="py-2"><button onclick="viewExamRecordDetail(${r.id})" class="text-blue-500 hover:text-blue-600"><i class="fa fa-eye"></i> 查看答卷</button></td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -1490,6 +1561,14 @@
             
             document.getElementById('resultContent').innerHTML = details;
             document.getElementById('resultModal').classList.remove('hidden');
+        }
+        
+        async function viewExamRecordDetail(recordId) {
+            const records = await DataService.getExamRecords();
+            const record = records.find(r => r.id === recordId);
+            if (!record) return;
+            
+            await showResult(record);
         }
         
         let editingExamId = null;
