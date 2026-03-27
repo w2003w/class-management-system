@@ -374,6 +374,11 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
+            await this.supabase
+                .from('attendance_records')
+                .delete()
+                .eq('attendanceId', id);
+            
             const { error } = await this.supabase
                 .from('attendances')
                 .delete()
@@ -498,6 +503,11 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
+            await this.supabase
+                .from('exam_records')
+                .delete()
+                .or(`examId.eq.${id},examid.eq.${id}`);
+            
             const { error } = await this.supabase
                 .from('exams')
                 .delete()
@@ -726,6 +736,11 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
+            await this.supabase
+                .from('vote_records')
+                .delete()
+                .or(`voteId.eq.${id},voteid.eq.${id}`);
+            
             const { error } = await this.supabase
                 .from('votes')
                 .delete()
@@ -850,6 +865,11 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
+            await this.supabase
+                .from('lottery_records')
+                .delete()
+                .or(`lotteryId.eq.${id},lotteryid.eq.${id}`);
+            
             const { error } = await this.supabase
                 .from('lotteries')
                 .delete()
@@ -917,7 +937,17 @@ const SupabaseService = {
                 .order('createdat', { ascending: false });
             
             if (error) throw error;
-            return data || [];
+            
+            // 转换字段名以匹配前端期望的格式
+            return (data || []).map(notification => ({
+                id: notification.id,
+                title: notification.title,
+                message: notification.content,
+                type: notification.type,
+                userId: null,
+                read: notification.read,
+                createdAt: notification.createdat
+            }));
         } catch (error) {
             console.error('Get notifications error:', error);
             return [];
@@ -930,9 +960,11 @@ const SupabaseService = {
         try {
             const newNotification = {
                 id: Date.now(),
-                ...this.cleanData(notificationData),
-                createdat: new Date().toISOString(),
-                read: false
+                title: notificationData.title,
+                content: notificationData.message,
+                type: notificationData.type || 'info',
+                read: false,
+                createdat: new Date().toISOString()
             };
             
             const { data, error } = await this.supabase
@@ -1192,6 +1224,11 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
+            await this.supabase
+                .from('questionnaire_records')
+                .delete()
+                .or(`questionnaireId.eq.${id},questionnaireid.eq.${id}`);
+            
             const { error } = await this.supabase
                 .from('questionnaires')
                 .delete()

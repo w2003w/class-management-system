@@ -1,8 +1,11 @@
-// 班级管理系统 Service Worker
-const CACHE_NAME = 'class-management-cache-v1.0.0';
+// 班级管理系统 Service Worker - 高性能缓存策略
+const CACHE_NAME = 'class-management-cache-v2.0.0';
+const STATIC_CACHE = 'class-management-static-v2';
+const DYNAMIC_CACHE = 'class-management-dynamic-v2';
+const API_CACHE = 'class-management-api-v2';
 
-// 需要缓存的资源列表
-const urlsToCache = [
+// 需要预缓存的静态资源
+const STATIC_URLS = [
   '/',
   '/index.html',
   '/dashboard.html',
@@ -12,186 +15,191 @@ const urlsToCache = [
   '/profile.html',
   '/users.html',
   '/settings.html',
+  '/grading.html',
+  '/participate.html',
+  // JS文件
+  '/js/supabase-config.js',
+  '/js/supabase-service.js',
+  '/js/data-service.js',
+  '/js/optimized-data-service.js',
+  '/js/performance-utils.js',
+  '/js/data.js',
+  '/js/utils.js',
   // 外部资源
   'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js',
-  // 图标资源
-  'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D'
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+  'https://unpkg.com/@supabase/supabase-js@2'
 ];
 
 // 安装 Service Worker
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] 正在安装...');
+  console.log('[SW] 安装中...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then((cache) => {
-        console.log('[Service Worker] 正在缓存资源');
-        return cache.addAll(urlsToCache);
+        console.log('[SW] 预缓存静态资源');
+        return cache.addAll(STATIC_URLS);
       })
-      .then(() => {
-        console.log('[Service Worker] 资源缓存完成');
-        // 跳过等待，直接激活
-        return self.skipWaiting();
-      })
+      .then(() => self.skipWaiting())
   );
 });
 
 // 激活 Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] 正在激活...');
-  const cacheWhitelist = [CACHE_NAME];
-  
+  console.log('[SW] 激活中...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('[Service Worker] 删除旧缓存:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames
+          .filter((name) => !name.includes('v2'))
+          .map((name) => {
+            console.log('[SW] 删除旧缓存:', name);
+            return caches.delete(name);
+          })
       );
-    }).then(() => {
-      console.log('[Service Worker] 激活完成');
-      // 立即接管所有客户端
-      return self.clients.claim();
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
+// 缓存策略
+const CACHE_STRATEGIES = {
+  // 静态资源 - 缓存优先
+  static: async (request) => {
+    const cache = await caches.open(STATIC_CACHE);
+    const cached = await cache.match(request);
+    
+    if (cached) return cached;
+    
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    } catch (error) {
+      return cached || new Response('离线中', { status: 503 });
+    }
+  },
+
+  // API请求 - 网络优先，缓存备用
+  api: async (request) => {
+    const cache = await caches.open(API_CACHE);
+    
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        // 克隆并缓存
+        cache.put(request, networkResponse.clone());
+        return networkResponse;
+      }
+    } catch (error) {
+      console.log('[SW] API网络请求失败，使用缓存');
+    }
+    
+    const cached = await cache.match(request);
+    if (cached) {
+      // 添加标记表示是缓存数据
+      const headers = new Headers(cached.headers);
+      headers.set('X-From-Cache', 'true');
+      return new Response(cached.body, {
+        status: cached.status,
+        statusText: cached.statusText,
+        headers
+      });
+    }
+    
+    return new Response(JSON.stringify({ error: '离线中' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  },
+
+  // 动态资源 - 网络优先
+  dynamic: async (request) => {
+    const cache = await caches.open(DYNAMIC_CACHE);
+    
+    try {
+      const networkResponse = await fetch(request);
+      if (networkResponse.ok) {
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    } catch (error) {
+      const cached = await cache.match(request);
+      return cached || new Response('离线中', { status: 503 });
+    }
+  }
+};
+
 // 拦截网络请求
 self.addEventListener('fetch', (event) => {
-  console.log('[Service Worker] 拦截请求:', event.request.url);
+  const { request } = event;
+  const url = new URL(request.url);
   
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // 如果在缓存中找到响应，则返回缓存的响应
-        if (response) {
-          console.log('[Service Worker] 从缓存返回:', event.request.url);
-          return response;
-        }
-        
-        // 否则发起网络请求
-        console.log('[Service Worker] 发起网络请求:', event.request.url);
-        return fetch(event.request)
-          .then((response) => {
-            // 检查响应是否有效
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // 克隆响应，因为响应是流，只能使用一次
-            const responseToCache = response.clone();
-            
-            // 将新的响应添加到缓存中
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                console.log('[Service Worker] 缓存新资源:', event.request.url);
-                cache.put(event.request, responseToCache);
-              })
-              .catch((error) => {
-                console.error('[Service Worker] 缓存失败:', error);
-              });
-            
-            return response;
-          })
-          .catch((error) => {
-            console.error('[Service Worker] 网络请求失败:', error);
-            // 如果网络请求失败，可以返回一个离线页面
-            return caches.match('/index.html');
-          });
-      })
-  );
+  // 跳过非GET请求
+  if (request.method !== 'GET') return;
+  
+  // 跳过chrome扩展请求
+  if (url.protocol === 'chrome-extension:') return;
+  
+  // 判断请求类型
+  let strategy = 'dynamic';
+  
+  if (STATIC_URLS.some(u => request.url.includes(u) || url.pathname === u)) {
+    strategy = 'static';
+  } else if (url.pathname.includes('/rest/v1/') || 
+             url.hostname.includes('supabase.co')) {
+    strategy = 'api';
+  }
+  
+  event.respondWith(CACHE_STRATEGIES[strategy](request));
 });
 
 // 后台同步
 self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-attendance-data') {
-    console.log('[Service Worker] 执行后台同步:', event.tag);
-    event.waitUntil(syncAttendanceData());
+  if (event.tag === 'sync-data') {
+    event.waitUntil(syncData());
   }
 });
 
 // 推送通知
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] 收到推送通知:', event.data);
-  
-  const data = event.data ? event.data.json() : {};
-  const options = {
-    body: data.body || '有新的消息通知',
-    icon: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D',
-    badge: 'https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/202e421ad5584be09197200fb64801cb~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603251522510C2B92F0154267AB91D9&rrcfp=f06b921b&x-expires=1777015434&x-signature=VqlAlhiqhibrNyMSWgWghmTCFD0%3D',
-    data: {
-      url: data.url || '/dashboard.html'
-    }
-  };
-  
+  const data = event.data.json();
   event.waitUntil(
-    self.registration.showNotification(data.title || '班级管理系统', options)
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon.png',
+      badge: '/badge.png',
+      data: data.data
+    })
   );
 });
 
-// 点击通知
+// 通知点击
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] 通知被点击:', event.notification.data);
-  
   event.notification.close();
-  
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.openWindow(event.notification.data.url || '/')
   );
 });
 
-// 同步签到数据的函数
-function syncAttendanceData() {
-  // 从 IndexedDB 获取待同步的数据
-  return new Promise((resolve, reject) => {
-    console.log('[Service Worker] 同步签到数据...');
-    // 这里应该实现与 IndexedDB 的交互逻辑
-    // 由于在 Service Worker 中无法直接访问 IndexedDB，
-    // 实际实现需要在主线程中完成
-    resolve();
-  });
-}
-
-// 周期性同步
-self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'daily-sync') {
-    event.waitUntil(dailySync());
-  }
-});
-
-// 每日同步函数
-function dailySync() {
-  console.log('[Service Worker] 执行每日同步...');
-  // 实现每日同步逻辑
-  return Promise.resolve();
-}
-
-// 分享目标 API
-self.addEventListener('share', (event) => {
-  console.log('[Service Worker] 处理分享:', event.data);
-  // 实现分享处理逻辑
-});
-
-// 消息接收
-self.addEventListener('message', (event) => {
-  console.log('[Service Worker] 收到消息:', event.data);
+// 定期清理旧缓存
+setInterval(async () => {
+  const apiCache = await caches.open(API_CACHE);
+  const requests = await apiCache.keys();
+  const now = Date.now();
+  const maxAge = 5 * 60 * 1000; // 5分钟
   
-  // 处理来自主线程的消息
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+  for (const request of requests) {
+    const response = await apiCache.match(request);
+    const dateHeader = response.headers.get('date');
+    if (dateHeader) {
+      const age = now - new Date(dateHeader).getTime();
+      if (age > maxAge) {
+        apiCache.delete(request);
+      }
+    }
   }
-});
-
-// 错误处理
-self.addEventListener('error', (event) => {
-  console.error('[Service Worker] 错误:', event.error);
-});
-
-// 未捕获的异常
-self.addEventListener('unhandledrejection', (event) => {
-  console.error('[Service Worker] 未处理的 Promise 拒绝:', event.reason);
-});
+}, 60000); // 每分钟清理一次

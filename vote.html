@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 投票抽奖</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -814,7 +814,7 @@
     
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/supabase-service.js"></script>
     <script src="js/leancloud-config.js"></script>
@@ -934,8 +934,15 @@
             
             container.innerHTML = filtered.map(vote => {
                 const status = getStatus(vote);
-                const voteRecordCount = voteRecords.filter(r => r.voteId === vote.id).length;
-                const userVoted = voteRecords.find(r => r.voteId === vote.id && r.userId === currentUser.id);
+                const voteRecordCount = voteRecords.filter(r => String(r.voteId || r.voteid) === String(vote.id)).length;
+                const userVoted = voteRecords.some(r => {
+                    const recordVoteId = r.voteId || r.voteid;
+                    const recordUserId = r.userId || r.userid;
+                    return String(recordVoteId) === String(vote.id) && 
+                           recordUserId !== undefined && 
+                           recordUserId !== null &&
+                           String(recordUserId) === String(currentUser.id);
+                });
                 
                 return `
                     <div class="p-4 hover:bg-gray-50 transition-colors">
@@ -987,8 +994,15 @@
             
             container.innerHTML = filtered.map(lottery => {
                 const status = getStatus(lottery);
-                const lotteryRecordCount = lotteryRecords.filter(r => r.lotteryId === lottery.id).length;
-                const userRecords = lotteryRecords.filter(r => r.lotteryId === lottery.id && r.userId === currentUser.id);
+                const lotteryRecordCount = lotteryRecords.filter(r => String(r.lotteryId || r.lotteryid) === String(lottery.id)).length;
+                const userRecords = lotteryRecords.filter(r => {
+                    const recordLotteryId = r.lotteryId || r.lotteryid;
+                    const recordUserId = r.userId || r.userid;
+                    return String(recordLotteryId) === String(lottery.id) && 
+                           recordUserId !== undefined && 
+                           recordUserId !== null &&
+                           String(recordUserId) === String(currentUser.id);
+                });
                 const maxDraws = lottery.maxDraws || 1;
                 const canDraw = status === 'active' && userRecords.length < maxDraws;
                 
@@ -1157,7 +1171,7 @@
         async function showMyVoteRecord(voteId) {
             const votes = await DataService.getVotes();
             const vote = votes.find(v => v.id === voteId);
-            const records = (await DataService.getVoteRecords()).filter(r => r.voteId === voteId && r.userId === currentUser.id);
+            const records = (await DataService.getVoteRecords()).filter(r => (r.voteId || r.voteid) === voteId && String(r.userId || r.userid) === String(currentUser.id));
             
             if (!vote) return;
             
@@ -1167,7 +1181,7 @@
                 return;
             }
             
-            const selectedOptions = myRecord.selectedOptions.map(i => vote.options[i]).join('、');
+            const selectedOptions = (myRecord.selectedOptions || myRecord.selectedoptions || myRecord.choices || []).map(i => vote.options[i]).join('、');
             
             let html = `
                 <div class="mb-6">
@@ -1175,7 +1189,7 @@
                     <div class="p-4 bg-blue-50 rounded-xl">
                         <p class="text-sm text-gray-600 mb-2">您的选择：</p>
                         <p class="font-medium text-primary">${selectedOptions}</p>
-                        <p class="text-xs text-gray-500 mt-2">投票时间：${formatDateTime(myRecord.participatedAt)}</p>
+                        <p class="text-xs text-gray-500 mt-2">投票时间：${formatDateTime(myRecord.participatedAt || myRecord.votedAt)}</p>
                     </div>
                     ${myRecord.customFields && Object.keys(myRecord.customFields).length > 0 ? `
                         <div class="mt-4 p-4 bg-gray-50 rounded-xl">
@@ -1193,13 +1207,21 @@
         async function showVoteDetail(voteId) {
             const votes = await DataService.getVotes();
             const vote = votes.find(v => v.id === voteId);
-            const records = (await DataService.getVoteRecords()).filter(r => r.voteId === voteId);
+            const records = (await DataService.getVoteRecords()).filter(r => (r.voteId || r.voteid) === voteId);
             
             if (!vote) return;
             
+            const isAdmin = currentUser.role !== 'user';
+            const userVoted = records.some(r => String(r.userId || r.userid) === String(currentUser.id));
+            
+            if (!isAdmin && !userVoted) {
+                showToast('请先参与投票后再查看结果', 'warning');
+                return;
+            }
+            
             const optionCounts = vote.options.map((opt, i) => ({
                 name: opt,
-                count: records.filter(r => r.selectedOptions.includes(i)).length
+                count: records.filter(r => (r.selectedOptions || r.selectedoptions || r.choices || []).includes(i)).length
             }));
             
             let exportBtnHtml = '';
@@ -1237,7 +1259,7 @@
         async function showMyLotteryRecord(lotteryId) {
             const lotteries = await DataService.getLotteries();
             const lottery = lotteries.find(l => l.id === lotteryId);
-            const records = (await DataService.getLotteryRecords()).filter(r => r.lotteryId === lotteryId && r.userId === currentUser.id);
+            const records = (await DataService.getLotteryRecords()).filter(r => (r.lotteryId || r.lotteryid) === lotteryId && String(r.userId || r.userid) === String(currentUser.id));
             
             if (!lottery) return;
             
@@ -1278,14 +1300,14 @@
             
             html += `</div></div>`;
             
-            document.getElementById('lotteryDetailContent').innerHTML = html;
-            document.getElementById('lotteryDetailModal').classList.remove('hidden');
+            document.getElementById('voteDetailContent').innerHTML = html;
+            document.getElementById('voteDetailModal').classList.remove('hidden');
         }
         
         async function showLotteryRecords(lotteryId) {
             const lotteries = await DataService.getLotteries();
             const lottery = lotteries.find(l => l.id === lotteryId);
-            const records = (await DataService.getLotteryRecords()).filter(r => r.lotteryId === lotteryId);
+            const records = (await DataService.getLotteryRecords()).filter(r => (r.lotteryId || r.lotteryid) === lotteryId);
             
             if (!lottery) return;
             
@@ -1358,9 +1380,9 @@
             const data = records.map(r => ({
                 姓名: r.participantName || '',
                 手机号: r.participantPhone || '',
-                选择: r.selectedOptions.map(i => vote.options[i]).join(','),
+                选择: (r.selectedOptions || r.selectedoptions || r.choices || []).map(i => vote.options[i]).join(','),
                 备注: r.remark || '',
-                时间: formatDateTime(r.participatedAt)
+                时间: formatDateTime(r.participatedAt || r.votedAt)
             }));
             
             DataService.exportToCSV(data, `投票记录_${vote.title}_${new Date().toLocaleDateString()}`);
@@ -1506,7 +1528,7 @@
                         <div class="prize-assigned-members mt-2">
                             <label class="block text-xs text-gray-600 mb-1"><i class="fa fa-user-secret text-red-500 mr-1"></i>指定中奖成员（仅超级管理员可见）</label>
                             <div class="prize-member-select-container max-h-32 overflow-y-auto border rounded-lg p-2 bg-white text-sm">
-                                ${users.map(u => `<label class="flex items-center py-1 hover:bg-gray-50 px-1 rounded"><input type="checkbox" class="prize-member-checkbox w-4 h-4 text-primary rounded mr-2" value="${u.id}" ${(p.assignedMembers || []).includes(u.id) ? 'checked' : ''}><span>${u.username}</span></label>`).join('')}
+                                ${users.map(u => `<label class="flex items-center py-1 hover:bg-gray-50 px-1 rounded"><input type="checkbox" class="prize-member-checkbox w-4 h-4 text-primary rounded mr-2" value="${u.id}" ${(p.assignedMembers || p.assignedmembers || []).map(m => parseInt(m)).includes(parseInt(u.id)) ? 'checked' : ''}><span>${u.username}</span></label>`).join('')}
                             </div>
                         </div>
                     `;
@@ -1576,8 +1598,15 @@
             
             container.innerHTML = filtered.map(q => {
                 const status = getStatus(q);
-                const recordCount = questionnaireRecords.filter(r => r.questionnaireId === q.id).length;
-                const userParticipated = questionnaireRecords.find(r => r.questionnaireId === q.id && r.userId === currentUser.id);
+                const recordCount = questionnaireRecords.filter(r => String(r.questionnaireId || r.questionnaireid) === String(q.id)).length;
+                const userParticipated = questionnaireRecords.some(r => {
+                    const recordQId = r.questionnaireId || r.questionnaireid;
+                    const recordUserId = r.userId || r.userid;
+                    return String(recordQId) === String(q.id) && 
+                           recordUserId !== undefined && 
+                           recordUserId !== null &&
+                           String(recordUserId) === String(currentUser.id);
+                });
                 
                 return `
                     <div class="p-4 hover:bg-gray-50 transition-colors">
@@ -2048,7 +2077,7 @@
         async function showMyQuestionnaireRecord(questionnaireId) {
             const questionnaires = await DataService.getQuestionnaires();
             const questionnaire = questionnaires.find(q => q.id === questionnaireId);
-            const records = (await DataService.getQuestionnaireRecords()).filter(r => r.questionnaireId === questionnaireId && r.userId === currentUser.id);
+            const records = (await DataService.getQuestionnaireRecords()).filter(r => (r.questionnaireId || r.questionnaireid) === questionnaireId && String(r.userId || r.userid) === String(currentUser.id));
             
             if (!questionnaire) return;
             
@@ -2109,9 +2138,17 @@
         async function showQuestionnaireStats(questionnaireId) {
             const questionnaires = await DataService.getQuestionnaires();
             const questionnaire = questionnaires.find(q => q.id === questionnaireId);
-            const records = (await DataService.getQuestionnaireRecords()).filter(r => r.questionnaireId === questionnaireId);
+            const records = (await DataService.getQuestionnaireRecords()).filter(r => (r.questionnaireId || r.questionnaireid) === questionnaireId);
             
             if (!questionnaire) return;
+            
+            const isAdmin = currentUser.role !== 'user';
+            const userParticipated = records.some(r => String(r.userId || r.userid) === String(currentUser.id));
+            
+            if (!isAdmin && !userParticipated) {
+                showToast('请先填写问卷后再查看结果', 'warning');
+                return;
+            }
             
             document.getElementById('statsQuestionnaireTitle').textContent = questionnaire.title;
             document.getElementById('statsTotalResponses').textContent = records.length;
@@ -2809,6 +2846,7 @@
                     remark: currentVote.needRemark ? document.getElementById('voteParticipantRemark').value : '',
                     customFields: customFieldValues,
                     selectedOptions: selectedOptions,
+                    choices: selectedOptions,
                     participatedAt: new Date().toISOString()
                 };
                 
@@ -2838,7 +2876,8 @@
                 
                 if (currentLottery.prizes) {
                     for (const p of currentLottery.prizes) {
-                        if (p.assignedMembers && p.assignedMembers.includes(currentUser.id)) {
+                        const assignedMembers = p.assignedMembers || p.assignedmembers || [];
+                        if (assignedMembers.length > 0 && assignedMembers.map(m => parseInt(m)).includes(parseInt(currentUser.id))) {
                             prize = p.name;
                             break;
                         }

@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 签到管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -261,6 +261,7 @@
                                 <option value="300">300米</option>
                                 <option value="400">400米</option>
                                 <option value="500">500米</option>
+                                <option value="1000">1000米</option>
                             </select>
                         </div>
                     </div>
@@ -492,7 +493,7 @@
     
     <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/supabase-service.js"></script>
     <script src="js/leancloud-config.js"></script>
@@ -680,12 +681,19 @@
             
             container.innerHTML = filtered.map(attendance => {
                 const status = getAttendanceStatus(attendance);
-                const attendanceRecords = records.filter(r => r.attendanceId === attendance.id);
+                const attendanceRecords = records.filter(r => String(r.attendanceId || r.attendanceid) === String(attendance.id));
                 const signedCount = attendanceRecords.length;
                 const totalUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin').length;
                 const progress = totalUsers > 0 ? Math.round((signedCount / totalUsers) * 100) : 0;
                 
-                const userRecord = records.find(r => r.attendanceId === attendance.id && r.userId === currentUser.id);
+                const userRecord = records.find(r => {
+                    const recordAId = r.attendanceId || r.attendanceid;
+                    const recordUserId = r.userId || r.userid;
+                    return String(recordAId) === String(attendance.id) && 
+                           recordUserId !== undefined && 
+                           recordUserId !== null &&
+                           String(recordUserId) === String(currentUser.id);
+                });
                 const hasSigned = !!userRecord;
                 
                 let timeDisplay = '';
@@ -729,7 +737,7 @@
                                 ${status === 'active' && hasSigned ? `<span class="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm">已签到</span>` : ''}
                                 <button onclick="showQrCode(${attendance.id})" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="二维码"><i class="fa fa-qrcode"></i></button>
                                 <button onclick="showDetail(${attendance.id})" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition-colors" title="详情"><i class="fa fa-info-circle"></i></button>
-                                ${status !== 'completed' ? `<button onclick="editAttendance(${attendance.id})" class="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors" title="编辑"><i class="fa fa-edit"></i></button><button onclick="deleteAttendance(${attendance.id})" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition-colors" title="删除"><i class="fa fa-trash"></i></button>` : ''}
+                                ${currentUser.role !== 'user' ? `<button onclick="editAttendance(${attendance.id})" class="px-3 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors" title="编辑"><i class="fa fa-edit"></i></button><button onclick="deleteAttendance(${attendance.id})" class="px-3 py-2 bg-red-100 text-red-600 rounded-lg text-sm hover:bg-red-200 transition-colors" title="删除"><i class="fa fa-trash"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -764,6 +772,21 @@
                 document.getElementById('locationMessage').textContent = '正在获取您的位置...';
                 document.getElementById('distanceInfo').textContent = '';
                 
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    document.getElementById('locationMessage').innerHTML = '<span class="text-orange-600"><i class="fa fa-exclamation-circle mr-1"></i>需要HTTPS环境</span>';
+                    document.getElementById('distanceInfo').innerHTML = `
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500 mb-2">地理位置需要HTTPS，请手动输入坐标：</p>
+                            <div class="flex space-x-2">
+                                <input type="text" id="manualLat" placeholder="纬度" class="flex-1 px-3 py-1 border rounded text-sm">
+                                <input type="text" id="manualLng" placeholder="经度" class="flex-1 px-3 py-1 border rounded text-sm">
+                                <button type="button" onclick="verifyManualLocation()" class="px-3 py-1 bg-primary text-white rounded text-sm">验证</button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
                 if (navigator.geolocation) {
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
@@ -789,8 +812,25 @@
                             }
                         },
                         (error) => {
-                            document.getElementById('locationMessage').innerHTML = '<span class="text-red-600"><i class="fa fa-times-circle mr-1"></i>无法获取位置</span>';
-                            document.getElementById('distanceInfo').textContent = '请确保已授权位置权限';
+                            let errorMsg = '无法获取位置';
+                            if (error.code === 1) {
+                                errorMsg = '请授权位置权限';
+                            } else if (error.code === 2) {
+                                errorMsg = '位置信息不可用';
+                            } else if (error.code === 3) {
+                                errorMsg = '获取位置超时';
+                            }
+                            document.getElementById('locationMessage').innerHTML = `<span class="text-red-600"><i class="fa fa-times-circle mr-1"></i>${errorMsg}</span>`;
+                            document.getElementById('distanceInfo').innerHTML = `
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500 mb-2">请手动输入坐标：</p>
+                                    <div class="flex space-x-2">
+                                        <input type="text" id="manualLat" placeholder="纬度" class="flex-1 px-3 py-1 border rounded text-sm">
+                                        <input type="text" id="manualLng" placeholder="经度" class="flex-1 px-3 py-1 border rounded text-sm">
+                                        <button type="button" onclick="verifyManualLocation()" class="px-3 py-1 bg-primary text-white rounded text-sm">验证</button>
+                                    </div>
+                                </div>
+                            `;
                         },
                         { enableHighAccuracy: true, timeout: 10000 }
                     );
@@ -803,6 +843,34 @@
             }
             
             document.getElementById('signModal').classList.remove('hidden');
+        }
+        
+        function verifyManualLocation() {
+            const lat = parseFloat(document.getElementById('manualLat').value);
+            const lng = parseFloat(document.getElementById('manualLng').value);
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                showToast('请输入有效的坐标', 'warning');
+                return;
+            }
+            
+            userLocation = { lat, lng };
+            
+            const distance = calculateDistance(
+                userLocation.lat, userLocation.lng,
+                currentAttendance.latitude, currentAttendance.longitude
+            );
+            
+            const rangeMeters = parseInt(currentAttendance.rangeMeters) || 200;
+            
+            if (distance <= rangeMeters) {
+                document.getElementById('locationMessage').innerHTML = '<span class="text-green-600 font-medium"><i class="fa fa-check-circle mr-1"></i>位置验证通过</span>';
+                document.getElementById('distanceInfo').textContent = `您距离签到点约 ${Math.round(distance)} 米`;
+                document.getElementById('confirmSignBtn').disabled = false;
+            } else {
+                document.getElementById('locationMessage').innerHTML = '<span class="text-red-600 font-medium"><i class="fa fa-times-circle mr-1"></i>位置验证失败</span>';
+                document.getElementById('distanceInfo').textContent = `您距离签到点约 ${Math.round(distance)} 米，需在 ${rangeMeters} 米范围内`;
+            }
         }
         
         function closeSignModal() {
@@ -848,18 +916,25 @@
             if (!attendance) return;
             
             const records = await DataService.getAttendanceRecords();
-            let attendanceRecords = records.filter(r => r.attendanceId === attendanceId);
+            let attendanceRecords = records.filter(r => (r.attendanceId || r.attendanceid) === attendanceId);
             const users = await DataService.getUsers();
             const allUsers = users.filter(u => u.role === 'user' || u.role === 'subAdmin');
             
             const isAdmin = currentUser.role !== 'user';
+            const userRecord = attendanceRecords.find(r => String(r.userId || r.userid) === String(currentUser.id));
+            const hasSigned = !!userRecord;
             
-            if (!isAdmin) {
-                attendanceRecords = attendanceRecords.filter(r => r.userId === currentUser.id);
+            if (!isAdmin && !hasSigned) {
+                showToast('请先签到后再查看详情', 'warning');
+                return;
             }
             
-            const signedUsers = attendanceRecords.map(r => r.userId);
-            const unsignedUsers = isAdmin ? allUsers.filter(u => !signedUsers.includes(u.id)) : [];
+            if (!isAdmin) {
+                attendanceRecords = attendanceRecords.filter(r => String(r.userId || r.userid) === String(currentUser.id));
+            }
+            
+            const signedUsers = attendanceRecords.map(r => r.userId || r.userid);
+            const unsignedUsers = isAdmin ? allUsers.filter(u => !signedUsers.map(s => String(s)).includes(String(u.id))) : [];
             
             let timeDisplay = '';
             if (attendance.isRepeat) {
@@ -943,7 +1018,7 @@
         async function exportAttendanceRecords(attendanceId) {
             const attendances = await DataService.getAttendances();
             const attendance = attendances.find(a => a.id === attendanceId);
-            const records = (await DataService.getAttendanceRecords()).filter(r => r.attendanceId === attendanceId);
+            const records = (await DataService.getAttendanceRecords()).filter(r => (r.attendanceId || r.attendanceid) === attendanceId);
             
             if (records.length === 0) {
                 showToast('没有记录可导出', 'warning');

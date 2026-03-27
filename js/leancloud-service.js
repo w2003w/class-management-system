@@ -37,7 +37,7 @@ const LeanCloudService = {
             }
             
             const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js';
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leancloud-storage/4.15.0/av-min.js';
             script.onload = () => resolve(window.AV);
             script.onerror = reject;
             document.head.appendChild(script);

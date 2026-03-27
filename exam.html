@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 考试系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script>
         tailwind.config = {
             theme: {
@@ -708,7 +708,7 @@
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/supabase-service.js"></script>
     <script src="js/leancloud-config.js"></script>
@@ -851,8 +851,15 @@
             
             container.innerHTML = filtered.map(exam => {
                 const status = getExamStatus(exam);
-                const examRecords = records.filter(r => r.examId === exam.id);
-                const userRecord = records.find(r => r.examId === exam.id && r.userId === currentUser.id);
+                const examRecords = records.filter(r => String(r.examId || r.examid) === String(exam.id));
+                const userRecord = records.find(r => {
+                    const recordExamId = r.examId || r.examid;
+                    const recordUserId = r.userId || r.userid;
+                    return String(recordExamId) === String(exam.id) && 
+                           recordUserId !== undefined && 
+                           recordUserId !== null &&
+                           String(recordUserId) === String(currentUser.id);
+                });
                 const hasTaken = !!userRecord;
                 
                 return `
@@ -1044,7 +1051,7 @@
             }
             
             const records = await DataService.getExamRecords();
-            const existingRecord = records.find(r => r.examId === examId && r.userId === currentUser.id);
+            const existingRecord = records.find(r => (r.examId || r.examid) === examId && String(r.userId || r.userid) === String(currentUser.id));
             if (existingRecord) {
                 showToast('您已经参加过这场考试', 'warning');
                 return;
@@ -1380,7 +1387,8 @@
             
             let detailsHtml = '';
             if (record.details && record.details.length > 0) {
-                const examQuestions = questions.filter(q => exam.questionIds.includes(q.id));
+                const examQuestionIds = exam.questionIds || exam.questionids || [];
+                const examQuestions = questions.filter(q => examQuestionIds.includes(q.id));
                 detailsHtml = `
                     <div class="mt-6">
                         <h4 class="font-semibold text-gray-800 mb-3">答题详情</h4>
@@ -1476,6 +1484,12 @@
             const records = await DataService.getExamRecords();
             const record = records.find(r => r.id === recordId);
             if (record) {
+                const isAdmin = currentUser.role !== 'user';
+                const isOwnRecord = String(record.userId || record.userid) === String(currentUser.id);
+                if (!isAdmin && !isOwnRecord) {
+                    showToast('您只能查看自己的考试结果', 'warning');
+                    return;
+                }
                 showResult(record);
             }
         }
@@ -1483,7 +1497,16 @@
         async function viewExamStats(examId) {
             const exams = await DataService.getExams();
             const exam = exams.find(e => e.id === examId);
-            const records = (await DataService.getExamRecords()).filter(r => r.examId === examId);
+            const records = (await DataService.getExamRecords()).filter(r => (r.examId || r.examid) === examId);
+            
+            const isAdmin = currentUser.role !== 'user';
+            const userRecord = records.find(r => String(r.userId || r.userid) === String(currentUser.id));
+            const hasTaken = !!userRecord;
+            
+            if (!isAdmin && !hasTaken) {
+                showToast('请先参加考试后再查看统计', 'warning');
+                return;
+            }
             
             if (records.length === 0) {
                 showToast('暂无考试记录', 'info');
@@ -1832,6 +1855,12 @@
             document.getElementById('createExamForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
+                const examName = document.getElementById('examName').value.trim();
+                if (!examName) {
+                    showToast('请输入考试名称', 'warning');
+                    return;
+                }
+                
                 const questions = await DataService.getQuestions();
                 const includeSingle = document.getElementById('includeSingle').checked;
                 const includeMultiple = document.getElementById('includeMultiple').checked;
@@ -1913,7 +1942,7 @@
                 }
                 
                 const exam = {
-                    name: document.getElementById('examName').value,
+                    name: examName,
                     startTime: document.getElementById('examStartTime').value,
                     endTime: document.getElementById('examEndTime').value,
                     questionCount: questionCount,
@@ -2127,6 +2156,13 @@
                 
                 try {
                     const type = document.getElementById('questionType').value;
+                    const content = document.getElementById('questionContent').value.trim();
+                    
+                    if (!content) {
+                        showToast('请输入题目内容', 'warning');
+                        return;
+                    }
+                    
                     let options = [];
                     let correctAnswers = [];
                     
@@ -2151,7 +2187,6 @@
                             return;
                         }
                         
-                        const content = document.getElementById('questionContent').value;
                         const blankCount = (content.match(/___/g) || []).length;
                         if (blankCount !== correctAnswers.length) {
                             showToast(`题目中有${blankCount}个空格，但只填写了${correctAnswers.length}个答案`, 'warning');
@@ -2200,7 +2235,7 @@
                     const question = {
                         type: type,
                         category: document.getElementById('questionCategory').value,
-                        content: document.getElementById('questionContent').value,
+                        content: content,
                         options: options,
                         correctAnswers: correctAnswers,
                         explanation: document.getElementById('questionExplanation').value,
