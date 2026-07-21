@@ -4,12 +4,12 @@ CREATE TABLE IF NOT EXISTS folders (
     name TEXT NOT NULL,
     ownerid BIGINT NOT NULL,
     members TEXT DEFAULT '',
-    createdat TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
     files JSONB DEFAULT '[]'
 );
 
 -- 添加缺失的列到folders表
-ALTER TABLE folders ADD COLUMN IF NOT EXISTS createdat TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE folders ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 ALTER TABLE folders ADD COLUMN IF NOT EXISTS files JSONB DEFAULT '[]';
 
 -- 文件表

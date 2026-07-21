@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_questionnaire_records_userid ON questionnaire_rec
 
 -- 通知索引
 CREATE INDEX IF NOT EXISTS idx_notifications_userid ON notifications(userId);
-CREATE INDEX IF NOT EXISTS idx_notifications_createdat ON notifications(createdAt DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_isread ON notifications(userId, isRead);
 ```
 

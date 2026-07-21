@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS file_records (
     tags JSONB DEFAULT '[]',
     is_public BOOLEAN DEFAULT false,
     download_count INTEGER DEFAULT 0,
-    createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

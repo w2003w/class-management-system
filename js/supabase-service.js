@@ -365,7 +365,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('attendances')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
@@ -456,7 +456,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('attendance_records')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
@@ -580,7 +580,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('exams')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
             
             if (error) throw error;
             return data || [];
@@ -1177,7 +1177,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('votes')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return data || [];
@@ -1266,7 +1266,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('notifications')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
@@ -1377,7 +1377,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('wrong_question_sets')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
@@ -1494,7 +1494,7 @@ const SupabaseService = {
                 query = query.eq('folder_path', path);
             }
 
-            const { data, error } = await query.order('createdat', { ascending: false });
+            const { data, error } = await query.order('created_at', { ascending: false });
 
             if (error) throw error;
 
@@ -1560,7 +1560,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('lotteries')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return data || [];
@@ -1793,7 +1793,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('questionnaires')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return data || [];
@@ -2051,7 +2051,7 @@ const SupabaseService = {
             const { data, error } = await this.supabase
                 .from('wrong_question_sets')
                 .select('*')
-                .order('createdat', { ascending: false });
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             return data || [];

@@ -501,7 +501,7 @@ const DataStore = {
         const questionnaires = this.getQuestionnaires();
         const maxId = questionnaires.length > 0 ? Math.max(...questionnaires.map(q => parseInt(q.id) || 0)) : 0;
         questionnaire.id = maxId + 1;
-        questionnaire.createdat = new Date().toISOString();
+        questionnaire.created_at = new Date().toISOString();
         questionnaires.push(questionnaire);
         this.saveQuestionnaires(questionnaires);
         return questionnaire;
@@ -543,7 +543,7 @@ const DataStore = {
         const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
         record.id = maxId + 1;
         record.submittedAt = new Date().toISOString();
-        record.createdat = new Date().toISOString();
+        record.created_at = new Date().toISOString();
         records.push(record);
         this.saveQuestionnaireRecords(records);
         return record;
