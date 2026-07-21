@@ -86,9 +86,18 @@ const SupabaseService = {
             console.log('Initializing Supabase with URL:', config.url);
             console.log('API key provided:', config.anonKey ? 'Yes' : 'No');
             
-            const { createClient } = window.supabase;
+            let createClient;
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                createClient = window.supabase.createClient;
+            } else if (window.createClient) {
+                createClient = window.createClient;
+            } else if (window.SupabaseClient && typeof window.SupabaseClient.createClient === 'function') {
+                createClient = window.SupabaseClient.createClient;
+            }
+            
             if (!createClient) {
-                console.error('supabase library not loaded');
+                console.error('supabase library not loaded properly');
+                console.error('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('supabase') || k === 'createClient'));
                 return false;
             }
             
