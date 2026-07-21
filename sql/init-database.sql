@@ -30,6 +30,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS class_name TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES groups(id);
 
 -- 创建索引
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -43,17 +44,26 @@ CREATE TABLE IF NOT EXISTS groups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     description TEXT,
-    created_by bigint REFERENCES users(id),
+    permissions JSONB DEFAULT '{}'::jsonb,
+    created_by UUID REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 初始化分组数据
+INSERT INTO groups (id, name, description, permissions) VALUES
+('00000000-0000-0000-0000-000000000001', '2024级1班', '计算机科学与技术专业2024级1班', '{"dashboard": true, "attendance": true, "exam": true, "vote": true, "chat": true}'),
+('00000000-0000-0000-0000-000000000002', '2024级2班', '计算机科学与技术专业2024级2班', '{"dashboard": true, "attendance": true, "exam": true, "vote": true, "chat": true}'),
+('00000000-0000-0000-0000-000000000003', '2025级1班', '软件工程专业2025级1班', '{"dashboard": true, "attendance": true, "exam": true, "vote": true, "chat": true}'),
+('00000000-0000-0000-0000-000000000004', '教师组', '全体教师成员', '{"dashboard": true, "attendance": true, "exam": true, "vote": true, "chat": true, "users": true}')
+ON CONFLICT (id) DO NOTHING;
 
 -- ================================================
 -- 3. 用户分组关联表
 -- ================================================
 CREATE TABLE IF NOT EXISTS user_groups (
-    user_id bigint REFERENCES users(id) ON DELETE CASCADE,
-    group_id bigint REFERENCES groups(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
     role TEXT DEFAULT 'member' CHECK (role IN ('admin', 'member')),
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, group_id)

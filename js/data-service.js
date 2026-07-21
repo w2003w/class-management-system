@@ -183,7 +183,7 @@ const DataService = {
 
     async batchUpdateUserGroups(userIds, groupId) {
         await this.ensureInit();
-        const updates = { group_id: groupId ? Number(groupId) : null };
+        const updates = { group_id: groupId || null };
         const results = [];
 
         for (const id of userIds) {
@@ -1810,7 +1810,7 @@ const DataService = {
         await this.ensureInit();
         try {
             if (window.ChatService) {
-                return await ChatService.sendMessage('global', content);
+                return await ChatService.sendMessage('00000000-0000-0000-0000-000000000001', content);
             }
         } catch (error) {
             console.warn('ChatService sendMessage failed:', error);

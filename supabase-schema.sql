@@ -27,9 +27,11 @@ DROP TABLE IF EXISTS groups CASCADE;
 DROP VIEW IF EXISTS user_stats CASCADE;
 
 CREATE TABLE groups (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT UNIQUE NOT NULL,
     description TEXT,
+    permissions JSONB DEFAULT '{}'::jsonb,
+    created_by UUID REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -46,7 +48,7 @@ CREATE TABLE users (
     phone TEXT,
     avatar TEXT,
     status TEXT DEFAULT 'active',
-    group_id BIGINT REFERENCES groups(id),
+    group_id UUID REFERENCES groups(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -74,6 +76,28 @@ CREATE TABLE attendance_records (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+CREATE TABLE subjects (
+    id TEXT PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    color TEXT DEFAULT '#3B82F6',
+    icon TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE question_types (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE knowledge_points (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name TEXT NOT NULL,
+    subject_id TEXT REFERENCES subjects(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE questions (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     type TEXT NOT NULL,
@@ -82,7 +106,7 @@ CREATE TABLE questions (
     answer TEXT NOT NULL,
     analysis TEXT,
     difficulty TEXT DEFAULT 'medium',
-    subject_id BIGINT,
+    subject_id TEXT REFERENCES subjects(id),
     knowledge_point_id BIGINT,
     created_by TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -176,27 +200,6 @@ CREATE TABLE password_reset_requests (
     email TEXT NOT NULL,
     token TEXT UNIQUE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE subjects (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name TEXT UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE knowledge_points (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name TEXT NOT NULL,
-    subject_id BIGINT REFERENCES subjects(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE question_types (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    name TEXT UNIQUE NOT NULL,
-    description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -446,7 +449,12 @@ CREATE POLICY "Allow anonymous read access to password_reset_requests" ON passwo
 CREATE POLICY "Allow anonymous insert to password_reset_requests" ON password_reset_requests
     FOR INSERT WITH CHECK (true);
 
-INSERT INTO groups (name, description) VALUES ('默认分组', '系统默认分组');
+INSERT INTO groups (id, name, description) VALUES 
+('00000000-0000-0000-0000-000000000001', '2024级1班', '计算机科学与技术专业2024级1班'),
+('00000000-0000-0000-0000-000000000002', '2024级2班', '计算机科学与技术专业2024级2班'),
+('00000000-0000-0000-0000-000000000003', '2025级1班', '软件工程专业2025级1班'),
+('00000000-0000-0000-0000-000000000004', '教师组', '全体教师成员')
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO users (username, password, name, role, status, created_at) 
 VALUES ('admin', 'admin123', '系统管理员', 'admin', 'active', NOW());

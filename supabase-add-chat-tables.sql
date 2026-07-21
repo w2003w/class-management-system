@@ -5,30 +5,31 @@
 -- 1. 聊天会话表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS chat_conversations (
-    id TEXT PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT,
-    type TEXT DEFAULT 'private',
-    participants JSONB DEFAULT '[]'::jsonb,
-    created_by TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    type TEXT DEFAULT 'private' CHECK (type IN ('private', 'group')),
+    participants UUID[] NOT NULL,
+    last_message TEXT,
     last_message_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    unread_count JSONB DEFAULT '{}'::jsonb,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_by bigint REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    unread_count JSONB DEFAULT '{}'::jsonb
 );
 
 -- ============================================================
 -- 2. 聊天消息表
 -- ============================================================
 CREATE TABLE IF NOT EXISTS chat_messages (
-    id TEXT PRIMARY KEY,
-    conversation_id TEXT NOT NULL DEFAULT 'global',
-    sender_id TEXT,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID REFERENCES chat_conversations(id) ON DELETE CASCADE,
+    sender_id bigint REFERENCES users(id),
     content TEXT NOT NULL,
-    type TEXT DEFAULT 'text',
-    metadata JSONB DEFAULT '{}'::jsonb,
-    status TEXT DEFAULT 'sent',
-    read_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    type TEXT DEFAULT 'text' CHECK (type IN ('text', 'image', 'file', 'system')),
+    metadata JSONB,
+    status TEXT DEFAULT 'sent' CHECK (status IN ('sending', 'sent', 'delivered', 'read', 'failed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    read_at TIMESTAMP WITH TIME ZONE
 );
 
 -- ============================================================
@@ -50,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_conversations_last_message
 -- 4. 预置全局群聊会话
 -- ============================================================
 INSERT INTO chat_conversations (id, name, type, participants, created_by, last_message_at, unread_count)
-VALUES ('global', '班级群聊', 'group', '[]'::jsonb, 'system', NOW(), '{}'::jsonb)
+VALUES ('00000000-0000-0000-0000-000000000001', '班级群聊', 'group', '{}', NULL, NOW(), '{}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -406,18 +406,34 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+            navigator.serviceWorker.register('service-worker.js').then(registration => {
+                console.log('Service Worker registered:', registration);
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('New Service Worker available, prompting refresh');
+                            if (confirm('网站有更新，是否刷新页面？')) {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.log('Service Worker registration failed:', err);
+            });
         }
     </script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2?v=3"></script>
-    <script src="js/supabase-config.js?v=3"></script>
-    <script src="js/supabase-service.js?v=3"></script>
-    <script src="js/leancloud-config.js?v=3"></script>
-    <script src="js/leancloud-service.js?v=3"></script>
-    <script src="js/firebase-config.js?v=3"></script>
-    <script src="js/firebase-service.js?v=3"></script>
-    <script src="js/data.js?v=3"></script>
-    <script src="js/data-service.js?v=3"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js?v=5"></script>
+    <script src="js/supabase-service.js?v=5"></script>
+    <script src="js/leancloud-config.js?v=5"></script>
+    <script src="js/leancloud-service.js?v=5"></script>
+    <script src="js/firebase-config.js?v=5"></script>
+    <script src="js/firebase-service.js?v=5"></script>
+    <script src="js/data.js?v=5"></script>
+    <script src="js/data-service.js?v=5"></script>
     <script>
         let currentActivityId = null;
         let currentTab = 'vote';

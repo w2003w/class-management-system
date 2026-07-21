@@ -93,7 +93,7 @@ const ChatService = {
 
     async getMessages(conversationId, options = {}) {
         const { limit = 50, before = null, after = null } = options;
-        const convId = conversationId || 'global';
+        const convId = conversationId || '00000000-0000-0000-0000-000000000001';
 
         try {
             const { supabase } = await this.getSupabase();
@@ -558,7 +558,13 @@ const ChatService = {
             const client = window.SupabaseService.supabase;
             if (client && typeof client.from === 'function') {
                 return { supabase: client };
+            } else if (client) {
+                console.error('[ChatService] Supabase client exists but has no from method:', typeof client);
             }
+        }
+
+        if (!window.SupabaseService) {
+            console.warn('[ChatService] SupabaseService not available');
         }
 
         return { supabase: null };

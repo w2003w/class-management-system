@@ -102,6 +102,8 @@ const SupabaseService = {
             }
             
             this.supabase = createClient(config.url, config.anonKey);
+            console.log('Supabase client created:', !!this.supabase);
+            console.log('Supabase client methods:', this.supabase ? Object.keys(this.supabase).filter(k => typeof this.supabase[k] === 'function') : 'null');
             this.initialized = true;
             console.log('Supabase initialized successfully');
             return true;

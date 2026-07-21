@@ -1,0 +1,5 @@
+{
+    "version": "5.0.0",
+    "buildDate": "2026-07-21",
+    "changelog": "更新缓存机制，修复Service Worker问题，统一版本号"
+}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -226,7 +226,7 @@
             </header>
 
             <main class="flex-1 overflow-y-auto p-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-6 mb-6">
                     <div class="card-stat">
                         <div class="card-stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #818CF8;">
                             <i class="fa-solid fa-users"></i>
@@ -254,6 +254,20 @@
                         </div>
                         <div class="stat-value" id="statRegularUsers">0</div>
                         <div class="stat-label">普通用户</div>
+                    </div>
+                    <div class="card-stat">
+                        <div class="card-stat-icon" style="background: rgba(249, 115, 22, 0.15); color: #FB923C;">
+                            <i class="fa-solid fa-layer-group"></i>
+                        </div>
+                        <div class="stat-value" id="statTotalGroups">0</div>
+                        <div class="stat-label">分组总数</div>
+                    </div>
+                    <div class="card-stat">
+                        <div class="card-stat-icon" style="background: rgba(239, 68, 68, 0.15); color: #F87171;">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </div>
+                        <div class="stat-value" id="statNoGroupUsers">0</div>
+                        <div class="stat-label">未分组用户</div>
                     </div>
                 </div>
 
@@ -481,7 +495,7 @@
     </div>
 
     <div id="groupModal" class="fixed inset-0 modal-overlay flex items-center justify-center z-50 hidden">
-        <div class="glass-card rounded-2xl p-6 max-w-md w-full mx-4">
+        <div class="glass-card rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
                 <h3 id="groupModalTitle" class="text-xl font-bold text-white">添加分组</h3>
                 <button id="closeGroupModal" class="text-gray-400 hover:text-white transition-colors">
@@ -499,6 +513,35 @@
                     <label class="block text-sm font-medium text-gray-300 mb-2">描述</label>
                     <input type="text" id="groupDescription"
                         class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100" placeholder="可选描述">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">分组权限</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permDashboard" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">数据概览</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permAttendance" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">签到管理</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permExam" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">考试系统</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permVote" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">投票抽奖</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permChat" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">实时聊天</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-3 bg-gray-800/50 rounded-xl cursor-pointer hover:bg-gray-800 transition-colors">
+                            <input type="checkbox" id="permUsers" class="permission-checkbox w-4 h-4 rounded border-gray-600 bg-gray-700 text-primary focus:ring-primary">
+                            <span class="text-gray-300">用户管理</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="flex items-center space-x-3 pt-2">
                     <button type="button" id="cancelGroupBtn" class="flex-1 px-4 py-3 bg-gray-700/50 text-gray-300 rounded-xl font-medium hover:bg-gray-700 transition-colors">取消</button>
@@ -536,17 +579,34 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+            navigator.serviceWorker.register('service-worker.js').then(registration => {
+                console.log('Service Worker registered:', registration);
+                
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('New Service Worker available, prompting refresh');
+                            if (confirm('网站有更新，是否刷新页面？')) {
+                                window.location.reload();
+                            }
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.log('Service Worker registration failed:', err);
+            });
         }
     </script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2?v=4"></script>
-    <script src="js/supabase-config.js?v=4"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/version-check-service.js?v=5"></script>
+    <script src="js/supabase-config.js?v=5"></script>
     <script src="js/supabase-service.js?v=5"></script>
-    <script src="js/leancloud-config.js?v=4"></script>
-    <script src="js/leancloud-service.js?v=4"></script>
-    <script src="js/firebase-config.js?v=4"></script>
-    <script src="js/firebase-service.js?v=4"></script>
-    <script src="js/data.js?v=4"></script>
+    <script src="js/leancloud-config.js?v=5"></script>
+    <script src="js/leancloud-service.js?v=5"></script>
+    <script src="js/firebase-config.js?v=5"></script>
+    <script src="js/firebase-service.js?v=5"></script>
+    <script src="js/data.js?v=5"></script>
     <script src="js/data-service.js?v=5"></script>
 
     <script>
@@ -607,6 +667,7 @@
                 }
 
                 initEventListeners();
+                await loadGroupsForImport();
                 await loadUsers();
                 await updateStats();
                 
@@ -938,11 +999,15 @@
             const activeUsers = (users || []).filter(u => (u.status || 'active') === 'active').length;
             const admins = (users || []).filter(u => u.role === 'admin' || u.role === 'subAdmin').length;
             const regularUsers = (users || []).filter(u => u.role === 'user').length;
+            const totalGroups = (groups || []).length;
+            const noGroupUsers = (users || []).filter(u => !u.group_id).length;
 
             document.getElementById('statTotalUsers').textContent = totalUsers;
             document.getElementById('statActiveUsers').textContent = activeUsers;
             document.getElementById('statAdmins').textContent = admins;
             document.getElementById('statRegularUsers').textContent = regularUsers;
+            document.getElementById('statTotalGroups').textContent = totalGroups;
+            document.getElementById('statNoGroupUsers').textContent = noGroupUsers;
         }
 
         async function saveUser() {
@@ -951,7 +1016,7 @@
                     name: document.getElementById('userName').value.trim(),
                     username: document.getElementById('userUsername').value.trim(),
                     role: document.getElementById('userRole').value,
-                    group_id: document.getElementById('userGroup').value ? Number(document.getElementById('userGroup').value) : null,
+                    group_id: document.getElementById('userGroup').value || null,
                     department: document.getElementById('userDepartment').value.trim(),
                     class_name: document.getElementById('userClass').value.trim(),
                     email: document.getElementById('userEmail').value.trim(),
@@ -1137,6 +1202,7 @@
             document.getElementById('editingGroupId').value = '';
             document.getElementById('groupName').value = '';
             document.getElementById('groupDescription').value = '';
+            document.querySelectorAll('.permission-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('groupModal').classList.remove('hidden');
         }
 
@@ -1152,13 +1218,22 @@
                 return;
             }
 
+            const permissions = {
+                dashboard: document.getElementById('permDashboard').checked,
+                attendance: document.getElementById('permAttendance').checked,
+                exam: document.getElementById('permExam').checked,
+                vote: document.getElementById('permVote').checked,
+                chat: document.getElementById('permChat').checked,
+                users: document.getElementById('permUsers').checked
+            };
+
             showLoading(true);
             try {
                 if (editingGroupId) {
-                    await DataService.updateGroup(String(editingGroupId), { name, description });
+                    await DataService.updateGroup(String(editingGroupId), { name, description, permissions });
                     showToast('分组更新成功', 'success');
                 } else {
-                    await DataService.addGroup({ name, description });
+                    await DataService.addGroup({ name, description, permissions });
                     showToast('分组创建成功', 'success');
                 }
                 closeGroupModal();
@@ -1180,6 +1255,15 @@
             document.getElementById('editingGroupId').value = groupId;
             document.getElementById('groupName').value = group.name || '';
             document.getElementById('groupDescription').value = group.description || '';
+
+            const perms = group.permissions || {};
+            document.getElementById('permDashboard').checked = perms.dashboard || false;
+            document.getElementById('permAttendance').checked = perms.attendance || false;
+            document.getElementById('permExam').checked = perms.exam || false;
+            document.getElementById('permVote').checked = perms.vote || false;
+            document.getElementById('permChat').checked = perms.chat || false;
+            document.getElementById('permUsers').checked = perms.users || false;
+
             document.getElementById('groupModal').classList.remove('hidden');
         }
 
@@ -1209,9 +1293,11 @@
             try {
                 groups = await DataService.getGroups() || [];
                 populateGroupSelects();
+                renderGroupList();
             } catch (error) {
                 console.error('加载分组失败:', error);
                 groups = [];
+                renderGroupList();
             }
         }
 

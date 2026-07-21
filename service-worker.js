@@ -1,8 +1,9 @@
 // 班级管理系统 Service Worker - 高性能缓存策略
-const CACHE_NAME = 'class-management-cache-v3.0.0';
-const STATIC_CACHE = 'class-management-static-v3';
-const DYNAMIC_CACHE = 'class-management-dynamic-v3';
-const API_CACHE = 'class-management-api-v3';
+const CACHE_VERSION = 'v4';
+const CACHE_NAME = `class-management-cache-${CACHE_VERSION}`;
+const STATIC_CACHE = `class-management-static-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `class-management-dynamic-${CACHE_VERSION}`;
+const API_CACHE = `class-management-api-${CACHE_VERSION}`;
 
 // 需要预缓存的静态资源
 const STATIC_URLS = [
@@ -53,7 +54,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => !name.includes('v3'))
+          .filter((name) => name.startsWith('class-management-') && !name.includes(CACHE_VERSION))
           .map((name) => {
             console.log('[SW] 删除旧缓存:', name);
             return caches.delete(name);
@@ -147,7 +148,19 @@ self.addEventListener('fetch', (event) => {
   // 判断请求类型
   let strategy = 'dynamic';
   
-  if (STATIC_URLS.some(u => request.url.includes(u) || url.pathname === u)) {
+  if (url.pathname === '/' || 
+      url.pathname === '/index.html' ||
+      url.pathname === '/dashboard.html' ||
+      url.pathname === '/attendance.html' ||
+      url.pathname === '/exam.html' ||
+      url.pathname === '/vote.html' ||
+      url.pathname === '/profile.html' ||
+      url.pathname === '/users.html' ||
+      url.pathname === '/settings.html' ||
+      url.pathname === '/grading.html' ||
+      url.pathname === '/participate.html' ||
+      url.pathname.startsWith('/js/') ||
+      url.pathname.startsWith('/css/')) {
     strategy = 'static';
   } else if (url.pathname.includes('/rest/v1/') || 
              url.hostname.includes('supabase.co')) {

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连接测试页面</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a2e; color: #fff; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        pre { background: #222; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h1>连接测试页面</h1>
+    
+    <div class="test-section">
+        <h2>1. 检查 supabase-js 库加载</h2>
+        <button onclick="checkLibrary()">检查库</button>
+        <div id="libraryResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 检查 Supabase 配置</h2>
+        <button onclick="checkConfig()">检查配置</button>
+        <div id="configResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试 Supabase 连接</h2>
+        <button onclick="testConnection()">测试连接</button>
+        <div id="connectionResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 获取分组数据</h2>
+        <button onclick="getGroupsData()">获取分组</button>
+        <div id="groupsResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. 控制台日志</h2>
+        <div id="consoleLog"></div>
+    </div>
+
+    <script>
+        const SupabaseConfig = {
+            url: 'https://szbskrqdhyhnikxijkoo.supabase.co',
+            anonKey: 'sb_publishable_XCL_dgmSDnEEz0IEB1SXxQ_kAmRtejU'
+        };
+
+        let originalLog = console.log;
+        let originalError = console.error;
+        let logOutput = '';
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logOutput += '<span class="info">[LOG]</span> ' + args.join(' ') + '<br>';
+            updateConsole();
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logOutput += '<span class="error">[ERR]</span> ' + args.join(' ') + '<br>';
+            updateConsole();
+        };
+
+        function updateConsole() {
+            document.getElementById('consoleLog').innerHTML = logOutput;
+        }
+
+        function checkLibrary() {
+            const result = document.getElementById('libraryResult');
+            result.innerHTML = '';
+            
+            if (window.createClient) {
+                result.innerHTML += '<p class="success">✓ createClient 函数可用</p>';
+            } else {
+                result.innerHTML += '<p class="error">✗ createClient 函数不可用</p>';
+            }
+            
+            console.log('Library check completed');
+        }
+
+        function checkConfig() {
+            const result = document.getElementById('configResult');
+            result.innerHTML = '';
+            
+            if (SupabaseConfig.url) {
+                result.innerHTML += '<p class="success">✓ URL: ' + SupabaseConfig.url + '</p>';
+            } else {
+                result.innerHTML += '<p class="error">✗ URL 为空</p>';
+            }
+            
+            if (SupabaseConfig.anonKey) {
+                result.innerHTML += '<p class="success">✓ API Key: ' + SupabaseConfig.anonKey.substring(0, 20) + '...</p>';
+            } else {
+                result.innerHTML += '<p class="error">✗ API Key 为空</p>';
+            }
+            
+            console.log('Config check completed');
+        }
+
+        async function testConnection() {
+            const result = document.getElementById('connectionResult');
+            result.innerHTML = '<p class="info">正在连接...</p>';
+            
+            try {
+                const supabase = createClient(SupabaseConfig.url, SupabaseConfig.anonKey);
+                result.innerHTML = '<p class="success">✓ Supabase 客户端创建成功</p>';
+                
+                if (supabase.from) {
+                    result.innerHTML += '<p class="success">✓ from() 方法可用</p>';
+                } else {
+                    result.innerHTML += '<p class="error">✗ from() 方法不可用</p>';
+                    result.innerHTML += '<p class="info">可用方法: ' + Object.keys(supabase).filter(k => typeof supabase[k] === 'function').join(', ') + '</p>';
+                }
+                
+                const { data, error } = await supabase.from('users').select('*').limit(1);
+                if (error) {
+                    result.innerHTML += '<p class="error">✗ 查询失败: ' + error.message + '</p>';
+                    result.innerHTML += '<p class="error">错误代码: ' + error.code + '</p>';
+                } else {
+                    result.innerHTML += '<p class="success">✓ 查询成功，用户数: ' + (data ? data.length : 0) + '</p>';
+                }
+                
+                console.log('Connection test completed');
+            } catch (err) {
+                result.innerHTML += '<p class="error">✗ 连接异常: ' + err.message + '</p>';
+                console.error('Connection test failed:', err);
+            }
+        }
+
+        async function getGroupsData() {
+            const result = document.getElementById('groupsResult');
+            result.innerHTML = '<p class="info">正在获取分组数据...</p>';
+            
+            try {
+                const supabase = createClient(SupabaseConfig.url, SupabaseConfig.anonKey);
+                
+                const { data, error } = await supabase.from('groups').select('*');
+                
+                if (error) {
+                    result.innerHTML = '<p class="error">✗ 获取分组失败: ' + error.message + '</p>';
+                    result.innerHTML += '<p class="error">错误代码: ' + error.code + '</p>';
+                    result.innerHTML += '<pre>' + JSON.stringify(error, null, 2) + '</pre>';
+                } else {
+                    result.innerHTML = '<p class="success">✓ 获取分组成功，数量: ' + (data ? data.length : 0) + '</p>';
+                    if (data && data.length > 0) {
+                        result.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                    } else {
+                        result.innerHTML += '<p class="info">⚠️ 分组表为空，请检查是否执行了初始化脚本</p>';
+                    }
+                }
+                
+                console.log('Groups data fetched');
+            } catch (err) {
+                result.innerHTML = '<p class="error">✗ 获取分组异常: ' + err.message + '</p>';
+                console.error('Get groups failed:', err);
+            }
+        }
+
+        window.onload = function() {
+            console.log('Test page loaded');
+        };
+    </script>
+</body>
+</html>

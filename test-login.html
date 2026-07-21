@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试页面</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a2e; color: #fff; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #333; border-radius: 8px; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        pre { background: #222; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 200px; overflow-y: auto; }
+        button { padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #1976D2; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>登录测试页面</h1>
+    
+    <div class="test-section">
+        <h2>1. 登录测试</h2>
+        <input type="text" id="username" placeholder="用户名" value="admin">
+        <input type="password" id="password" placeholder="密码" value="admin123">
+        <button onclick="testLogin()">登录</button>
+        <div id="loginResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 获取当前用户</h2>
+        <button onclick="testGetCurrentUser()">获取用户</button>
+        <div id="userResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 检查 localStorage</h2>
+        <button onclick="checkLocalStorage()">检查</button>
+        <div id="storageResult"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 控制台日志</h2>
+        <div id="consoleLog"></div>
+    </div>
+
+    <script>
+        const SupabaseConfig = {
+            url: 'https://szbskrqdhyhnikxijkoo.supabase.co',
+            anonKey: 'sb_publishable_XCL_dgmSDnEEz0IEB1SXxQ_kAmRtejU'
+        };
+
+        let supabaseClient = null;
+        let logOutput = '';
+
+        function log(msg, type = 'info') {
+            const colors = { info: '#2196F3', error: '#f44336', success: '#4CAF50' };
+            logOutput += `<span style="color: ${colors[type]}">[${type.toUpperCase()}]</span> ${msg}<br>`;
+            document.getElementById('consoleLog').innerHTML = logOutput;
+            console.log(msg);
+        }
+
+        async function testLogin() {
+            const result = document.getElementById('loginResult');
+            result.innerHTML = '<p class="info">正在登录...</p>';
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                log('步骤1: 创建 Supabase 客户端');
+                supabaseClient = createClient(SupabaseConfig.url, SupabaseConfig.anonKey);
+                
+                log('步骤2: 查询用户', 'info');
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('username', username)
+                    .maybeSingle();
+                
+                if (error) {
+                    log(`查询失败: ${error.message}`, 'error');
+                    result.innerHTML = '<p class="error">✗ 查询用户失败: ' + error.message + '</p>';
+                    return;
+                }
+                
+                if (!data) {
+                    log('用户不存在', 'error');
+                    result.innerHTML = '<p class="error">✗ 用户不存在</p>';
+                    return;
+                }
+                
+                log(`找到用户: ${JSON.stringify(data)}`, 'success');
+                
+                if (data.password !== password) {
+                    log(`密码不匹配: 数据库密码=${data.password}, 输入密码=${password}`, 'error');
+                    result.innerHTML = '<p class="error">✗ 密码错误</p>';
+                    return;
+                }
+                
+                log('步骤3: 保存用户到 localStorage', 'info');
+                localStorage.setItem('currentUser', JSON.stringify(data));
+                log(`localStorage.currentUser = ${localStorage.getItem('currentUser')}`, 'success');
+                
+                result.innerHTML = '<p class="success">✓ 登录成功！</p>';
+                result.innerHTML += '<p class="info">用户数据已保存到 localStorage</p>';
+                
+            } catch (err) {
+                log(`登录异常: ${err.message}`, 'error');
+                result.innerHTML = '<p class="error">✗ 登录异常: ' + err.message + '</p>';
+            }
+        }
+
+        async function testGetCurrentUser() {
+            const result = document.getElementById('userResult');
+            result.innerHTML = '<p class="info">正在获取用户...</p>';
+            
+            try {
+                log('步骤1: 从 localStorage 读取用户', 'info');
+                const userJson = localStorage.getItem('currentUser');
+                
+                if (!userJson) {
+                    log('localStorage 中没有 currentUser', 'error');
+                    result.innerHTML = '<p class="error">✗ localStorage 中没有用户数据</p>';
+                    return;
+                }
+                
+                log(`读取到: ${userJson}`, 'success');
+                
+                const user = JSON.parse(userJson);
+                log(`解析后的用户: ${JSON.stringify(user)}`, 'success');
+                
+                result.innerHTML = '<p class="success">✓ 获取用户成功！</p>';
+                result.innerHTML += '<pre>' + JSON.stringify(user, null, 2) + '</pre>';
+                
+                if (user && user.id && user.username) {
+                    result.innerHTML += '<p class="success">✓ 用户信息完整</p>';
+                } else {
+                    result.innerHTML += '<p class="error">✗ 用户信息不完整</p>';
+                }
+                
+            } catch (err) {
+                log(`获取用户异常: ${err.message}`, 'error');
+                result.innerHTML = '<p class="error">✗ 获取用户异常: ' + err.message + '</p>';
+            }
+        }
+
+        function checkLocalStorage() {
+            const result = document.getElementById('storageResult');
+            result.innerHTML = '';
+            
+            const keys = Object.keys(localStorage);
+            result.innerHTML = '<p class="info">localStorage 中的所有键值:</p>';
+            
+            if (keys.length === 0) {
+                result.innerHTML += '<p class="error">✗ localStorage 为空</p>';
+                return;
+            }
+            
+            keys.forEach(key => {
+                const value = localStorage.getItem(key);
+                const isJson = isJsonString(value);
+                result.innerHTML += `<p><strong>${key}:</strong> ${isJson ? '(JSON)' : ''}</p>`;
+                if (isJson) {
+                    try {
+                        const parsed = JSON.parse(value);
+                        result.innerHTML += '<pre>' + JSON.stringify(parsed, null, 2) + '</pre>';
+                    } catch (e) {
+                        result.innerHTML += '<p>' + value.substring(0, 100) + '...</p>';
+                    }
+                } else {
+                    result.innerHTML += '<p>' + value.substring(0, 100) + '...</p>';
+                }
+            });
+        }
+
+        function isJsonString(str) {
+            try {
+                JSON.parse(str);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        window.onload = function() {
+            log('测试页面加载完成');
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

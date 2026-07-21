@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -45,15 +45,15 @@
         <main class="flex-1 p-4">
             <div id="loadingState" class="flex flex-col items-center justify-center py-20">
                 <div class="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p class="text-gray-500">加载�?..</p>
+                <p class="text-gray-500">加载�?..</p>
             </div>
             
             <div id="errorState" class="hidden flex flex-col items-center justify-center py-20">
                 <div class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
                     <i class="fa fa-times text-red-500 text-3xl"></i>
                 </div>
-                <h2 class="text-xl font-bold text-gray-800 mb-2">出错�?/h2>
-                <p class="text-gray-500 mb-4" id="errorMessage">活动不存在或已结�?/p>
+                <h2 class="text-xl font-bold text-gray-800 mb-2">出错�?/h2>
+                <p class="text-gray-500 mb-4" id="errorMessage">活动不存在或已结�?/p>
                 <a href="index.html" class="px-6 py-2 bg-primary text-white rounded-xl font-medium">返回首页</a>
             </div>
             
@@ -70,14 +70,14 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">账号</label>
-                            <input type="text" id="loginUsername" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入账�?>
+                            <input type="text" id="loginUsername" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入账�?>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
-                            <input type="password" id="loginPassword" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入密�?>
+                            <input type="password" id="loginPassword" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入密�?>
                         </div>
                         <button id="loginSubmitBtn" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
-                            登录并参�?
+                            登录并参�?
                         </button>
                     </div>
                 </div>
@@ -123,7 +123,7 @@
                         <div id="lotteryExtraFields" class="space-y-4 mb-6"></div>
                         
                         <button type="submit" class="w-full py-3 bg-accent text-white rounded-xl font-medium hover:bg-orange-600 transition-colors">
-                            <i class="fa fa-gift mr-2"></i>开始抽�?
+                            <i class="fa fa-gift mr-2"></i>开始抽�?
                         </button>
                     </form>
                 </div>
@@ -139,15 +139,15 @@
                     
                     <div id="attendanceLocationInfo" class="mb-6 hidden">
                         <div class="p-4 bg-blue-50 rounded-xl">
-                            <p class="text-sm text-gray-600 mb-2"><i class="fa fa-map-marker text-red-500 mr-2"></i>签到地点�?span id="attendanceLocationName"></span></p>
-                            <p class="text-sm text-gray-600"><i class="fa fa-bullseye text-blue-500 mr-2"></i>有效范围�?span id="attendanceRange"></span>�?/p>
+                            <p class="text-sm text-gray-600 mb-2"><i class="fa fa-map-marker text-red-500 mr-2"></i>签到地点�?span id="attendanceLocationName"></span></p>
+                            <p class="text-sm text-gray-600"><i class="fa fa-bullseye text-blue-500 mr-2"></i>有效范围�?span id="attendanceRange"></span>�?/p>
                         </div>
                     </div>
                     
                     <form id="attendanceForm">
                         <div id="attendanceLocationCheck" class="mb-4 hidden">
                             <button type="button" id="getLocationBtn" class="w-full py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors">
-                                <i class="fa fa-location-arrow mr-2"></i>获取位置并签�?
+                                <i class="fa fa-location-arrow mr-2"></i>获取位置并签�?
                             </button>
                             <p class="text-xs text-gray-500 mt-2 text-center">点击获取您的当前位置进行签到</p>
                         </div>
@@ -208,7 +208,7 @@
     <script src="js/leancloud-service.js"></script>
     <script src="js/firebase-config.js"></script>
     <script src="js/firebase-service.js"></script>
-    <script src="js/data.js"></script>
+    <script src="js/data.js?v=5"></script>
     <script src="js/data-service.js"></script>
     <script>
         let currentUser = null;
@@ -248,7 +248,7 @@
                 } else if (activityType === 'exam') {
                     await loadExam();
                 } else {
-                    showError('未知的活动类�?);
+                    showError('未知的活动类�?);
                 }
             }, 500);
         }
@@ -258,7 +258,7 @@
             const vote = votes.find(v => v.id === activityId);
             
             if (!vote) {
-                showError('投票不存�?);
+                showError('投票不存�?);
                 return;
             }
             
@@ -267,12 +267,12 @@
             const end = new Date(vote.endTime);
             
             if (now < start) {
-                showError('投票尚未开�?);
+                showError('投票尚未开�?);
                 return;
             }
             
             if (now > end) {
-                showError('投票已结�?);
+                showError('投票已结�?);
                 return;
             }
             
@@ -280,7 +280,7 @@
             const hasVoted = currentUser && records.some(r => r.voteId === activityId && r.userId === currentUser.id);
             
             if (hasVoted) {
-                showResult(true, '已参�?, '您已经参与过此投�?);
+                showResult(true, '已参�?, '您已经参与过此投�?);
                 return;
             }
             
@@ -318,7 +318,7 @@
             if (vote.needPhone) {
                 extraFields += `
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">手机�?/label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机�?/label>
                         <input type="tel" id="votePhone" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入手机号">
                     </div>
                 `;
@@ -327,7 +327,7 @@
                 extraFields += `
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
-                        <textarea id="voteRemark" rows="2" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入备�?></textarea>
+                        <textarea id="voteRemark" rows="2" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入备�?></textarea>
                     </div>
                 `;
             }
@@ -341,7 +341,7 @@
             const lottery = lotteries.find(l => l.id === activityId);
             
             if (!lottery) {
-                showError('抽奖不存�?);
+                showError('抽奖不存�?);
                 return;
             }
             
@@ -350,12 +350,12 @@
             const end = new Date(lottery.endTime);
             
             if (now < start) {
-                showError('抽奖尚未开�?);
+                showError('抽奖尚未开�?);
                 return;
             }
             
             if (now > end) {
-                showError('抽奖已结�?);
+                showError('抽奖已结�?);
                 return;
             }
             
@@ -364,10 +364,10 @@
             
             if (hasDrawn) {
                 const userRecord = records.find(r => r.lotteryId === activityId && r.userId === currentUser.id);
-                if (userRecord && userRecord.prize && userRecord.prize !== '未中�?) {
-                    showResult(true, '恭喜中奖', `您获得了�?{userRecord.prize}`);
+                if (userRecord && userRecord.prize && userRecord.prize !== '未中�?) {
+                    showResult(true, '恭喜中奖', `您获得了�?{userRecord.prize}`);
                 } else {
-                    showResult(false, '已参�?, '您已经参与过此抽奖，未中�?);
+                    showResult(false, '已参�?, '您已经参与过此抽奖，未中�?);
                 }
                 return;
             }
@@ -402,7 +402,7 @@
             if (lottery.needPhone) {
                 extraFields += `
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">手机�?/label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">手机�?/label>
                         <input type="tel" id="lotteryPhone" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入手机号">
                     </div>
                 `;
@@ -417,7 +417,7 @@
             const attendance = attendances.find(a => a.id === activityId);
             
             if (!attendance) {
-                showError('签到不存�?);
+                showError('签到不存�?);
                 return;
             }
             
@@ -426,12 +426,12 @@
             const end = new Date(attendance.endTime);
             
             if (now < start) {
-                showError('签到尚未开�?);
+                showError('签到尚未开�?);
                 return;
             }
             
             if (now > end) {
-                showError('签到已结�?);
+                showError('签到已结�?);
                 return;
             }
             
@@ -439,7 +439,7 @@
             const hasSigned = currentUser && records.some(r => r.attendanceId === activityId && r.userId === currentUser.id);
             
             if (hasSigned) {
-                showResult(true, '已签�?, '您已经完成签�?);
+                showResult(true, '已签�?, '您已经完成签�?);
                 return;
             }
             
@@ -455,7 +455,7 @@
             
             if (attendance.type === 'location') {
                 document.getElementById('attendanceLocationInfo').classList.remove('hidden');
-                document.getElementById('attendanceLocationName').textContent = attendance.locationName || '未设�?;
+                document.getElementById('attendanceLocationName').textContent = attendance.locationName || '未设�?;
                 document.getElementById('attendanceRange').textContent = attendance.rangeMeters || 200;
                 document.getElementById('attendanceLocationCheck').classList.remove('hidden');
             } else {
@@ -468,7 +468,7 @@
                     extraFields += `
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">${field}</label>
-                            <input type="text" id="customField_${idx}" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输�?{field}">
+                            <input type="text" id="customField_${idx}" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输�?{field}">
                         </div>
                     `;
                 });
@@ -483,7 +483,7 @@
             const exam = exams.find(e => e.id === activityId);
             
             if (!exam) {
-                showError('考试不存�?);
+                showError('考试不存�?);
                 return;
             }
             
@@ -492,12 +492,12 @@
             const end = new Date(exam.endTime);
             
             if (now < start) {
-                showError('考试尚未开�?);
+                showError('考试尚未开�?);
                 return;
             }
             
             if (now > end) {
-                showError('考试已结�?);
+                showError('考试已结�?);
                 return;
             }
             
@@ -505,7 +505,7 @@
             const hasSubmitted = currentUser && results.some(r => r.examId === activityId && r.userId === currentUser.id);
             
             if (hasSubmitted) {
-                showResult(true, '已提�?, '您已经完成考试');
+                showResult(true, '已提�?, '您已经完成考试');
                 return;
             }
             
@@ -518,7 +518,7 @@
             
             document.getElementById('examTitle').textContent = exam.title;
             document.getElementById('examDescription').textContent = exam.description || '暂无说明';
-            document.getElementById('examTimeInfo').textContent = `考试时长�?{exam.duration || 60}分钟`;
+            document.getElementById('examTimeInfo').textContent = `考试时长�?{exam.duration || 60}分钟`;
             
             let questionsHtml = '';
             if (exam.questions && exam.questions.length > 0) {
@@ -549,7 +549,7 @@
                         });
                     } else if (q.type === 'text') {
                         questionsHtml += `
-                            <textarea name="question_${qIdx}" rows="3" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入答�?></textarea>
+                            <textarea name="question_${qIdx}" rows="3" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入答�?></textarea>
                         `;
                     }
                     
@@ -615,7 +615,7 @@
                 
                 const user = await DataService.getUserByUsername(username);
                 if (!user || user.password !== password) {
-                    showToast('账号或密码错�?, 'error');
+                    showToast('账号或密码错�?, 'error');
                     return;
                 }
                 
@@ -662,7 +662,7 @@
                 await DataService.addVoteRecord(record);
                 
                 document.getElementById('voteContent').classList.add('hidden');
-                showResult(true, '投票成功', '感谢您的参与�?);
+                showResult(true, '投票成功', '感谢您的参与�?);
             });
             
             document.getElementById('lotteryForm').addEventListener('submit', async function(e) {
@@ -695,9 +695,9 @@
                 document.getElementById('lotteryContent').classList.add('hidden');
                 
                 if (prize) {
-                    showResult(true, '恭喜中奖', `您获得了�?{prize}`);
+                    showResult(true, '恭喜中奖', `您获得了�?{prize}`);
                 } else {
-                    showResult(false, '很遗�?, '未中奖，下次再接再厉�?);
+                    showResult(false, '很遗�?, '未中奖，下次再接再厉�?);
                 }
             });
             
@@ -729,7 +729,7 @@
                     },
                     (error) => {
                         let message = '无法获取位置';
-                        if (error.code === 1) message = '请授权位置权�?;
+                        if (error.code === 1) message = '请授权位置权�?;
                         showToast(message, 'error');
                     },
                     { enableHighAccuracy: true, timeout: 10000 }
@@ -799,7 +799,7 @@
                 await DataService.addExamResult(result);
                 
                 document.getElementById('examContent').classList.add('hidden');
-                showResult(true, '提交成功', `您的得分�?{score}分`);
+                showResult(true, '提交成功', `您的得分�?{score}分`);
             });
         }
         
