@@ -170,10 +170,17 @@ const SupabaseService = {
         try {
             const { data, error } = await this.supabase
                 .from('users')
-                .select('*');
+                .select('*, groups(name)')
+                .order('id', { ascending: true });
             
             if (error) throw error;
-            return data || [];
+            return (data || []).map(user => {
+                const { groups, ...rest } = user;
+                return {
+                    ...rest,
+                    group_name: groups?.name || null
+                };
+            });
         } catch (error) {
             console.error('Get users error:', error);
             return [];

@@ -180,6 +180,23 @@ const DataService = {
         }
         return DataStore.updateUser(id, updates);
     },
+
+    async batchUpdateUserGroups(userIds, groupId) {
+        await this.ensureInit();
+        const updates = { group_id: groupId ? Number(groupId) : null };
+        const results = [];
+
+        for (const id of userIds) {
+            try {
+                const result = await this.updateUser(String(id), updates);
+                if (result) results.push(result);
+            } catch (error) {
+                console.error(`批量更新用户 ${id} 分组失败:`, error);
+            }
+        }
+
+        return results;
+    },
     
     async deleteUser(id) {
         await this.ensureInit();

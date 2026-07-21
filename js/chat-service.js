@@ -93,17 +93,18 @@ const ChatService = {
 
     async getMessages(conversationId, options = {}) {
         const { limit = 50, before = null, after = null } = options;
+        const convId = conversationId || 'global';
 
         try {
             const { supabase } = await this.getSupabase();
             if (!supabase) {
-                return this.getLocalMessages(conversationId).slice(-limit);
+                return this.getLocalMessages(convId).slice(-limit);
             }
 
             let query = supabase
                 .from('chat_messages')
                 .select('*')
-                .eq('conversation_id', conversationId)
+                .eq('conversation_id', convId)
                 .order('created_at', { ascending: false })
                 .limit(limit);
 
@@ -123,7 +124,7 @@ const ChatService = {
             return messages;
         } catch (error) {
             console.error('[ChatService] 获取消息失败:', error);
-            return this.getLocalMessages(conversationId);
+            return this.getLocalMessages(convId);
         }
     },
 
@@ -552,15 +553,15 @@ const ChatService = {
     },
 
     async getSupabase() {
-        if (window.SupabaseService && window.SupabaseService.supabase) {
-            return { supabase: window.SupabaseService.supabase };
+        if (window.SupabaseService) {
+            await window.SupabaseService.ensureInit();
+            const client = window.SupabaseService.supabase;
+            if (client && typeof client.from === 'function') {
+                return { supabase: client };
+            }
         }
 
-        if (window.supabase) {
-            return { supabase: window.supabase };
-        }
-
-        return null;
+        return { supabase: null };
     },
 
     getCurrentUserId() {
