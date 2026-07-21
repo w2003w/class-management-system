@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,11 +24,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: class-management-system
-          directory: .
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: publish

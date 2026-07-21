@@ -25,42 +25,6 @@ const DataStore = {
                 role: 'admin',
                 avatar: '',
                 createdAt: new Date().toISOString()
-            },
-            { 
-                id: 2, 
-                username: 'zhangsan', 
-                password: '123456', 
-                name: '张三', 
-                role: 'subAdmin',
-                avatar: '',
-                createdAt: new Date().toISOString()
-            },
-            { 
-                id: 3, 
-                username: 'lisi', 
-                password: '123456', 
-                name: '李四', 
-                role: 'user',
-                avatar: '',
-                createdAt: new Date().toISOString()
-            },
-            { 
-                id: 4, 
-                username: 'wangwu', 
-                password: '123456', 
-                name: '王五', 
-                role: 'user',
-                avatar: '',
-                createdAt: new Date().toISOString()
-            },
-            { 
-                id: 5, 
-                username: 'zhaoliu', 
-                password: '123456', 
-                name: '赵六', 
-                role: 'user',
-                avatar: '',
-                createdAt: new Date().toISOString()
             }
         ];
         localStorage.setItem('users', JSON.stringify(defaultUsers));
@@ -103,7 +67,7 @@ const DataStore = {
     
     getUserById: function(id) {
         const users = this.getUsers();
-        return users.find(u => u.id === id);
+        return users.find(u => String(u.id) === String(id));
     },
     
     addUser: function(user) {
@@ -118,7 +82,7 @@ const DataStore = {
     
     updateUser: function(id, updates) {
         const users = this.getUsers();
-        const index = users.findIndex(u => u.id === id);
+        const index = users.findIndex(u => String(u.id) === String(id));
         if (index !== -1) {
             users[index] = { ...users[index], ...updates };
             this.saveUsers(users);
@@ -129,7 +93,7 @@ const DataStore = {
     
     deleteUser: function(id) {
         const users = this.getUsers();
-        const filtered = users.filter(u => u.id !== id);
+        const filtered = users.filter(u => String(u.id) !== String(id));
         this.saveUsers(filtered);
         return filtered.length < users.length;
     },
@@ -588,6 +552,217 @@ const DataStore = {
     resetDatabase: function() {
         localStorage.clear();
         this.init();
+    },
+    
+    getSubjects: function() {
+        const data = localStorage.getItem('subjects');
+        if (!data) return this.getDefaultSubjects();
+        try {
+            return JSON.parse(data);
+        } catch {
+            return this.getDefaultSubjects();
+        }
+    },
+    
+    getDefaultSubjects: function() {
+        return [
+            { id: '1', name: '语文', color: '#EF4444' },
+            { id: '2', name: '数学', color: '#3B82F6' },
+            { id: '3', name: '英语', color: '#22C55E' },
+            { id: '4', name: '物理', color: '#F59E0B' },
+            { id: '5', name: '化学', color: '#8B5CF6' },
+            { id: '6', name: '生物', color: '#EC4899' },
+            { id: '7', name: '历史', color: '#6B7280' },
+            { id: '8', name: '地理', color: '#14B8A6' },
+            { id: '9', name: '政治', color: '#F97316' }
+        ];
+    },
+    
+    saveSubjects: function(subjects) {
+        localStorage.setItem('subjects', JSON.stringify(subjects));
+    },
+    
+    addSubject: function(subject) {
+        const subjects = this.getSubjects();
+        const maxId = Math.max(...subjects.map(s => parseInt(s.id)), 0);
+        subject.id = String(maxId + 1);
+        subjects.push(subject);
+        this.saveSubjects(subjects);
+        return subject;
+    },
+    
+    updateSubject: function(id, updates) {
+        const subjects = this.getSubjects();
+        const index = subjects.findIndex(s => s.id === id);
+        if (index !== -1) {
+            subjects[index] = { ...subjects[index], ...updates };
+            this.saveSubjects(subjects);
+            return subjects[index];
+        }
+        return null;
+    },
+    
+    deleteSubject: function(id) {
+        const subjects = this.getSubjects();
+        const filtered = subjects.filter(s => s.id !== id);
+        this.saveSubjects(filtered);
+        return filtered.length < subjects.length;
+    },
+    
+    getQuestionTypes: function() {
+        const data = localStorage.getItem('questionTypes');
+        if (!data) return this.getDefaultQuestionTypes();
+        try {
+            return JSON.parse(data);
+        } catch {
+            return this.getDefaultQuestionTypes();
+        }
+    },
+    
+    getDefaultQuestionTypes: function() {
+        return [
+            { id: '1', name: '选择题' },
+            { id: '2', name: '填空题' },
+            { id: '3', name: '判断题' },
+            { id: '4', name: '简答题' },
+            { id: '5', name: '计算题' },
+            { id: '6', name: '证明题' },
+            { id: '7', name: '作文' },
+            { id: '8', name: '阅读理解' }
+        ];
+    },
+    
+    saveQuestionTypes: function(types) {
+        localStorage.setItem('questionTypes', JSON.stringify(types));
+    },
+    
+    addQuestionType: function(type) {
+        const types = this.getQuestionTypes();
+        const maxId = Math.max(...types.map(t => parseInt(t.id)), 0);
+        type.id = String(maxId + 1);
+        types.push(type);
+        this.saveQuestionTypes(types);
+        return type;
+    },
+    
+    updateQuestionType: function(id, updates) {
+        const types = this.getQuestionTypes();
+        const index = types.findIndex(t => t.id === id);
+        if (index !== -1) {
+            types[index] = { ...types[index], ...updates };
+            this.saveQuestionTypes(types);
+            return types[index];
+        }
+        return null;
+    },
+    
+    deleteQuestionType: function(id) {
+        const types = this.getQuestionTypes();
+        const filtered = types.filter(t => t.id !== id);
+        this.saveQuestionTypes(filtered);
+        return filtered.length < types.length;
+    },
+    
+    getKnowledgePoints: function() {
+        const data = localStorage.getItem('knowledgePoints');
+        if (!data) return this.getDefaultKnowledgePoints();
+        try {
+            return JSON.parse(data);
+        } catch {
+            return this.getDefaultKnowledgePoints();
+        }
+    },
+    
+    getDefaultKnowledgePoints: function() {
+        return [
+            { id: '1', name: '函数', subjectId: '2' },
+            { id: '2', name: '三角函数', subjectId: '2' },
+            { id: '3', name: '概率统计', subjectId: '2' },
+            { id: '4', name: '力学', subjectId: '4' },
+            { id: '5', name: '电学', subjectId: '4' },
+            { id: '6', name: '有机化学', subjectId: '5' },
+            { id: '7', name: '无机化学', subjectId: '5' },
+            { id: '8', name: '细胞生物学', subjectId: '6' },
+            { id: '9', name: '遗传变异', subjectId: '6' },
+            { id: '10', name: '阅读理解', subjectId: '1' },
+            { id: '11', name: '文言文', subjectId: '1' },
+            { id: '12', name: '词汇语法', subjectId: '3' },
+            { id: '13', name: '时态语态', subjectId: '3' },
+            { id: '14', name: '中国历史', subjectId: '7' },
+            { id: '15', name: '世界历史', subjectId: '7' }
+        ];
+    },
+    
+    saveKnowledgePoints: function(kps) {
+        localStorage.setItem('knowledgePoints', JSON.stringify(kps));
+    },
+    
+    addKnowledgePoint: function(kp) {
+        const kps = this.getKnowledgePoints();
+        const maxId = Math.max(...kps.map(k => parseInt(k.id)), 0);
+        kp.id = String(maxId + 1);
+        kps.push(kp);
+        this.saveKnowledgePoints(kps);
+        return kp;
+    },
+    
+    updateKnowledgePoint: function(id, updates) {
+        const kps = this.getKnowledgePoints();
+        const index = kps.findIndex(k => k.id === id);
+        if (index !== -1) {
+            kps[index] = { ...kps[index], ...updates };
+            this.saveKnowledgePoints(kps);
+            return kps[index];
+        }
+        return null;
+    },
+    
+    deleteKnowledgePoint: function(id) {
+        const kps = this.getKnowledgePoints();
+        const filtered = kps.filter(k => k.id !== id);
+        this.saveKnowledgePoints(filtered);
+        return filtered.length < kps.length;
+    },
+    
+    getWrongQuestions: function() {
+        const data = localStorage.getItem('wrongQuestions');
+        if (!data) return [];
+        try {
+            return JSON.parse(data);
+        } catch {
+            return [];
+        }
+    },
+    
+    saveWrongQuestions: function(questions) {
+        localStorage.setItem('wrongQuestions', JSON.stringify(questions));
+    },
+    
+    addWrongQuestion: function(question) {
+        const questions = this.getWrongQuestions();
+        const maxId = Math.max(...questions.map(q => parseInt(q.id || 0)), 0);
+        question.id = String(maxId + 1);
+        questions.push(question);
+        this.saveWrongQuestions(questions);
+        return question;
+    },
+    
+    updateWrongQuestion: function(id, updates) {
+        const questions = this.getWrongQuestions();
+        const index = questions.findIndex(q => q.id === id);
+        if (index !== -1) {
+            questions[index] = { ...questions[index], ...updates };
+            this.saveWrongQuestions(questions);
+            return questions[index];
+        }
+        return null;
+    },
+    
+    deleteWrongQuestion: function(id) {
+        const questions = this.getWrongQuestions();
+        const filtered = questions.filter(q => q.id !== id);
+        this.saveWrongQuestions(filtered);
+        return filtered.length < questions.length;
     }
 };
 

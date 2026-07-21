@@ -1,8 +1,8 @@
 // 班级管理系统 Service Worker - 高性能缓存策略
-const CACHE_NAME = 'class-management-cache-v2.0.0';
-const STATIC_CACHE = 'class-management-static-v2';
-const DYNAMIC_CACHE = 'class-management-dynamic-v2';
-const API_CACHE = 'class-management-api-v2';
+const CACHE_NAME = 'class-management-cache-v3.0.0';
+const STATIC_CACHE = 'class-management-static-v3';
+const DYNAMIC_CACHE = 'class-management-dynamic-v3';
+const API_CACHE = 'class-management-api-v3';
 
 // 需要预缓存的静态资源
 const STATIC_URLS = [
@@ -53,7 +53,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => !name.includes('v2'))
+          .filter((name) => !name.includes('v3'))
           .map((name) => {
             console.log('[SW] 删除旧缓存:', name);
             return caches.delete(name);

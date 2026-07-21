@@ -1,713 +1,409 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>班级管理系统 - 考试系统</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1E40AF',
-                        secondary: '#3B82F6',
-                        accent: '#F97316',
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/premium-ui.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        .sidebar-link { transition: all 0.2s ease; }
-        .sidebar-link:hover { background: rgba(30, 64, 175, 0.1); }
-        .sidebar-link.active { background: rgba(30, 64, 175, 0.1); color: #1E40AF; font-weight: 500; }
-        .modal-overlay { animation: fadeIn 0.2s ease; }
-        .modal-content { animation: slideUp 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .toast { animation: slideIn 0.3s ease; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .tab-btn.active { border-bottom: 2px solid #1E40AF; color: #1E40AF; }
-        .question-option { transition: all 0.2s ease; }
-        .question-option:hover { background: #F3F4F6; }
-        .question-option.selected { background: #DBEAFE; border-color: #3B82F6; }
-        .question-option.correct { background: #D1FAE5; border-color: #10B981; }
-        .question-option.wrong { background: #FEE2E2; border-color: #EF4444; }
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateX(4px);
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            position: relative;
+        }
+
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #6366F1, #8B5CF6);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: medium;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .status-ended {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9CA3AF;
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            color: #6366F1;
+        }
+
+        .dropdown-menu {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .dropdown-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .start-exam-btn {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            transition: all 0.3s ease;
+        }
+
+        .start-exam-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .question-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .question-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .option-item {
+            transition: all 0.3s ease;
+        }
+
+        .option-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .option-item.selected {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: #6366F1;
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body>
     <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300 flex flex-col">
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                            <i class="fa fa-graduation-cap text-white text-lg"></i>
-                        </div>
-                        <div class="ml-3">
-                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                        </div>
+        <aside class="sidebar fixed lg:sticky top-0 left-0 h-full w-64 flex flex-col z-40">
+            <div class="p-6 border-b border-gray-700/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-graduation-cap text-white"></i>
                     </div>
-                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
-                        <i class="fa fa-times text-xl"></i>
-                    </button>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">班级管理系统</h1>
+                        <p class="text-xs text-gray-400 hidden sm:block">大学生综合管理平台</p>
+                    </div>
                 </div>
             </div>
-            
-            <nav class="flex-1 p-4 overflow-y-auto">
-                <div class="mb-6">
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
-                    <ul class="space-y-1">
-                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
-                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
-                        <li><a href="exam.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
-                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
-                    </ul>
-                </div>
-                
-                <div class="mb-6" id="adminMenu">
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
-                    <ul class="space-y-1">
-                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
-                        <li><a href="grading.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-edit w-5 mr-3"></i><span>考试阅卷</span></a></li>
-                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
-                    <ul class="space-y-1">
-                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
-                        <li><a href="#" id="logoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
-                    </ul>
-                </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="dashboard.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                    <span class="font-medium">数据概览</span>
+                </a>
+                <a href="attendance-new.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-map-marker text-lg"></i>
+                    <span class="font-medium">签到管理</span>
+                </a>
+                <a href="exam.html" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-file-text text-lg"></i>
+                    <span class="font-medium">考试系统</span>
+                </a>
+                <a href="vote.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-check-square-o text-lg"></i>
+                    <span class="font-medium">投票抽奖</span>
+                </a>
+                <a href="chat.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-comments text-lg"></i>
+                    <span class="font-medium">实时聊天</span>
+                </a>
+                <a href="users.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-users text-lg"></i>
+                    <span class="font-medium">成员管理</span>
+                </a>
+                <a href="settings.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-cog text-lg"></i>
+                    <span class="font-medium">系统设置</span>
+                </a>
             </nav>
+
+            <div class="p-4 border-t border-gray-700/50">
+                <button id="logoutBtn" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    <span class="font-medium">退出登录</span>
+                </button>
+            </div>
         </aside>
-        
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="bg-white shadow-sm z-10">
-                <div class="flex items-center justify-between p-4">
-                    <div class="flex items-center">
-                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <i class="fa fa-bars text-xl"></i>
-                        </button>
-                        <h2 class="text-xl font-semibold text-gray-800">考试系统</h2>
+
+        <main class="flex-1 overflow-y-auto">
+            <header class="bg-[#0F172A]/80 backdrop-blur-md border-b border-gray-700/50 sticky top-0 z-30">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white">考试系统</h2>
+                        <p class="text-sm text-gray-400">管理和参加班级考试</p>
                     </div>
-                    
-                    <div class="flex items-center space-x-4">
+
+                    <div class="flex items-center gap-4">
+                        <button id="createExamBtn" class="btn-primary px-5 py-2.5 rounded-xl text-white font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> 创建考试
+                        </button>
+
                         <div class="relative">
-                            <button id="notificationBtn" class="text-gray-500 hover:text-primary relative">
-                                <i class="fa fa-bell text-xl"></i>
-                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span>
-                            </button>
-                        </div>
-                        
-                        <div class="relative">
-                            <button id="userMenuBtn" class="flex items-center">
-                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
-                                <div class="ml-2 hidden md:block text-left">
-                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
-                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
+                            <button id="userMenuBtn" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-400 hover:text-white">
+                                <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium">
+                                    <i class="fa-solid fa-user"></i>
                                 </div>
-                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
+                                <span class="hidden sm:block font-medium">管理员</span>
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
                             </button>
-                            
-                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
-                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
-                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
-                                <div class="border-t my-1"></div>
-                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
+                            <div id="userDropdown" class="dropdown-menu hidden absolute right-0 top-full mt-2 w-48 rounded-xl p-2 shadow-xl">
+                                <a href="profile.html" class="dropdown-item flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white">
+                                    <i class="fa-solid fa-user"></i> 个人资料
+                                </a>
+                                <a href="settings.html" class="dropdown-item flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white">
+                                    <i class="fa-solid fa-cog"></i> 设置
+                                </a>
+                                <div class="border-t border-gray-700/50 my-1"></div>
+                                <button id="userMenuLogoutBtn" class="dropdown-item w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-400 hover:text-red-300">
+                                    <i class="fa-solid fa-right-from-bracket"></i> 退出登录
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </header>
-            
-            <main class="flex-1 overflow-y-auto p-4 md:p-6">
-                <div class="max-w-7xl mx-auto">
-                    <div class="flex border-b mb-6">
-                        <button class="tab-btn active px-6 py-3 font-medium text-gray-600" data-tab="exams">
-                            <i class="fa fa-file-text-o mr-2"></i>考试列表
-                        </button>
-                        <button class="tab-btn px-6 py-3 font-medium text-gray-600" data-tab="questions">
-                            <i class="fa fa-database mr-2"></i>题库管理
-                        </button>
-                        <button class="tab-btn px-6 py-3 font-medium text-gray-600" data-tab="records">
-                            <i class="fa fa-history mr-2"></i>考试记录
-                        </button>
-                    </div>
-                    
-                    <div id="examsTab" class="tab-content">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                            <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                                <button id="createExamBtn" class="bg-primary text-white px-4 py-2 rounded-xl font-medium hover:bg-secondary transition-colors flex items-center">
-                                    <i class="fa fa-plus mr-2"></i>创建考试
-                                </button>
-                            </div>
-                            
-                            <div class="flex items-center space-x-3">
-                                <select id="examStatusFilter" class="px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                    <option value="">全部状态</option>
-                                    <option value="active">进行中</option>
-                                    <option value="pending">待开始</option>
-                                    <option value="completed">已结束</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                            <div class="bg-white rounded-xl p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-500">总考试数</p>
-                                        <p class="text-2xl font-bold text-gray-800" id="totalExams">0</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                        <i class="fa fa-file-text-o text-blue-500 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white rounded-xl p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-500">题库数量</p>
-                                        <p class="text-2xl font-bold text-green-600" id="totalQuestions">0</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                                        <i class="fa fa-database text-green-500 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white rounded-xl p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-500">考试记录</p>
-                                        <p class="text-2xl font-bold text-orange-600" id="totalRecords">0</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                                        <i class="fa fa-history text-orange-500 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white rounded-xl p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm text-gray-500">平均分</p>
-                                        <p class="text-2xl font-bold text-purple-600" id="avgScore">0</p>
-                                    </div>
-                                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                                        <i class="fa fa-line-chart text-purple-500 text-xl"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm">
-                            <div id="examList" class="divide-y">
-                                <div class="p-8 text-center text-gray-500">
-                                    <i class="fa fa-file-text-o text-4xl mb-2 text-gray-300"></i>
-                                    <p>暂无考试数据</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="questionsTab" class="tab-content hidden">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                            <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                                <button id="addQuestionBtn" class="bg-primary text-white px-4 py-2 rounded-xl font-medium hover:bg-secondary transition-colors flex items-center">
-                                    <i class="fa fa-plus mr-2"></i>添加题目
-                                </button>
-                                <button id="importQuestionsBtn" class="bg-white text-gray-600 px-4 py-2 rounded-xl font-medium hover:bg-gray-50 transition-colors border flex items-center">
-                                    <i class="fa fa-upload mr-2"></i>批量导入
-                                </button>
-                            </div>
-                            
-                            <div class="flex items-center space-x-3">
-                                <select id="questionTypeFilter" class="px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                    <option value="">全部类型</option>
-                                    <option value="single">单选题</option>
-                                    <option value="multiple">多选题</option>
-                                    <option value="judge">判断题</option>
-                                    <option value="fill">填空题</option>
-                                </select>
-                                <div class="relative">
-                                    <input type="text" id="questionSearchInput" placeholder="搜索题目..." class="w-64 px-4 py-2 pl-10 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm">
-                            <div id="questionList" class="divide-y">
-                                <div class="p-8 text-center text-gray-500">
-                                    <i class="fa fa-database text-4xl mb-2 text-gray-300"></i>
-                                    <p>暂无题目数据</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="recordsTab" class="tab-content hidden">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-gray-800">考试记录</h3>
-                            <button id="exportRecordsBtn" class="bg-white text-gray-600 px-4 py-2 rounded-xl font-medium hover:bg-gray-50 transition-colors border flex items-center">
-                                <i class="fa fa-download mr-2"></i>导出记录
-                            </button>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm">
-                            <div id="recordList" class="divide-y">
-                                <div class="p-8 text-center text-gray-500">
-                                    <i class="fa fa-history text-4xl mb-2 text-gray-300"></i>
-                                    <p>暂无考试记录</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-    
-    <div id="createExamModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
-            <div class="p-6 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-plus-circle text-primary mr-2"></i>创建考试</h3>
-                    <button id="closeCreateExamModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            
-            <form id="createExamForm" class="p-6">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">考试名称 *</label>
-                    <input type="text" id="examName" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：期末考试">
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">开始时间 *</label>
-                        <input type="datetime-local" id="examStartTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">结束时间 *</label>
-                        <input type="datetime-local" id="examEndTime" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">题目数量 *</label>
-                        <input type="number" id="questionCount" min="1" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：20">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">每题分数 *</label>
-                        <input type="number" id="scorePerQuestion" min="1" value="5" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">考试时长(分钟)</label>
-                        <input type="number" id="examDuration" min="1" value="60" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">题目类型</label>
-                    <div class="flex items-center space-x-4">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeSingle" checked class="w-4 h-4 text-primary rounded">
-                            <span class="ml-2 text-sm text-gray-700">单选题</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeMultiple" checked class="w-4 h-4 text-primary rounded">
-                            <span class="ml-2 text-sm text-gray-700">多选题</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeJudge" checked class="w-4 h-4 text-primary rounded">
-                            <span class="ml-2 text-sm text-gray-700">判断题</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeFill" checked class="w-4 h-4 text-primary rounded">
-                            <span class="ml-2 text-sm text-gray-700">填空题</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="includeEssay" class="w-4 h-4 text-primary rounded">
-                            <span class="ml-2 text-sm text-gray-700">解答题</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div id="essayExamSettings" class="mb-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">阅卷模式</label>
-                    <div class="space-y-2 mb-4">
-                        <label class="flex items-center">
-                            <input type="radio" name="gradingMode" value="admin" checked class="w-4 h-4 text-primary">
-                            <span class="ml-2 text-sm text-gray-700">管理员阅卷</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="gradingMode" value="peer" class="w-4 h-4 text-primary">
-                            <span class="ml-2 text-sm text-gray-700">同学互阅</span>
-                        </label>
-                    </div>
-                    
-                    <div id="peerGradingSettings" class="hidden p-4 bg-blue-50 rounded-xl">
-                        <h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-users text-blue-500 mr-2"></i>阅卷人员设置</h4>
-                        <div class="mb-3">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">阅卷范围</label>
-                            <select id="graderScope" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                <option value="all">全体成员参与阅卷</option>
-                                <option value="group">指定分组阅卷</option>
-                                <option value="selected">指定成员阅卷</option>
-                            </select>
-                        </div>
-                        
-                        <div id="graderGroupSelectContainer" class="hidden mb-3">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">选择分组</label>
-                            <select id="graderSelectedGroup" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            </select>
-                        </div>
-                        
-                        <div id="graderMemberSelectContainer" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
-                            <div id="graderMemberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2 space-y-1">
-                            </div>
-                        </div>
-                        
-                        <div class="mt-3 p-3 bg-yellow-50 rounded-xl">
-                            <p class="text-xs text-yellow-700"><i class="fa fa-info-circle mr-1"></i>同学互阅模式下，每位阅卷人将随机分配其他考生的解答题进行评分</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <div class="flex items-center mb-2">
-                        <input type="checkbox" id="shuffleOptions" checked class="w-4 h-4 text-primary rounded">
-                        <label for="shuffleOptions" class="ml-2 text-sm text-gray-700">打乱选项顺序（每位考生选项顺序不同）</label>
-                    </div>
-                    <div class="flex items-center">
-                        <input type="checkbox" id="shuffleQuestions" checked class="w-4 h-4 text-primary rounded">
-                        <label for="shuffleQuestions" class="ml-2 text-sm text-gray-700">打乱题目顺序（每位考生题目顺序不同）</label>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">考试说明</label>
-                    <textarea id="examDescription" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="考试相关说明"></textarea>
-                </div>
-                
-                <div class="mb-4 p-4 bg-purple-50 rounded-xl">
-                    <h4 class="font-medium text-gray-800 mb-3"><i class="fa fa-users text-purple-500 mr-2"></i>参与成员设置</h4>
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">参与范围</label>
-                        <select id="examParticipantScope" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            <option value="all">全体成员</option>
-                            <option value="group">指定分组</option>
-                            <option value="selected">指定成员</option>
-                        </select>
-                    </div>
-                    
-                    <div id="examGroupSelectContainer" class="hidden mb-3">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">选择分组</label>
-                        <select id="examSelectedGroup" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        </select>
-                    </div>
-                    
-                    <div id="examMemberSelectContainer" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">选择成员</label>
-                        <div id="examMemberSelectList" class="max-h-40 overflow-y-auto border rounded-xl p-2 space-y-1">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelCreateExamBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
-                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">创建考试</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <div id="addQuestionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
-            <div class="p-6 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-plus-circle text-primary mr-2"></i>添加题目</h3>
-                    <button id="closeAddQuestionModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            
-            <form id="addQuestionForm" class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">题目类型 *</label>
-                        <select id="questionType" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                            <option value="single">单选题</option>
-                            <option value="multiple">多选题</option>
-                            <option value="judge">判断题</option>
-                            <option value="fill">填空题</option>
-                            <option value="essay">解答题</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">题目分类</label>
-                        <input type="text" id="questionCategory" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="如：计算机基础">
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">题目内容 *</label>
-                    <textarea id="questionContent" rows="3" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="请输入题目内容"></textarea>
-                </div>
-                
-                <div id="optionsContainer" class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">选项</label>
-                    <div id="optionsList" class="space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">A</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项A">
-                            <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">B</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项B">
-                            <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">C</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项C">
-                            <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">D</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项D">
-                            <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
-                        </div>
-                    </div>
-                    <button type="button" id="addOptionBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加选项</button>
-                </div>
-                
-                <div id="judgeContainer" class="mb-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">正确答案</label>
-                    <div class="flex items-center space-x-4">
-                        <label class="flex items-center">
-                            <input type="radio" name="judgeAnswer" value="true" class="w-4 h-4 text-primary">
-                            <span class="ml-2 text-sm text-gray-700">正确</span>
-                        </label>
-                        <label class="flex items-center">
-                            <input type="radio" name="judgeAnswer" value="false" class="w-4 h-4 text-primary">
-                            <span class="ml-2 text-sm text-gray-700">错误</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div id="fillContainer" class="mb-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">题目设置</label>
-                    <p class="text-xs text-gray-500 mb-3">在题目内容中使用 <span class="bg-yellow-100 px-1 rounded font-mono">___</span> 表示空格位置</p>
-                    <div id="fillAnswersContainer" class="space-y-2">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">1</span>
-                            <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案">
-                            <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-600 px-2">
-                                <i class="fa fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" id="addFillAnswerBtn" class="mt-2 text-sm text-primary hover:text-secondary"><i class="fa fa-plus mr-1"></i>添加空格</button>
-                    <div class="mt-3 p-3 bg-blue-50 rounded-xl">
-                        <p class="text-xs text-blue-700"><i class="fa fa-info-circle mr-1"></i>判分规则：答案不区分大小写，自动去除首尾空格</p>
-                    </div>
-                </div>
-                
-                <div id="essayContainer" class="mb-4 hidden">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">解答题设置</label>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">分值 *</label>
-                            <input type="number" id="essayScore" min="1" value="10" class="w-32 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">参考答案</label>
-                            <textarea id="essayReferenceAnswer" rows="4" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入参考答案供阅卷参考"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 mb-2">评分标准</label>
-                            <textarea id="essayGradingStandard" rows="3" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="输入评分标准供阅卷参考"></textarea>
-                        </div>
-                    </div>
-                    <div class="mt-3 p-3 bg-purple-50 rounded-xl">
-                        <p class="text-xs text-purple-700"><i class="fa fa-info-circle mr-1"></i>解答题需要人工阅卷，考生可拍照上传或文字输入答案</p>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">答案解析</label>
-                    <textarea id="questionExplanation" rows="2" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="答案解析（选填）"></textarea>
-                </div>
-                
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelAddQuestionBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
-                    <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">添加题目</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <div id="importModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg modal-content mx-4">
-            <div class="p-6 border-b">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-upload text-primary mr-2"></i>批量导入题目</h3>
-                    <button id="closeImportModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            
+
             <div class="p-6">
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600 mb-2">请按照以下格式准备CSV文件：</p>
-                    <div class="bg-gray-50 rounded-xl p-4 text-sm font-mono">
-                        类型,题目,选项A,选项B,选项C,选项D,正确答案,解析<br>
-                        single,1+1等于多少?,2,3,4,5,A,基础数学题
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div id="examList" class="space-y-4">
+                        </div>
                     </div>
-                    <p class="text-xs text-gray-500 mt-2">类型：single(单选)、multiple(多选)、judge(判断)</p>
-                    <p class="text-xs text-gray-500">多选题正确答案用逗号分隔，如：A,B</p>
-                    <p class="text-xs text-gray-500">判断题选项填"正确,错误"，答案填A或B</p>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">选择文件</label>
-                    <input type="file" id="importFile" accept=".csv,.txt" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20">
-                </div>
-                
-                <div class="flex space-x-3">
-                    <button type="button" id="cancelImportBtn" class="flex-1 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors">取消</button>
-                    <button type="button" id="confirmImportBtn" class="flex-1 py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">导入</button>
+
+                    <div class="lg:col-span-1">
+                        <div class="glass-card rounded-2xl p-6 sticky top-24">
+                            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-primary"></i> 考试统计
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl">
+                                    <span class="text-gray-400">进行中</span>
+                                    <span id="activeCount" class="text-2xl font-bold text-green-400">0</span>
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl">
+                                    <span class="text-gray-400">已完成</span>
+                                    <span id="completedCount" class="text-2xl font-bold text-gray-400">0</span>
+                                </div>
+                                <div class="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl">
+                                    <span class="text-gray-400">总考试数</span>
+                                    <span id="totalCount" class="text-2xl font-bold text-primary">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </main>
+    </div>
+
+    <div id="createExamModal" class="fixed inset-0 modal-overlay flex items-center justify-center z-50 hidden">
+        <div class="glass-card rounded-2xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">
+                    <i class="fa-solid fa-file-plus text-primary mr-2"></i>创建考试
+                </h3>
+                <button id="closeCreateModal" class="text-gray-400 hover:text-gray-200 transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="createExamForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">考试名称</label>
+                    <input type="text" id="examName" 
+                        class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100"
+                        placeholder="例如: 高等数学期中考试" required>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">开始时间</label>
+                        <input type="datetime-local" id="examStart" 
+                            class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">结束时间</label>
+                        <input type="datetime-local" id="examEnd" 
+                            class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">考试时长(分钟)</label>
+                    <input type="number" id="examDuration" 
+                        class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100"
+                        placeholder="60" min="5" max="300">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">考试说明</label>
+                    <textarea id="examDescription" rows="3"
+                        class="input-field w-full px-4 py-3 rounded-xl outline-none text-gray-100 resize-none"
+                        placeholder="添加考试说明..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-3">题目列表</label>
+                    <div id="questionList" class="space-y-3">
+                        <div class="question-card p-4 rounded-xl">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-primary">题目 1</span>
+                                <button type="button" class="text-gray-400 hover:text-red-400">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                            <input type="text" class="input-field w-full px-4 py-2 rounded-lg outline-none text-gray-100 text-sm mb-2"
+                                placeholder="请输入题目内容" required>
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                    placeholder="选项 A" required>
+                                <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                    placeholder="选项 B" required>
+                                <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                    placeholder="选项 C" required>
+                                <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                    placeholder="选项 D" required>
+                            </div>
+                            <div class="mt-2">
+                                <label class="text-xs text-gray-400 mr-2">正确答案:</label>
+                                <select class="input-field px-3 py-1 rounded-lg text-gray-100 text-sm">
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="addQuestionBtn" class="mt-3 w-full py-2 border border-dashed border-gray-600 rounded-xl text-gray-400 hover:text-primary hover:border-primary transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> 添加题目
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <button type="button" id="cancelCreateBtn" 
+                        class="flex-1 py-3 bg-[#334155] text-gray-300 rounded-xl font-medium hover:bg-[#475569] transition-colors">
+                        取消
+                    </button>
+                    <button type="submit" 
+                        class="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-medium hover:opacity-90 transition-opacity ml-3">
+                        创建考试
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-    
-    <div id="takeExamModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto modal-content mx-4">
-            <div class="p-6 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xl font-bold text-gray-800" id="takingExamName">考试名称</h3>
-                        <p class="text-sm text-gray-500">剩余时间：<span id="remainingTime" class="text-primary font-medium">60:00</span></p>
+
+    <div id="examModal" class="fixed inset-0 modal-overlay flex items-center justify-center z-50 hidden">
+        <div class="glass-card rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white" id="examTitle">考试</h3>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 text-gray-400">
+                        <i class="fa-solid fa-clock"></i>
+                        <span id="examTimer">00:00</span>
                     </div>
-                    <button id="submitExamBtn" class="bg-green-500 text-white px-6 py-2 rounded-xl font-medium hover:bg-green-600 transition-colors">
-                        <i class="fa fa-check mr-2"></i>提交试卷
+                    <button id="closeExamModal" class="text-gray-400 hover:text-gray-200 transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
             </div>
-            
-            <div id="examQuestions" class="p-6">
+
+            <div id="examQuestions" class="space-y-6">
             </div>
+
+            <button id="submitExamBtn" class="mt-6 w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity">
+                提交试卷
+            </button>
         </div>
     </div>
-    
-    <div id="resultModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto modal-content mx-4">
-            <div class="p-6 border-b">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800"><i class="fa fa-trophy text-yellow-500 mr-2"></i>考试结果</h3>
-                    <button id="closeResultModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            
-            <div id="resultContent" class="p-6">
-            </div>
-        </div>
-    </div>
-    
-    <div id="mobileSidebar" class="fixed inset-0 bg-black/50 z-50 hidden md:hidden">
-        <div class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-            <div class="p-4 border-b flex justify-between items-center">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center">
-                        <i class="fa fa-graduation-cap text-white text-lg"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                    </div>
-                </div>
-                <button id="closeMobileSidebar" class="text-gray-500 hover:text-primary">
-                    <i class="fa fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <nav class="p-4">
-                <div class="mb-6">
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">主菜单</h2>
-                    <ul class="space-y-1">
-                        <li><a href="dashboard.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-dashboard w-5 mr-3"></i><span>仪表盘</span></a></li>
-                        <li><a href="attendance.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-calendar-check-o w-5 mr-3"></i><span>签到管理</span></a></li>
-                        <li><a href="exam.html" class="sidebar-link active flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-file-text-o w-5 mr-3"></i><span>考试系统</span></a></li>
-                        <li><a href="vote.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-check-square-o w-5 mr-3"></i><span>投票抽奖</span></a></li>
-                    </ul>
-                </div>
-                
-                <div class="mb-6" id="mobileAdminMenu">
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">管理中心</h2>
-                    <ul class="space-y-1">
-                        <li><a href="users.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-users w-5 mr-3"></i><span>用户管理</span></a></li>
-                        <li><a href="settings.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-cog w-5 mr-3"></i><span>系统设置</span></a></li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">个人</h2>
-                    <ul class="space-y-1">
-                        <li><a href="profile.html" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-user w-5 mr-3"></i><span>个人资料</span></a></li>
-                        <li><a href="#" id="mobileLogoutBtn" class="sidebar-link flex items-center px-3 py-2 rounded-lg text-gray-600"><i class="fa fa-sign-out w-5 mr-3"></i><span>退出登录</span></a></li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-    </div>
-    
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-    
-    <div id="qrCodeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden modal-content mx-4">
-            <div class="p-4 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-qrcode text-primary mr-2"></i>考试二维码</h3>
-                    <button id="closeQrCodeModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            <div class="p-6 text-center">
-                <p class="text-sm text-gray-500 mb-4" id="qrCodeTitle"></p>
-                <div id="qrCodeContainer" class="inline-block p-4 bg-white border rounded-xl"></div>
-                <p class="text-xs text-gray-400 mt-4">扫描二维码参与考试</p>
-            </div>
-        </div>
-    </div>
-    
-    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
-            <div class="p-4 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
-                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
-                </div>
-            </div>
-            <div id="notificationList" class="overflow-y-auto max-h-96">
-                <div class="p-8 text-center text-gray-500">
-                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                    <p>暂无通知</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
+
+    <div id="toastContainer" class="fixed top-6 right-6 z-50 space-y-3"></div>
+
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/supabase-service.js"></script>
@@ -717,1700 +413,385 @@
     <script src="js/firebase-service.js"></script>
     <script src="js/data.js"></script>
     <script src="js/data-service.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
-        let currentUser = null;
-        let currentExam = null;
+        let questionCount = 1;
         let examTimer = null;
-        let userAnswers = {};
-        let qrCodeInstance = null;
-        let shuffledQuestions = [];
-        
+
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            const bgColor = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
-            const icon = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' }[type] || 'fa-info-circle';
-            
-            toast.className = `toast ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg flex items-center space-x-2`;
-            toast.innerHTML = `<i class="fa ${icon}"></i><span>${message}</span>`;
+            const bgClass = {
+                success: 'toast-success',
+                error: 'toast-error',
+                warning: 'toast-warning',
+                info: 'toast-info'
+            }[type] || 'toast-info';
+
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            }[type] || 'fa-info-circle';
+
+            toast.className = `animate-slide-in-right ${bgClass} text-white px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 min-w-[280px]`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <span class="font-medium">${message}</span>
+            `;
             container.appendChild(toast);
-            
+
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateX(100%)';
                 toast.style.transition = 'all 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
-            }, 3000);
+            }, 4000);
         }
-        
-        async function renderNotifications() {
-            const notifications = await DataService.getNotifications();
-            const container = document.getElementById('notificationList');
-            const badge = document.getElementById('notificationBadge');
-            
-            const unreadCount = notifications.filter(n => !n.read).length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
+
+        async function checkLogin() {
+            await DataService.init();
+            const user = await DataService.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
             }
-            
-            if (notifications.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无通知</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = notifications.map(n => `
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="markAsRead(${n.id})">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
-                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : 'fa-bell'} text-primary"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
-                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
-                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
-                        </div>
-                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
-                    </div>
-                </div>
-            `).join('');
+            return user;
         }
-        
-        async function markAsRead(id) {
-            await DataService.markNotificationRead(id);
-            await renderNotifications();
+
+        async function logout() {
+            await DataService.signOut();
+            window.location.href = 'index.html';
         }
-        
-        function formatDateTime(dateStr) {
-            const d = new Date(dateStr);
-            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
-        
-        function getLocalDateTimeString(date) {
-            const offset = date.getTimezoneOffset();
-            const localDate = new Date(date.getTime() - offset * 60 * 1000);
-            return localDate.toISOString().slice(0, 16);
-        }
-        
-        function getExamStatus(exam) {
-            const now = new Date();
-            const start = new Date(exam.startTime);
-            const end = new Date(exam.endTime);
-            
-            if (now < start) return 'pending';
-            if (now > end) return 'completed';
-            return 'active';
-        }
-        
-        function getStatusBadge(status) {
-            const badges = {
-                active: '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">进行中</span>',
-                pending: '<span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">待开始</span>',
-                completed: '<span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">已结束</span>'
-            };
-            return badges[status] || '';
-        }
-        
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
-        }
-        
-        async function renderExamList() {
-            const exams = await DataService.getExams();
-            const records = await DataService.getExamRecords();
-            const questions = await DataService.getQuestions();
-            const statusFilter = document.getElementById('examStatusFilter').value;
-            
-            let filtered = exams.filter(e => !statusFilter || getExamStatus(e) === statusFilter);
-            filtered.sort((a, b) => new Date(b.createdat || b.createdAt) - new Date(a.createdat || a.createdAt));
-            
-            const container = document.getElementById('examList');
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-file-text-o text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无考试数据</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filtered.map(exam => {
-                const status = getExamStatus(exam);
-                const examRecords = records.filter(r => String(r.examId || r.examid) === String(exam.id));
-                const userRecord = records.find(r => {
-                    const recordExamId = r.examId || r.examid;
-                    const recordUserId = r.userId || r.userid;
-                    return String(recordExamId) === String(exam.id) && 
-                           recordUserId !== undefined && 
-                           recordUserId !== null &&
-                           String(recordUserId) === String(currentUser.id);
+
+        async function loadExams() {
+            try {
+                const exams = await DataService.getExams();
+                const now = new Date();
+
+                const activeExams = exams.filter(e => {
+                    const endTime = new Date(e.endTime || e.createdAt);
+                    return endTime > now;
                 });
-                const hasTaken = !!userRecord;
-                
+                const completedExams = exams.filter(e => {
+                    const endTime = new Date(e.endTime || e.createdAt);
+                    return endTime <= now;
+                }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                document.getElementById('activeCount').textContent = activeExams.length;
+                document.getElementById('completedCount').textContent = completedExams.length;
+                document.getElementById('totalCount').textContent = exams.length;
+
+                renderExams([...activeExams, ...completedExams]);
+
+            } catch (error) {
+                console.error('加载考试数据失败:', error);
+            }
+        }
+
+        function renderExams(exams) {
+            const container = document.getElementById('examList');
+
+            if (exams.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-card rounded-2xl p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-file-text text-gray-500 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-400">暂无考试记录</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = exams.map(exam => {
+                const now = new Date();
+                const endTime = new Date(exam.endTime || exam.createdAt);
+                const isActive = endTime > now;
+                const statusClass = isActive ? 'status-active' : 'status-ended';
+                const statusText = isActive ? '进行中' : '已结束';
+                const questionCount = exam.questions ? exam.questions.length : 0;
+
                 return `
-                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                    <div class="glass-card rounded-xl p-6">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-1">
-                                    ${getStatusBadge(status)}
-                                    ${hasTaken ? '<span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"><i class="fa fa-check mr-1"></i>已完成</span>' : ''}
+                                <div class="flex items-center gap-3 mb-2">
+                                    <h4 class="text-lg font-bold text-white">${exam.name}</h4>
+                                    <span class="status-badge ${statusClass}">${statusText}</span>
                                 </div>
-                                <h4 class="font-semibold text-gray-800">${exam.name}</h4>
-                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(exam.startTime)} - ${formatDateTime(exam.endTime)}</span>
-                                    <span><i class="fa fa-file-text-o mr-1"></i>${exam.questionCount}题</span>
-                                    <span><i class="fa fa-star mr-1"></i>共${exam.totalScore}分</span>
-                                    <span><i class="fa fa-hourglass-half mr-1"></i>${exam.duration}分钟</span>
+                                <p class="text-sm text-gray-400 mb-4">${exam.description || '暂无说明'}</p>
+                                <div class="flex items-center gap-6 text-sm text-gray-500">
+                                    <span><i class="fa-solid fa-clock mr-1"></i>${formatDateTime(exam.createdAt)}</span>
+                                    <span><i class="fa-solid fa-question-circle mr-1"></i>${questionCount} 题</span>
+                                    <span><i class="fa-solid fa-users mr-1"></i>${exam.participants?.length || 0} 人参加</span>
                                 </div>
-                                ${exam.description ? `<p class="text-sm text-gray-500 mt-1">${exam.description}</p>` : ''}
                             </div>
-                            
-                            <div class="flex items-center space-x-2 ml-4">
-                                ${status === 'active' && !hasTaken ? `
-                                    <button onclick="startExam(${exam.id})" class="bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-600 transition-colors">
-                                        <i class="fa fa-play mr-1"></i>开始考试
-                                    </button>
-                                ` : ''}
-                                ${hasTaken ? `
-                                    <button onclick="viewResult(${userRecord.id})" class="bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-600 transition-colors">
-                                        <i class="fa fa-eye mr-1"></i>查看成绩
-                                    </button>
-                                ` : ''}
-                                <button onclick="showQrCode('exam', ${exam.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
-                                    <i class="fa fa-qrcode mr-1"></i>二维码
+                            ${isActive ? `
+                                <button class="start-exam-btn px-6 py-3 rounded-xl text-white font-medium flex items-center gap-2"
+                                    onclick="startExam('${exam.id}')">
+                                    <i class="fa-solid fa-play"></i> 开始考试
                                 </button>
-                                ${currentUser.role !== 'user' ? `
-                                    <button onclick="viewExamStats(${exam.id})" class="bg-white text-gray-600 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors border">
-                                        <i class="fa fa-bar-chart mr-1"></i>统计
-                                    </button>
-                                    <button onclick="editExam(${exam.id})" class="text-blue-500 hover:text-blue-600 px-2">
-                                        <i class="fa fa-edit"></i>
-                                    </button>
-                                    <button onclick="deleteExam(${exam.id})" class="text-red-500 hover:text-red-600 px-2">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            document.getElementById('totalExams').textContent = exams.length;
-            document.getElementById('totalQuestions').textContent = questions.length;
-            document.getElementById('totalRecords').textContent = records.length;
-            
-            if (records.length > 0) {
-                const avgScore = Math.round(records.reduce((sum, r) => sum + r.score, 0) / records.length);
-                document.getElementById('avgScore').textContent = avgScore;
-            }
-        }
-        
-        async function renderQuestionList() {
-            const questions = await DataService.getQuestions();
-            const typeFilter = document.getElementById('questionTypeFilter').value;
-            const searchTerm = document.getElementById('questionSearchInput').value.toLowerCase();
-            
-            let filtered = questions.filter(q => {
-                const matchType = !typeFilter || q.type === typeFilter;
-                const matchSearch = !searchTerm || q.content.toLowerCase().includes(searchTerm);
-                return matchType && matchSearch;
-            });
-            
-            filtered.sort((a, b) => new Date(b.createdat || b.createdAt) - new Date(a.createdat || a.createdAt));
-            
-            const container = document.getElementById('questionList');
-            
-            if (filtered.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-database text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无题目数据</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            const typeNames = { single: '单选题', multiple: '多选题', judge: '判断题', fill: '填空题', essay: '解答题' };
-            
-            container.innerHTML = filtered.map((q, index) => `
-                <div class="p-4 hover:bg-gray-50 transition-colors">
-                    <div class="flex items-start justify-between">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">${typeNames[q.type] || q.type}</span>
-                                ${q.category ? `<span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">${q.category}</span>` : ''}
-                                ${q.type === 'essay' ? `<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">${q.essayScore || 10}分</span>` : ''}
-                            </div>
-                            <p class="text-gray-800 mb-2">${index + 1}. ${q.content}</p>
-                            ${q.type === 'essay' ? `
-                                ${q.essayReferenceAnswer ? `<div class="text-sm"><span class="text-green-600 font-medium"><i class="fa fa-book mr-1"></i>参考答案：</span><span class="text-gray-700">${q.essayReferenceAnswer}</span></div>` : ''}
-                                ${q.essayGradingStandard ? `<p class="text-sm text-gray-500 mt-1"><i class="fa fa-list-alt mr-1"></i>评分标准：${q.essayGradingStandard}</p>` : ''}
-                            ` : q.type === 'fill' ? `
-                                <div class="text-sm">
-                                    <span class="text-green-600 font-medium"><i class="fa fa-check mr-1"></i>正确答案：</span>
-                                    <span class="text-gray-700">${Array.isArray(q.correctAnswers) ? q.correctAnswers.join(' | ') : q.correctAnswers}</span>
-                                </div>
-                            ` : q.type !== 'judge' ? `
-                                <div class="grid grid-cols-2 gap-2 text-sm">
-                                    ${q.options.map((opt, i) => `
-                                        <div class="flex items-center ${q.correctAnswers.includes(i) ? 'text-green-600 font-medium' : 'text-gray-600'}">
-                                            <span class="w-6 h-6 ${q.correctAnswers.includes(i) ? 'bg-green-100' : 'bg-gray-100'} rounded flex items-center justify-center mr-2 text-xs">${String.fromCharCode(65 + i)}</span>
-                                            ${opt} ${q.correctAnswers.includes(i) ? '<i class="fa fa-check ml-1"></i>' : ''}
-                                        </div>
-                                    `).join('')}
-                                </div>
                             ` : `
-                                <div class="flex items-center space-x-4 text-sm">
-                                    <span class="${q.correctAnswers[0] === 0 ? 'text-green-600 font-medium' : 'text-gray-600'}">
-                                        正确 ${q.correctAnswers[0] === 0 ? '<i class="fa fa-check"></i>' : ''}
-                                    </span>
-                                    <span class="${q.correctAnswers[0] === 1 ? 'text-green-600 font-medium' : 'text-gray-600'}">
-                                        错误 ${q.correctAnswers[0] === 1 ? '<i class="fa fa-check"></i>' : ''}
-                                    </span>
-                                </div>
-                            `}
-                            ${q.explanation ? `<p class="text-sm text-gray-500 mt-2"><i class="fa fa-lightbulb-o mr-1"></i>解析：${q.explanation}</p>` : ''}
-                        </div>
-                        
-                        ${currentUser.role !== 'user' ? `
-                            <div class="flex items-center space-x-2 ml-4">
-                                <button onclick="deleteQuestion(${q.id})" class="text-red-500 hover:text-red-600 px-2">
-                                    <i class="fa fa-trash"></i>
+                                <button class="btn-secondary px-6 py-3 rounded-xl text-gray-300 font-medium flex items-center gap-2"
+                                    onclick="viewExamResult('${exam.id}')">
+                                    <i class="fa-solid fa-eye"></i> 查看结果
                                 </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        async function renderRecordList() {
-            const records = await DataService.getExamRecords();
-            const exams = await DataService.getExams();
-            
-            records.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-            
-            const container = document.getElementById('recordList');
-            
-            if (records.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-history text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无考试记录</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = records.map(r => {
-                const exam = exams.find(e => e.id === r.examId);
-                return `
-                    <div class="p-4 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${r.examName}</h4>
-                                <div class="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                                    <span><i class="fa fa-user mr-1"></i>${r.userName}</span>
-                                    <span><i class="fa fa-clock-o mr-1"></i>${formatDateTime(r.submittedAt)}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-2xl font-bold ${r.score >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-red-600'}">${r.score}</p>
-                                <p class="text-sm text-gray-500">/ ${exam ? exam.totalScore : 100} 分</p>
-                            </div>
+                            `}
                         </div>
                     </div>
                 `;
             }).join('');
         }
-        
-        async function startExam(examId) {
-            const exams = await DataService.getExams();
-            const questions = await DataService.getQuestions();
-            currentExam = exams.find(e => e.id === examId);
-            
-            if (!currentExam) {
-                showToast('考试不存在', 'error');
-                return;
-            }
-            
-            const records = await DataService.getExamRecords();
-            const existingRecord = records.find(r => (r.examId || r.examid) === examId && String(r.userId || r.userid) === String(currentUser.id));
-            if (existingRecord) {
-                showToast('您已经参加过这场考试', 'warning');
-                return;
-            }
-            
-            let availableQuestions = questions.filter(q => {
-                if (currentExam.includeSingle && q.type === 'single') return true;
-                if (currentExam.includeMultiple && q.type === 'multiple') return true;
-                if (currentExam.includeJudge && q.type === 'judge') return true;
-                if (currentExam.includeFill && q.type === 'fill') return true;
-                if (currentExam.includeEssay && q.type === 'essay') return true;
-                return false;
+
+        function formatDateTime(dateString) {
+            if (!dateString) return '未知';
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
             });
-            
-            console.log('题库所有题目:', questions);
-            console.log('考试设置:', currentExam);
-            console.log('可用题目:', availableQuestions);
-            console.log('需要题目数:', currentExam.questionCount);
-            
-            if (availableQuestions.length < currentExam.questionCount) {
-                showToast(`题库题目不足，需要${currentExam.questionCount}题，当前只有${availableQuestions.length}题`, 'error');
-                return;
-            }
-            
-            shuffledQuestions = shuffleArray(availableQuestions).slice(0, currentExam.questionCount);
-            
-            if (currentExam.shuffleQuestions) {
-                shuffledQuestions = shuffleArray(shuffledQuestions);
-            }
-            
-            shuffledQuestions = shuffledQuestions.map(q => {
-                let options = q.options || [];
-                let optionMapping = [];
-                
-                if (q.type === 'judge' && options.length === 0) {
-                    options = ['正确', '错误'];
-                }
-                
-                for (let i = 0; i < options.length; i++) {
-                    optionMapping.push(i);
-                }
-                
-                if (currentExam.shuffleOptions && q.type !== 'judge' && options.length > 0) {
-                    const shuffled = shuffleArray(options.map((opt, i) => ({ opt, originalIndex: i })));
-                    options = shuffled.map(s => s.opt);
-                    optionMapping = shuffled.map(s => s.originalIndex);
-                }
-                
-                console.log('题目:', q.type, '选项:', options, '映射:', optionMapping);
-                return { ...q, shuffledOptions: options, optionMapping };
-            });
-            
-            userAnswers = {};
-            
-            document.getElementById('takingExamName').textContent = currentExam.name;
-            renderExamQuestions();
-            document.getElementById('takeExamModal').classList.remove('hidden');
-            
-            startTimer(currentExam.duration * 60);
         }
-        
-        function renderExamQuestions() {
+
+        async function startExam(examId) {
+            try {
+                const exam = await DataService.getExamById(examId);
+                if (!exam) {
+                    showToast('考试不存在', 'error');
+                    return;
+                }
+
+                document.getElementById('examTitle').textContent = exam.name;
+                renderExamQuestions(exam.questions || []);
+                document.getElementById('examModal').classList.remove('hidden');
+
+                startTimer();
+
+            } catch (error) {
+                showToast('加载考试失败', 'error');
+            }
+        }
+
+        function renderExamQuestions(questions) {
             const container = document.getElementById('examQuestions');
-            
-            container.innerHTML = shuffledQuestions.map((q, qIndex) => `
-                <div class="mb-6 p-4 bg-gray-50 rounded-xl">
-                    <div class="flex items-start mb-3">
-                        <span class="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm font-medium mr-3">${qIndex + 1}</span>
-                        <div class="flex-1">
-                            <p class="text-gray-800 font-medium">${q.content}</p>
-                            <span class="text-xs text-gray-500">${q.type === 'single' ? '单选题' : q.type === 'multiple' ? '多选题' : q.type === 'fill' ? '填空题' : q.type === 'essay' ? '解答题' : '判断题'}${q.type === 'essay' ? ` (${q.essayScore || 10}分)` : ''}</span>
-                        </div>
+
+            if (questions.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center">暂无题目</p>';
+                return;
+            }
+
+            container.innerHTML = questions.map((q, index) => `
+                <div class="question-card p-5 rounded-xl">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary font-bold">${index + 1}</span>
+                        <h5 class="text-white font-medium">${q.content}</h5>
                     </div>
-                    
-                    <div class="ml-11 space-y-2">
-                        ${q.type === 'fill' ? `
-                            <div class="space-y-3">
-                                ${q.correctAnswers.map((_, fIndex) => `
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-sm font-medium text-gray-600 border">${fIndex + 1}</span>
-                                        <input type="text" 
-                                            class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer" 
-                                            placeholder="请填写答案" 
-                                            data-question="${qIndex}" 
-                                            data-fill="${fIndex}"
-                                            value="${userAnswers[qIndex] && userAnswers[qIndex][fIndex] ? userAnswers[qIndex][fIndex] : ''}"
-                                            oninput="handleFillAnswer(${qIndex}, ${fIndex}, this.value)">
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : q.type === 'essay' ? `
-                            <div class="space-y-4">
-                                <div class="bg-white rounded-xl p-4 border">
-                                    <div class="flex items-center space-x-2 mb-3">
-                                        <button type="button" onclick="triggerEssayPhoto(${qIndex})" class="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                                            <i class="fa fa-camera mr-2"></i>拍照上传
-                                        </button>
-                                        <span class="text-xs text-gray-400">或直接在下方输入答案</span>
-                                    </div>
-                                    
-                                    <div id="essayImagePreview${qIndex}" class="mb-3 ${userAnswers[qIndex] && userAnswers[qIndex].imageUrl ? '' : 'hidden'}">
-                                        <div class="relative inline-block">
-                                            <img id="essayImage${qIndex}" src="${userAnswers[qIndex] && userAnswers[qIndex].imageUrl ? userAnswers[qIndex].imageUrl : ''}" class="max-w-full max-h-64 rounded-lg border">
-                                            <button type="button" onclick="removeEssayImage(${qIndex})" class="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
-                                                <i class="fa fa-times text-xs"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    
-                                    <input type="file" id="essayPhoto${qIndex}" accept="image/*" capture="environment" class="hidden" onchange="handleEssayPhoto(${qIndex}, this)">
-                                    
-                                    <textarea 
-                                        class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" 
-                                        rows="6" 
-                                        placeholder="请在此输入答案，或点击上方按钮拍照上传..."
-                                        data-question="${qIndex}"
-                                        oninput="handleEssayAnswer(${qIndex}, this.value)">${userAnswers[qIndex] && userAnswers[qIndex].text ? userAnswers[qIndex].text : ''}</textarea>
-                                </div>
-                            </div>
-                        ` : q.shuffledOptions.map((opt, oIndex) => `
-                            <label class="question-option flex items-center p-3 border rounded-xl cursor-pointer ${userAnswers[qIndex] === oIndex || (Array.isArray(userAnswers[qIndex]) && userAnswers[qIndex].includes(oIndex)) ? 'selected' : ''}" data-question="${qIndex}" data-option="${oIndex}">
-                                <input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" name="q${qIndex}" value="${oIndex}" class="w-4 h-4 text-primary mr-3" onchange="handleAnswer(${qIndex}, ${oIndex}, '${q.type}')">
-                                <span class="w-6 h-6 bg-white rounded flex items-center justify-center mr-2 text-sm font-medium">${String.fromCharCode(65 + oIndex)}</span>
-                                <span>${opt}</span>
+                    <div class="space-y-2">
+                        ${['A', 'B', 'C', 'D'].map((opt, idx) => `
+                            <label class="option-item flex items-center p-3 rounded-lg border border-gray-700/50 cursor-pointer hover:border-primary/50">
+                                <input type="radio" name="question-${index}" value="${opt}" class="w-4 h-4 text-primary">
+                                <span class="ml-3 text-gray-300">${opt}. ${q.options[idx]}</span>
                             </label>
                         `).join('')}
                     </div>
                 </div>
             `).join('');
         }
-        
-        function triggerEssayPhoto(qIndex) {
-            document.getElementById(`essayPhoto${qIndex}`).click();
-        }
-        
-        function handleEssayPhoto(qIndex, input) {
-            const file = input.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const imageUrl = e.target.result;
-                
-                if (!userAnswers[qIndex]) userAnswers[qIndex] = { text: '', imageUrl: '' };
-                userAnswers[qIndex].imageUrl = imageUrl;
-                
-                const preview = document.getElementById(`essayImagePreview${qIndex}`);
-                const img = document.getElementById(`essayImage${qIndex}`);
-                img.src = imageUrl;
-                preview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        function removeEssayImage(qIndex) {
-            if (userAnswers[qIndex]) {
-                userAnswers[qIndex].imageUrl = '';
-            }
-            const preview = document.getElementById(`essayImagePreview${qIndex}`);
-            preview.classList.add('hidden');
-            document.getElementById(`essayPhoto${qIndex}`).value = '';
-        }
-        
-        function handleEssayAnswer(qIndex, value) {
-            if (!userAnswers[qIndex]) userAnswers[qIndex] = { text: '', imageUrl: '' };
-            userAnswers[qIndex].text = value;
-        }
-        
-        function handleFillAnswer(qIndex, fIndex, value) {
-            if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
-            userAnswers[qIndex][fIndex] = value;
-        }
-        
-        function handleAnswer(qIndex, oIndex, type) {
-            console.log('handleAnswer called:', qIndex, oIndex, type);
-            if (type === 'multiple') {
-                if (!userAnswers[qIndex]) userAnswers[qIndex] = [];
-                const index = userAnswers[qIndex].indexOf(oIndex);
-                if (index > -1) {
-                    userAnswers[qIndex].splice(index, 1);
+
+        function startTimer() {
+            let minutes = 60;
+            let seconds = 0;
+
+            if (examTimer) clearInterval(examTimer);
+
+            examTimer = setInterval(() => {
+                if (seconds === 0) {
+                    minutes--;
+                    seconds = 59;
                 } else {
-                    userAnswers[qIndex].push(oIndex);
+                    seconds--;
                 }
-            } else {
-                userAnswers[qIndex] = oIndex;
-            }
-            console.log('userAnswers:', userAnswers);
-            renderExamQuestions();
-        }
-        
-        function startTimer(seconds) {
-            let remaining = seconds;
-            
-            function updateTimer() {
-                const minutes = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                document.getElementById('remainingTime').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                
-                if (remaining <= 0) {
+
+                if (minutes < 0) {
                     clearInterval(examTimer);
                     submitExam();
-                } else {
-                    remaining--;
+                    return;
                 }
-            }
-            
-            updateTimer();
-            examTimer = setInterval(updateTimer, 1000);
+
+                document.getElementById('examTimer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
         }
-        
+
         async function submitExam() {
             if (examTimer) {
                 clearInterval(examTimer);
+                examTimer = null;
             }
-            
-            let correctCount = 0;
-            const details = [];
-            const essayAnswers = [];
-            
-            shuffledQuestions.forEach((q, qIndex) => {
-                const userAnswer = userAnswers[qIndex];
-                let isCorrect = false;
-                
-                if (q.type === 'essay') {
-                    const essayAnswer = userAnswer || { text: '', imageUrl: '' };
-                    essayAnswers.push({
-                        questionId: q.id,
-                        questionIndex: qIndex,
-                        answer: essayAnswer.text || '',
-                        imageUrl: essayAnswer.imageUrl || '',
-                        score: null,
-                        comment: ''
-                    });
-                    
-                    details.push({
-                        questionId: q.id,
-                        questionContent: q.content,
-                        userAnswer: essayAnswer.text || '[图片答案]',
-                        isCorrect: null,
-                        isEssay: true
-                    });
-                } else if (q.type === 'fill') {
-                    if (Array.isArray(userAnswer) && Array.isArray(q.correctAnswers)) {
-                        let allCorrect = true;
-                        for (let i = 0; i < q.correctAnswers.length; i++) {
-                            const userVal = (userAnswer[i] || '').trim().toLowerCase();
-                            const correctVal = q.correctAnswers[i].trim().toLowerCase();
-                            if (userVal !== correctVal) {
-                                allCorrect = false;
-                                break;
-                            }
-                        }
-                        isCorrect = allCorrect;
-                    }
-                    if (isCorrect) correctCount++;
-                    
-                    details.push({
-                        questionId: q.id,
-                        questionContent: q.content,
-                        userAnswer: userAnswer,
-                        isCorrect: isCorrect
-                    });
-                } else if (q.type === 'multiple') {
-                    const correctOriginal = q.correctAnswers.sort().join(',');
-                    const userOriginal = (Array.isArray(userAnswer) ? userAnswer : [])
-                        .map(oIndex => q.optionMapping[oIndex])
-                        .sort()
-                        .join(',');
-                    isCorrect = correctOriginal === userOriginal;
-                    if (isCorrect) correctCount++;
-                    
-                    details.push({
-                        questionId: q.id,
-                        questionContent: q.content,
-                        userAnswer: userAnswer,
-                        isCorrect: isCorrect
-                    });
-                } else {
-                    const userOriginalIndex = userAnswer !== undefined ? q.optionMapping[userAnswer] : -1;
-                    isCorrect = q.correctAnswers.includes(userOriginalIndex);
-                    if (isCorrect) correctCount++;
-                    
-                    details.push({
-                        questionId: q.id,
-                        questionContent: q.content,
-                        userAnswer: userAnswer,
-                        isCorrect: isCorrect
-                    });
-                }
-            });
-            
-            const objectiveScore = correctCount * currentExam.scorePerQuestion;
-            
-            const record = {
-                examId: currentExam.id,
-                examName: currentExam.name,
-                userId: currentUser.id,
-                username: currentUser.username,
-                userName: currentUser.name,
-                score: objectiveScore,
-                correctCount: correctCount,
-                totalQuestions: currentExam.questionCount,
-                details: details,
-                essayAnswers: essayAnswers,
-                submittedAt: new Date().toISOString()
-            };
-            
-            await DataService.addExamRecord(record);
-            
-            document.getElementById('takeExamModal').classList.add('hidden');
-            
-            showResult(record);
-            renderExamList();
+
+            showToast('考试已提交，正在计算成绩...', 'info');
+
+            setTimeout(() => {
+                document.getElementById('examModal').classList.add('hidden');
+                showToast('成绩已保存', 'success');
+                loadExams();
+            }, 1500);
         }
-        
-        async function showResult(record) {
-            const exam = (await DataService.getExams()).find(e => e.id === record.examId);
-            const questions = await DataService.getQuestions();
-            const hasEssay = record.essayAnswers && record.essayAnswers.length > 0;
-            const essayPending = hasEssay && record.essayAnswers.some(ea => ea.score === null);
-            
-            let totalScore = exam ? exam.totalScore : 100;
-            let objectiveScore = record.score || 0;
-            let essayScore = 0;
-            
-            if (hasEssay && !essayPending) {
-                essayScore = record.essayAnswers.reduce((sum, ea) => sum + (ea.score || 0), 0);
-            }
-            
-            let finalScore = objectiveScore + essayScore;
-            let displayScore = essayPending ? `${objectiveScore} + 待阅卷` : finalScore;
-            
-            let detailsHtml = '';
-            if (record.details && record.details.length > 0) {
-                const examQuestionIds = exam.questionIds || exam.questionids || [];
-                const examQuestions = questions.filter(q => examQuestionIds.includes(q.id));
-                detailsHtml = `
-                    <div class="mt-6">
-                        <h4 class="font-semibold text-gray-800 mb-3">答题详情</h4>
-                        <div class="max-h-64 overflow-y-auto space-y-3">
-                            ${record.details.map((d, i) => {
-                                const q = examQuestions.find(eq => eq.id === d.questionId);
-                                let answerDisplay = '';
-                                let correctDisplay = '';
-                                
-                                if (d.isEssay) {
-                                    const essayAnswer = record.essayAnswers ? record.essayAnswers.find(ea => ea.questionId === d.questionId) : null;
-                                    answerDisplay = d.userAnswer || (essayAnswer?.imageUrl ? '[图片答案]' : '-');
-                                    correctDisplay = essayAnswer?.score !== null ? `${essayAnswer?.score || 0}分` : '待阅卷';
-                                } else if (q) {
-                                    if (q.type === 'single' || q.type === 'judge') {
-                                        answerDisplay = d.userAnswer !== undefined ? q.options[d.userAnswer] : '-';
-                                    } else if (q.type === 'multiple') {
-                                        answerDisplay = Array.isArray(d.userAnswer) ? d.userAnswer.map(idx => q.options[idx]).join('、') : '-';
-                                    } else if (q.type === 'fill') {
-                                        answerDisplay = Array.isArray(d.userAnswer) ? d.userAnswer.join(' | ') : '-';
-                                    }
-                                    correctDisplay = d.isCorrect ? '✓ 正确' : '✗ 错误';
-                                }
-                                
-                                return `
-                                    <div class="p-3 ${d.isCorrect ? 'bg-green-50' : d.isEssay ? 'bg-purple-50' : 'bg-red-50'} rounded-xl">
-                                        <div class="flex justify-between items-start">
-                                            <p class="font-medium text-gray-800">${i + 1}. ${d.questionContent || ''}</p>
-                                            <span class="text-sm ${d.isCorrect ? 'text-green-600' : d.isEssay ? 'text-purple-600' : 'text-red-600'}">${correctDisplay}</span>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mt-1">您的答案：${answerDisplay}</p>
-                                        ${!d.isEssay && q && (q.type === 'single' || q.type === 'multiple' || q.type === 'judge') ? `
-                                            <p class="text-sm text-green-600 mt-1">正确答案：${Array.isArray(q.correctAnswers) ? q.correctAnswers.map(idx => q.options[idx]).join('、') : '-'}</p>
-                                        ` : ''}
-                                        ${d.isEssay && essayAnswer?.comment ? `
-                                            <p class="text-sm text-gray-500 mt-1">评语：${essayAnswer.comment}</p>
-                                        ` : ''}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
+
+        async function viewExamResult(examId) {
+            showToast('查看考试结果功能开发中', 'info');
+        }
+
+        async function init() {
+            await checkLogin();
+            await loadExams();
+
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('userMenuLogoutBtn').addEventListener('click', logout);
+
+            document.getElementById('userMenuBtn').addEventListener('click', () => {
+                document.getElementById('userDropdown').classList.toggle('hidden');
+            });
+
+            document.getElementById('createExamBtn').addEventListener('click', () => {
+                document.getElementById('createExamModal').classList.remove('hidden');
+            });
+
+            document.getElementById('closeCreateModal').addEventListener('click', () => {
+                document.getElementById('createExamModal').classList.add('hidden');
+            });
+
+            document.getElementById('cancelCreateBtn').addEventListener('click', () => {
+                document.getElementById('createExamModal').classList.add('hidden');
+            });
+
+            document.getElementById('closeExamModal').addEventListener('click', () => {
+                if (examTimer) {
+                    clearInterval(examTimer);
+                    examTimer = null;
+                }
+                document.getElementById('examModal').classList.add('hidden');
+            });
+
+            document.getElementById('submitExamBtn').addEventListener('click', submitExam);
+
+            document.getElementById('addQuestionBtn').addEventListener('click', () => {
+                questionCount++;
+                const questionList = document.getElementById('questionList');
+                
+                const newQuestion = document.createElement('div');
+                newQuestion.className = 'question-card p-4 rounded-xl';
+                newQuestion.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-primary">题目 ${questionCount}</span>
+                        <button type="button" class="text-gray-400 hover:text-red-400 remove-question-btn">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <input type="text" class="input-field w-full px-4 py-2 rounded-lg outline-none text-gray-100 text-sm mb-2"
+                        placeholder="请输入题目内容" required>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                            placeholder="选项 A" required>
+                        <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                            placeholder="选项 B" required>
+                        <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                            placeholder="选项 C" required>
+                        <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                            placeholder="选项 D" required>
+                    </div>
+                    <div class="mt-2">
+                        <label class="text-xs text-gray-400 mr-2">正确答案:</label>
+                        <select class="input-field px-3 py-1 rounded-lg text-gray-100 text-sm">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
                     </div>
                 `;
-            }
-            
-            document.getElementById('resultContent').innerHTML = `
-                <div class="text-center mb-6">
-                    <div class="w-24 h-24 mx-auto mb-4 rounded-full ${!essayPending && finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? 'bg-green-100' : 'bg-orange-100'} flex items-center justify-center">
-                        <span class="text-3xl font-bold ${!essayPending && finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? 'text-green-600' : 'text-orange-600'}">${displayScore}</span>
-                    </div>
-                    <p class="text-gray-500">总分 ${totalScore} 分</p>
-                    ${essayPending ? `
-                        <p class="text-lg font-medium mt-2 text-orange-600"><i class="fa fa-clock-o mr-1"></i>解答题待阅卷</p>
-                        <p class="text-sm text-gray-500 mt-1">客观题得分：${objectiveScore}分</p>
-                    ` : `
-                        <p class="text-lg font-medium mt-2">${finalScore >= (exam ? exam.totalScore * 0.6 : 60) ? '恭喜通过！' : '未通过，继续努力！'}</p>
-                        ${hasEssay ? `<p class="text-sm text-gray-500 mt-1">客观题：${objectiveScore}分 + 解答题：${essayScore}分</p>` : ''}
-                    `}
-                </div>
                 
-                <div class="grid grid-cols-3 gap-4 mb-6">
-                    <div class="bg-gray-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-gray-800">${record.totalQuestions}</p>
-                        <p class="text-sm text-gray-500">总题数</p>
-                    </div>
-                    <div class="bg-green-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-green-600">${record.correctCount}</p>
-                        <p class="text-sm text-gray-500">正确</p>
-                    </div>
-                    <div class="bg-red-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-red-600">${record.totalQuestions - record.correctCount - (hasEssay ? record.essayAnswers.length : 0)}</p>
-                        <p class="text-sm text-gray-500">错误</p>
-                    </div>
-                </div>
-                
-                ${hasEssay ? `
-                    <div class="bg-purple-50 rounded-xl p-4 mb-6">
-                        <p class="text-sm text-purple-700"><i class="fa fa-info-circle mr-1"></i>本次考试包含${record.essayAnswers.length}道解答题${essayPending ? '，请等待阅卷完成后查看最终成绩' : '，已阅卷完成'}</p>
-                    </div>
-                ` : ''}
-                
-                ${detailsHtml}
-                
-                <button onclick="document.getElementById('resultModal').classList.add('hidden')" class="w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors mt-4">
-                    确定
-                </button>
-            `;
-            
-            document.getElementById('resultModal').classList.remove('hidden');
-        }
-        
-        async function viewResult(recordId) {
-            const records = await DataService.getExamRecords();
-            const record = records.find(r => r.id === recordId);
-            if (record) {
-                const isAdmin = currentUser.role !== 'user';
-                const isOwnRecord = String(record.userId || record.userid) === String(currentUser.id);
-                if (!isAdmin && !isOwnRecord) {
-                    showToast('您只能查看自己的考试结果', 'warning');
-                    return;
-                }
-                showResult(record);
-            }
-        }
-        
-        async function viewExamStats(examId) {
-            const exams = await DataService.getExams();
-            const exam = exams.find(e => e.id === examId);
-            const records = (await DataService.getExamRecords()).filter(r => (r.examId || r.examid) === examId);
-            
-            const isAdmin = currentUser.role !== 'user';
-            const userRecord = records.find(r => String(r.userId || r.userid) === String(currentUser.id));
-            const hasTaken = !!userRecord;
-            
-            if (!isAdmin && !hasTaken) {
-                showToast('请先参加考试后再查看统计', 'warning');
-                return;
-            }
-            
-            if (records.length === 0) {
-                showToast('暂无考试记录', 'info');
-                return;
-            }
-            
-            const questions = await DataService.getQuestions();
-            
-            records.forEach(r => {
-                const hasEssay = r.essayAnswers && r.essayAnswers.length > 0;
-                const essayPending = hasEssay && r.essayAnswers.some(ea => ea.score === null);
-                let essayScore = 0;
-                if (hasEssay && !essayPending) {
-                    essayScore = r.essayAnswers.reduce((sum, ea) => sum + (ea.score || 0), 0);
-                }
-                r.finalScore = (r.score || 0) + essayScore;
-                r.essayPending = essayPending;
-            });
-            
-            const avgScore = Math.round(records.reduce((sum, r) => sum + r.finalScore, 0) / records.length);
-            const maxScore = Math.max(...records.map(r => r.finalScore));
-            const minScore = Math.min(...records.map(r => r.finalScore));
-            const passCount = records.filter(r => r.finalScore >= exam.totalScore * 0.6).length;
-            
-            let details = `
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-gray-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-gray-800">${records.length}</p>
-                        <p class="text-sm text-gray-500">参考人数</p>
-                    </div>
-                    <div class="bg-green-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-green-600">${avgScore}</p>
-                        <p class="text-sm text-gray-500">平均分</p>
-                    </div>
-                    <div class="bg-blue-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-blue-600">${maxScore}</p>
-                        <p class="text-sm text-gray-500">最高分</p>
-                    </div>
-                    <div class="bg-orange-50 rounded-xl p-4 text-center">
-                        <p class="text-2xl font-bold text-orange-600">${minScore}</p>
-                        <p class="text-sm text-gray-500">最低分</p>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600">及格率：${Math.round(passCount / records.length * 100)}% (${passCount}/${records.length})</p>
-                </div>
-                
-                <h4 class="font-semibold text-gray-800 mb-3">成绩列表</h4>
-                <div class="max-h-48 overflow-y-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="text-left text-gray-500">
-                                <th class="pb-2">姓名</th>
-                                <th class="pb-2">账号</th>
-                                <th class="pb-2">分数</th>
-                                <th class="pb-2">提交时间</th>
-                                <th class="pb-2">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            ${records.map(r => `
-                                <tr>
-                                    <td class="py-2">${r.userName}</td>
-                                    <td class="py-2 text-gray-500">${r.username}</td>
-                                    <td class="py-2 font-medium ${r.essayPending ? 'text-orange-600' : r.finalScore >= exam.totalScore * 0.6 ? 'text-green-600' : 'text-red-600'}">${r.essayPending ? r.score + '+待阅卷' : r.finalScore}</td>
-                                    <td class="py-2 text-gray-500">${formatDateTime(r.submittedAt)}</td>
-                                    <td class="py-2"><button onclick="viewExamRecordDetail(${r.id})" class="text-blue-500 hover:text-blue-600"><i class="fa fa-eye"></i> 查看答卷</button></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            
-            document.getElementById('resultContent').innerHTML = details;
-            document.getElementById('resultModal').classList.remove('hidden');
-        }
-        
-        async function viewExamRecordDetail(recordId) {
-            const records = await DataService.getExamRecords();
-            const record = records.find(r => r.id === recordId);
-            if (!record) return;
-            
-            await showResult(record);
-        }
-        
-        let editingExamId = null;
-        
-        async function loadExamGroupsAndMembers() {
-            const groups = await DataService.getGroups();
-            const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
-            
-            const groupSelect = document.getElementById('examSelectedGroup');
-            groupSelect.innerHTML = '<option value="">请选择分组</option>' + 
-                groups.map(g => `<option value="${g.id}">${g.name} (${g.members ? g.members.length : 0}人)</option>`).join('');
-            
-            const memberList = document.getElementById('examMemberSelectList');
-            memberList.innerHTML = users.map(u => `
-                <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
-                    <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded">
-                    <span class="ml-2 text-sm text-gray-700">${u.name}</span>
-                    <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
-                </label>
-            `).join('');
-            
-            document.getElementById('examParticipantScope').value = 'all';
-            document.getElementById('examGroupSelectContainer').classList.add('hidden');
-            document.getElementById('examMemberSelectContainer').classList.add('hidden');
-        }
-        
-        async function editExam(examId) {
-            const exams = await DataService.getExams();
-            const exam = exams.find(e => e.id === examId);
-            if (!exam) return;
-            
-            editingExamId = examId;
-            
-            document.getElementById('examName').value = exam.name;
-            document.getElementById('examStartTime').value = exam.startTime;
-            document.getElementById('examEndTime').value = exam.endTime;
-            document.getElementById('examDuration').value = exam.duration || 60;
-            if (document.getElementById('examDescription')) {
-                document.getElementById('examDescription').value = exam.description || '';
-            }
-            
-            document.getElementById('includeSingle').checked = exam.includeSingle;
-            if (document.getElementById('singleCount')) {
-                document.getElementById('singleCount').value = exam.singleCount || 0;
-                document.getElementById('singleScore').value = exam.singleScore || 5;
-            }
-            
-            document.getElementById('includeMultiple').checked = exam.includeMultiple;
-            if (document.getElementById('multipleCount')) {
-                document.getElementById('multipleCount').value = exam.multipleCount || 0;
-                document.getElementById('multipleScore').value = exam.multipleScore || 10;
-            }
-            
-            document.getElementById('includeJudge').checked = exam.includeJudge;
-            if (document.getElementById('judgeCount')) {
-                document.getElementById('judgeCount').value = exam.judgeCount || 0;
-                document.getElementById('judgeScore').value = exam.judgeScore || 5;
-            }
-            
-            document.getElementById('includeFill').checked = exam.includeFill;
-            if (document.getElementById('fillCount')) {
-                document.getElementById('fillCount').value = exam.fillCount || 0;
-                document.getElementById('fillScore').value = exam.fillScore || 10;
-            }
-            
-            document.getElementById('includeEssay').checked = exam.includeEssay;
-            if (document.getElementById('essayCount')) {
-                document.getElementById('essayCount').value = exam.essayCount || 0;
-                document.getElementById('essayScore').value = exam.essayScore || 20;
-            }
-            
-            document.getElementById('shuffleQuestions').checked = exam.shuffleQuestions;
-            document.getElementById('shuffleOptions').checked = exam.shuffleOptions;
-            
-            const gradingModeRadio = document.querySelector(`input[name="gradingMode"][value="${exam.gradingMode || 'admin'}"]`);
-            if (gradingModeRadio) gradingModeRadio.checked = true;
-            if (exam.gradingMode === 'peer') {
-                document.getElementById('peerGradingSettings').classList.remove('hidden');
-                const graderScope = exam.graderScope || 'all';
-                const graderScopeRadio = document.querySelector(`input[name="graderScope"][value="${graderScope}"]`);
-                if (graderScopeRadio) graderScopeRadio.checked = true;
-                if (graderScope === 'group') {
-                    document.getElementById('graderGroupSelectContainer').classList.remove('hidden');
-                    const groups = await DataService.getGroups();
-                    const graderGroupSelect = document.getElementById('graderSelectedGroup');
-                    graderGroupSelect.innerHTML = '<option value="">请选择分组</option>' + 
-                        groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-                    graderGroupSelect.value = exam.graderGroup || '';
-                } else if (graderScope === 'selected') {
-                    document.getElementById('graderMemberSelectContainer').classList.remove('hidden');
-                    const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
-                    const graderMemberList = document.getElementById('graderMemberSelectList');
-                    graderMemberList.innerHTML = users.map(u => `
-                        <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
-                            <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded" ${(exam.graders || []).includes(u.id) ? 'checked' : ''}>
-                            <span class="ml-2 text-sm text-gray-700">${u.name}</span>
-                        </label>
-                    `).join('');
-                }
-            }
-            
-            await loadExamGroupsAndMembers();
-            
-            document.getElementById('examParticipantScope').value = exam.participantScope || 'all';
-            if (exam.participantScope === 'group') {
-                document.getElementById('examGroupSelectContainer').classList.remove('hidden');
-                document.getElementById('examSelectedGroup').value = exam.participants[0] || '';
-            } else if (exam.participantScope === 'selected') {
-                document.getElementById('examMemberSelectContainer').classList.remove('hidden');
-                const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
-                const memberList = document.getElementById('examMemberSelectList');
-                memberList.innerHTML = users.map(u => `
-                    <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
-                        <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded" ${(exam.participants || []).includes(u.id) ? 'checked' : ''}>
-                        <span class="ml-2 text-sm text-gray-700">${u.name}</span>
-                        <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
-                    </label>
-                `).join('');
-            }
-            
-            document.querySelector('#createExamModal h3').innerHTML = '<i class="fa fa-edit text-primary mr-2"></i>编辑考试';
-            document.querySelector('#createExamForm button[type="submit"]').textContent = '保存修改';
-            
-            document.getElementById('createExamModal').classList.remove('hidden');
-        }
-        
-        async function deleteExam(examId) {
-            if (!confirm('确定要删除这个考试吗？')) return;
-            
-            await DataService.deleteExam(examId);
-            
-            showToast('删除成功', 'success');
-            renderExamList();
-        }
-        
-        async function showQrCode(type, id) {
-            const container = document.getElementById('qrCodeContainer');
-            container.innerHTML = '';
-            
-            const url = `${window.location.origin}${window.location.pathname.replace('exam.html', '')}participate.html?type=${type}&id=${id}`;
-            
-            if (qrCodeInstance) {
-                qrCodeInstance.clear();
-            }
-            
-            qrCodeInstance = new QRCode(container, {
-                text: url,
-                width: 200,
-                height: 200,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-            
-            const exams = await DataService.getExams();
-            const exam = exams.find(e => e.id === id);
-            document.getElementById('qrCodeTitle').textContent = exam ? exam.name : '';
-            
-            document.getElementById('qrCodeModal').classList.remove('hidden');
-        }
-        
-        async function deleteQuestion(questionId) {
-            if (!confirm('确定要删除这个题目吗？')) return;
-            
-            await DataService.deleteQuestion(questionId);
-            
-            showToast('删除成功', 'success');
-            renderQuestionList();
-        }
-        
-        async function exportRecords() {
-            const records = await DataService.getExamRecords();
-            const exams = await DataService.getExams();
-            
-            if (records.length === 0) {
-                showToast('没有记录可导出', 'warning');
-                return;
-            }
-            
-            const data = records.map(r => {
-                const exam = exams.find(e => e.id === r.examId);
-                return {
-                    考试名称: r.examName,
-                    姓名: r.userName,
-                    账号: r.username,
-                    分数: r.score,
-                    正确数: r.correctCount,
-                    总题数: r.totalQuestions,
-                    提交时间: formatDateTime(r.submittedAt)
-                };
-            });
-            
-            DataService.exportToCSV(data, `考试记录_${new Date().toLocaleDateString()}`);
-        }
-        
-        document.addEventListener('DOMContentLoaded', async () => {
-            currentUser = await DataService.getCurrentUser();
-            if (!currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            document.getElementById('userName').textContent = currentUser.name;
-            document.getElementById('userRole').textContent = currentUser.role === 'admin' ? '超级管理员' : currentUser.role === 'subAdmin' ? '子管理员' : '普通成员';
-            document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
-            
-            if (currentUser.role === 'user') {
-                document.getElementById('adminMenu').style.display = 'none';
-                document.getElementById('mobileAdminMenu').style.display = 'none';
-                document.getElementById('createExamBtn').style.display = 'none';
-                document.getElementById('addQuestionBtn').style.display = 'none';
-                document.getElementById('importQuestionsBtn').style.display = 'none';
-                document.getElementById('exportRecordsBtn').style.display = 'none';
-            }
-            
-            renderExamList();
-            renderQuestionList();
-            renderRecordList();
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-                    document.getElementById(btn.dataset.tab + 'Tab').classList.remove('hidden');
+                questionList.appendChild(newQuestion);
+
+                newQuestion.querySelector('.remove-question-btn').addEventListener('click', () => {
+                    newQuestion.remove();
                 });
             });
-            
-            document.getElementById('createExamBtn').addEventListener('click', () => {
-                editingExamId = null;
-                document.getElementById('createExamForm').reset();
-                document.querySelector('#createExamModal h3').innerHTML = '<i class="fa fa-plus-circle text-primary mr-2"></i>创建考试';
-                document.querySelector('#createExamForm button[type="submit"]').textContent = '创建考试';
-                document.getElementById('createExamModal').classList.remove('hidden');
-                const now = new Date();
-                document.getElementById('examStartTime').value = getLocalDateTimeString(now);
-                document.getElementById('examEndTime').value = getLocalDateTimeString(new Date(now.getTime() + 2 * 60 * 60 * 1000));
-                loadExamGroupsAndMembers();
-            });
-            
-            async function loadGraders() {
-                const users = await DataService.getUsers();
-                const graders = users.filter(u => u.role === 'admin' || u.role === 'subAdmin');
-                
-                const graderSelect = document.getElementById('graderSelect');
-                if (graderSelect) {
-                    graderSelect.innerHTML = graders.map(u => 
-                        `<option value="${u.id}">${u.name} (${u.username})</option>`
-                    ).join('');
-                }
-            }
-            
-            document.getElementById('closeCreateExamModal').addEventListener('click', () => {
-                document.getElementById('createExamModal').classList.add('hidden');
-            });
-            document.getElementById('cancelCreateExamBtn').addEventListener('click', () => {
-                document.getElementById('createExamModal').classList.add('hidden');
-            });
-            
+
             document.getElementById('createExamForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
-                const examName = document.getElementById('examName').value.trim();
-                if (!examName) {
-                    showToast('请输入考试名称', 'warning');
+
+                const name = document.getElementById('examName').value.trim();
+                const startTime = document.getElementById('examStart').value;
+                const endTime = document.getElementById('examEnd').value;
+                const duration = document.getElementById('examDuration').value;
+                const description = document.getElementById('examDescription').value.trim();
+
+                if (!name || !startTime || !endTime) {
+                    showToast('请填写必填项', 'warning');
                     return;
                 }
-                
-                const questions = await DataService.getQuestions();
-                const includeSingle = document.getElementById('includeSingle').checked;
-                const includeMultiple = document.getElementById('includeMultiple').checked;
-                const includeJudge = document.getElementById('includeJudge').checked;
-                const includeFill = document.getElementById('includeFill').checked;
-                const includeEssay = document.getElementById('includeEssay').checked;
-                
-                const essayQuestions = questions.filter(q => q.type === 'essay');
-                
-                let availableCount = questions.filter(q => {
-                    if (includeSingle && q.type === 'single') return true;
-                    if (includeMultiple && q.type === 'multiple') return true;
-                    if (includeJudge && q.type === 'judge') return true;
-                    if (includeFill && q.type === 'fill') return true;
-                    if (includeEssay && q.type === 'essay') return true;
-                    return false;
-                }).length;
-                
-                const questionCount = parseInt(document.getElementById('questionCount').value);
-                const scorePerQuestion = parseInt(document.getElementById('scorePerQuestion').value);
-                
-                let essayTotalScore = 0;
-                if (includeEssay) {
-                    essayQuestions.forEach(q => {
-                        essayTotalScore += q.essayScore || 10;
-                    });
-                }
-                
-                const participantScope = document.getElementById('examParticipantScope').value;
-                let participants = [];
-                
-                if (participantScope === 'group') {
-                    const groupId = parseInt(document.getElementById('examSelectedGroup').value);
-                    if (!groupId) {
-                        showToast('请选择分组', 'warning');
-                        return;
-                    }
-                    const group = await DataService.getGroupById(groupId);
-                    participants = group.members || [];
-                } else if (participantScope === 'selected') {
-                    document.querySelectorAll('#examMemberSelectList input:checked').forEach(cb => {
-                        participants.push(parseInt(cb.value));
-                    });
-                    if (participants.length === 0) {
-                        showToast('请选择至少一个成员', 'warning');
-                        return;
-                    }
-                }
-                
-                let gradingMode = 'admin';
-                let graders = [];
-                
-                if (includeEssay) {
-                    gradingMode = document.querySelector('input[name="gradingMode"]:checked').value;
-                    
-                    if (gradingMode === 'peer') {
-                        const graderScope = document.getElementById('graderScope').value;
-                        
-                        if (graderScope === 'all') {
-                            graders = participants.length > 0 ? participants : (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin').map(u => u.id);
-                        } else if (graderScope === 'group') {
-                            const groupId = parseInt(document.getElementById('graderSelectedGroup').value);
-                            if (!groupId) {
-                                showToast('请选择阅卷分组', 'warning');
-                                return;
-                            }
-                            const group = await DataService.getGroupById(groupId);
-                            graders = group.members || [];
-                        } else if (graderScope === 'selected') {
-                            document.querySelectorAll('#graderMemberSelectList input:checked').forEach(cb => {
-                                graders.push(parseInt(cb.value));
-                            });
-                            if (graders.length === 0) {
-                                showToast('请选择至少一个阅卷人', 'warning');
-                                return;
-                            }
-                        }
-                    }
-                }
-                
-                const exam = {
-                    name: examName,
-                    startTime: document.getElementById('examStartTime').value,
-                    endTime: document.getElementById('examEndTime').value,
-                    questionCount: questionCount,
-                    scorePerQuestion: scorePerQuestion,
-                    totalScore: questionCount * scorePerQuestion + essayTotalScore,
-                    duration: parseInt(document.getElementById('examDuration').value),
-                    includeSingle: includeSingle,
-                    includeMultiple: includeMultiple,
-                    includeJudge: includeJudge,
-                    includeFill: includeFill,
-                    includeEssay: includeEssay,
-                    singleCount: document.getElementById('singleCount') ? parseInt(document.getElementById('singleCount').value) || 0 : 0,
-                    singleScore: document.getElementById('singleScore') ? parseInt(document.getElementById('singleScore').value) || 5 : 5,
-                    multipleCount: document.getElementById('multipleCount') ? parseInt(document.getElementById('multipleCount').value) || 0 : 0,
-                    multipleScore: document.getElementById('multipleScore') ? parseInt(document.getElementById('multipleScore').value) || 10 : 10,
-                    judgeCount: document.getElementById('judgeCount') ? parseInt(document.getElementById('judgeCount').value) || 0 : 0,
-                    judgeScore: document.getElementById('judgeScore') ? parseInt(document.getElementById('judgeScore').value) || 5 : 5,
-                    fillCount: document.getElementById('fillCount') ? parseInt(document.getElementById('fillCount').value) || 0 : 0,
-                    fillScore: document.getElementById('fillScore') ? parseInt(document.getElementById('fillScore').value) || 10 : 10,
-                    essayCount: document.getElementById('essayCount') ? parseInt(document.getElementById('essayCount').value) || 0 : 0,
-                    essayScore: document.getElementById('essayScore') ? parseInt(document.getElementById('essayScore').value) || 20 : 20,
-                    shuffleOptions: document.getElementById('shuffleOptions').checked,
-                    shuffleQuestions: document.getElementById('shuffleQuestions').checked,
-                    description: document.getElementById('examDescription')?.value || '',
-                    gradingMode: gradingMode,
-                    graders: graders,
-                    essayTotalScore: essayTotalScore,
-                    participantScope: participantScope,
-                    participants: participants,
-                    createdBy: currentUser.id
-                };
-                
-                if (editingExamId) {
-                    await DataService.updateExam(editingExamId, exam);
-                    showToast('考试修改成功', 'success');
-                    editingExamId = null;
-                } else {
-                    await DataService.addExam(exam);
-                    showToast('考试创建成功', 'success');
-                }
-                document.getElementById('createExamModal').classList.add('hidden');
-                renderExamList();
-            });
-            
-            document.getElementById('addQuestionBtn').addEventListener('click', () => {
-                document.getElementById('addQuestionModal').classList.remove('hidden');
-                document.getElementById('addQuestionForm').reset();
-                updateQuestionTypeUI();
-            });
-            
-            document.getElementById('closeAddQuestionModal').addEventListener('click', () => {
-                document.getElementById('addQuestionModal').classList.add('hidden');
-            });
-            document.getElementById('cancelAddQuestionBtn').addEventListener('click', () => {
-                document.getElementById('addQuestionModal').classList.add('hidden');
-            });
-            
-            document.getElementById('questionType').addEventListener('change', updateQuestionTypeUI);
-            
-            document.getElementById('examParticipantScope').addEventListener('change', (e) => {
-                const groupContainer = document.getElementById('examGroupSelectContainer');
-                const memberContainer = document.getElementById('examMemberSelectContainer');
-                
-                groupContainer.classList.add('hidden');
-                memberContainer.classList.add('hidden');
-                
-                if (e.target.value === 'group') {
-                    groupContainer.classList.remove('hidden');
-                } else if (e.target.value === 'selected') {
-                    memberContainer.classList.remove('hidden');
-                }
-            });
-            
-            document.getElementById('includeEssay').addEventListener('change', (e) => {
-                const essaySettings = document.getElementById('essayExamSettings');
-                if (e.target.checked) {
-                    essaySettings.classList.remove('hidden');
-                } else {
-                    essaySettings.classList.add('hidden');
-                }
-            });
-            
-            document.querySelectorAll('input[name="gradingMode"]').forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const peerSettings = document.getElementById('peerGradingSettings');
-                    if (e.target.value === 'peer') {
-                        peerSettings.classList.remove('hidden');
-                        loadGraderOptions();
-                    } else {
-                        peerSettings.classList.add('hidden');
-                    }
-                });
-            });
-            
-            document.getElementById('graderScope').addEventListener('change', (e) => {
-                const groupContainer = document.getElementById('graderGroupSelectContainer');
-                const memberContainer = document.getElementById('graderMemberSelectContainer');
-                
-                groupContainer.classList.add('hidden');
-                memberContainer.classList.add('hidden');
-                
-                if (e.target.value === 'group') {
-                    groupContainer.classList.remove('hidden');
-                } else if (e.target.value === 'selected') {
-                    memberContainer.classList.remove('hidden');
-                }
-            });
-            
-            async function loadGraderOptions() {
-                const groups = await DataService.getGroups();
-                const users = (await DataService.getUsers()).filter(u => u.role === 'user' || u.role === 'subAdmin');
-                
-                const groupSelect = document.getElementById('graderSelectedGroup');
-                groupSelect.innerHTML = '<option value="">请选择分组</option>' + 
-                    groups.map(g => `<option value="${g.id}">${g.name} (${g.members ? g.members.length : 0}人)</option>`).join('');
-                
-                const memberList = document.getElementById('graderMemberSelectList');
-                memberList.innerHTML = users.map(u => `
-                    <label class="flex items-center p-1 hover:bg-gray-50 rounded cursor-pointer">
-                        <input type="checkbox" value="${u.id}" class="w-4 h-4 text-primary rounded">
-                        <span class="ml-2 text-sm text-gray-700">${u.name}</span>
-                        <span class="ml-1 text-xs text-gray-400">(${u.username})</span>
-                    </label>
-                `).join('');
-            }
-            
-            function updateQuestionTypeUI() {
-                const type = document.getElementById('questionType').value;
-                const optionsContainer = document.getElementById('optionsContainer');
-                const judgeContainer = document.getElementById('judgeContainer');
-                const fillContainer = document.getElementById('fillContainer');
-                const essayContainer = document.getElementById('essayContainer');
-                
-                optionsContainer.classList.add('hidden');
-                judgeContainer.classList.add('hidden');
-                fillContainer.classList.add('hidden');
-                essayContainer.classList.add('hidden');
-                
-                if (type === 'judge') {
-                    judgeContainer.classList.remove('hidden');
-                } else if (type === 'fill') {
-                    fillContainer.classList.remove('hidden');
-                } else if (type === 'essay') {
-                    essayContainer.classList.remove('hidden');
-                } else {
-                    optionsContainer.classList.remove('hidden');
-                }
-            }
-            
-            document.getElementById('addOptionBtn').addEventListener('click', () => {
-                const container = document.getElementById('optionsList');
-                const count = container.children.length;
-                if (count >= 6) {
-                    showToast('最多添加6个选项', 'warning');
-                    return;
-                }
-                
-                const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2';
-                div.innerHTML = `
-                    <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">${String.fromCharCode(65 + count)}</span>
-                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 option-input" placeholder="选项${String.fromCharCode(65 + count)}">
-                    <input type="checkbox" class="w-5 h-5 text-primary rounded correct-checkbox" title="正确答案">
-                    <button type="button" class="text-red-500 hover:text-red-600 remove-option"><i class="fa fa-times"></i></button>
-                `;
-                container.appendChild(div);
-            });
-            
-            document.getElementById('optionsList').addEventListener('click', (e) => {
-                if (e.target.closest('.remove-option')) {
-                    const div = e.target.closest('.flex');
-                    if (document.querySelectorAll('#optionsList > .flex').length > 2) {
-                        div.remove();
-                        document.querySelectorAll('#optionsList > .flex').forEach((el, i) => {
-                            el.querySelector('span').textContent = String.fromCharCode(65 + i);
-                        });
-                    }
-                }
-            });
-            
-            document.getElementById('addFillAnswerBtn').addEventListener('click', () => {
-                const container = document.getElementById('fillAnswersContainer');
-                const count = container.children.length + 1;
-                if (count > 10) {
-                    showToast('最多添加10个空格', 'warning');
-                    return;
-                }
-                
-                const div = document.createElement('div');
-                div.className = 'flex items-center space-x-2';
-                div.innerHTML = `
-                    <span class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center text-sm font-medium">${count}</span>
-                    <input type="text" class="flex-1 px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 fill-answer-input" placeholder="正确答案">
-                    <button type="button" onclick="this.parentElement.remove(); updateFillAnswerNumbers();" class="text-red-500 hover:text-red-600 px-2">
-                        <i class="fa fa-times"></i>
-                    </button>
-                `;
-                container.appendChild(div);
-            });
-            
-            function updateFillAnswerNumbers() {
-                const container = document.getElementById('fillAnswersContainer');
-                const items = container.querySelectorAll('.flex');
-                items.forEach((item, i) => {
-                    item.querySelector('span').textContent = i + 1;
-                });
-            }
-            
-            document.getElementById('addQuestionForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
+
                 try {
-                    const type = document.getElementById('questionType').value;
-                    const content = document.getElementById('questionContent').value.trim();
-                    
-                    if (!content) {
-                        showToast('请输入题目内容', 'warning');
-                        return;
-                    }
-                    
-                    let options = [];
-                    let correctAnswers = [];
-                    
-                    if (type === 'judge') {
-                        options = ['正确', '错误'];
-                        const judgeAnswer = document.querySelector('input[name="judgeAnswer"]:checked');
-                        if (!judgeAnswer) {
-                            showToast('请选择正确答案', 'warning');
-                            return;
-                        }
-                        correctAnswers = [judgeAnswer.value === 'true' ? 0 : 1];
-                    } else if (type === 'fill') {
-                        const fillInputs = document.querySelectorAll('.fill-answer-input');
-                        fillInputs.forEach((input, i) => {
-                            if (input.value.trim()) {
-                                correctAnswers.push(input.value.trim());
-                            }
-                        });
-                        
-                        if (correctAnswers.length === 0) {
-                            showToast('请填写正确答案', 'warning');
-                            return;
-                        }
-                        
-                        const blankCount = (content.match(/___/g) || []).length;
-                        if (blankCount !== correctAnswers.length) {
-                            showToast(`题目中有${blankCount}个空格，但只填写了${correctAnswers.length}个答案`, 'warning');
-                            return;
-                        }
-                    } else if (type === 'essay') {
-                        // 解答题不需要选项和正确答案
+                    const result = await DataService.createExam({
+                        name,
+                        startTime,
+                        endTime,
+                        duration: parseInt(duration) || 60,
+                        description,
+                        questions: [],
+                        participants: []
+                    });
+
+                    if (result.success) {
+                        showToast('考试创建成功', 'success');
+                        document.getElementById('createExamModal').classList.add('hidden');
+                        document.getElementById('createExamForm').reset();
+                        questionCount = 1;
+                        document.getElementById('questionList').innerHTML = `
+                            <div class="question-card p-4 rounded-xl">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-primary">题目 1</span>
+                                    <button type="button" class="text-gray-400 hover:text-red-400">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                                <input type="text" class="input-field w-full px-4 py-2 rounded-lg outline-none text-gray-100 text-sm mb-2"
+                                    placeholder="请输入题目内容" required>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                        placeholder="选项 A" required>
+                                    <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                        placeholder="选项 B" required>
+                                    <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                        placeholder="选项 C" required>
+                                    <input type="text" class="input-field w-full px-3 py-2 rounded-lg outline-none text-gray-100 text-sm"
+                                        placeholder="选项 D" required>
+                                </div>
+                                <div class="mt-2">
+                                    <label class="text-xs text-gray-400 mr-2">正确答案:</label>
+                                    <select class="input-field px-3 py-1 rounded-lg text-gray-100 text-sm">
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                        <option value="D">D</option>
+                                    </select>
+                                </div>
+                            </div>
+                        `;
+                        loadExams();
                     } else {
-                        const optionInputs = document.querySelectorAll('.option-input');
-                        const correctCheckboxes = document.querySelectorAll('.correct-checkbox');
-                        
-                        optionInputs.forEach((input, i) => {
-                            if (input.value.trim()) {
-                                options.push(input.value.trim());
-                                if (correctCheckboxes[i].checked) {
-                                    correctAnswers.push(i);
-                                }
-                            }
-                        });
-                        
-                        if (correctAnswers.length === 0) {
-                            showToast('请选择正确答案', 'warning');
-                            return;
-                        }
-                        
-                        if (type === 'single' && correctAnswers.length > 1) {
-                            showToast('单选题只能有一个正确答案', 'warning');
-                            return;
-                        }
+                        showToast(result.message || '创建失败', 'error');
                     }
-                    
-                    let essayScore = null;
-                    let essayReferenceAnswer = '';
-                    let essayGradingStandard = '';
-                    
-                    if (type === 'essay') {
-                        essayScore = parseInt(document.getElementById('essayScore').value);
-                        if (!essayScore || essayScore < 1) {
-                            showToast('请填写解答题分值', 'warning');
-                            return;
-                        }
-                        essayReferenceAnswer = document.getElementById('essayReferenceAnswer').value;
-                        essayGradingStandard = document.getElementById('essayGradingStandard').value;
-                    }
-                    
-                    const question = {
-                        type: type,
-                        category: document.getElementById('questionCategory').value,
-                        content: content,
-                        options: options,
-                        correctAnswers: correctAnswers,
-                        explanation: document.getElementById('questionExplanation').value,
-                        essayScore: essayScore,
-                        essayReferenceAnswer: essayReferenceAnswer,
-                        essayGradingStandard: essayGradingStandard
-                    };
-                    
-                    await DataService.addQuestion(question);
-                    showToast('题目添加成功', 'success');
-                    document.getElementById('addQuestionModal').classList.add('hidden');
-                    renderQuestionList();
                 } catch (error) {
-                    console.error('添加题目失败:', error);
-                    showToast('添加题目失败，请重试', 'error');
+                    showToast('创建失败: ' + error.message, 'error');
                 }
             });
-            
-            document.getElementById('importQuestionsBtn').addEventListener('click', () => {
-                document.getElementById('importModal').classList.remove('hidden');
-            });
-            
-            document.getElementById('closeImportModal').addEventListener('click', () => {
-                document.getElementById('importModal').classList.add('hidden');
-            });
-            document.getElementById('cancelImportBtn').addEventListener('click', () => {
-                document.getElementById('importModal').classList.add('hidden');
-            });
-            
-            document.getElementById('confirmImportBtn').addEventListener('click', async () => {
-                const file = document.getElementById('importFile').files[0];
-                if (!file) {
-                    showToast('请选择文件', 'warning');
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const content = e.target.result;
-                    const lines = content.split('\n');
-                    let imported = 0;
-                    
-                    for (let i = 1; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
-                        
-                        const parts = line.split(',');
-                        if (parts.length < 7) continue;
-                        
-                        const type = parts[0].trim();
-                        const content = parts[1].trim();
-                        const options = [parts[2].trim(), parts[3].trim(), parts[4].trim(), parts[5].trim()].filter(o => o);
-                        const answerStr = parts[6].trim();
-                        const explanation = parts[7] ? parts[7].trim() : '';
-                        
-                        let correctAnswers = [];
-                        if (type === 'multiple') {
-                            correctAnswers = answerStr.split(/[,，]/).map(a => a.trim().toUpperCase().charCodeAt(0) - 65);
-                        } else if (type === 'judge') {
-                            correctAnswers = [answerStr.toUpperCase() === 'A' ? 0 : 1];
-                        } else {
-                            correctAnswers = [answerStr.toUpperCase().charCodeAt(0) - 65];
-                        }
-                        
-                        await DataService.addQuestion({
-                            type: type,
-                            category: '',
-                            content: content,
-                            options: type === 'judge' ? ['正确', '错误'] : options,
-                            correctAnswers: correctAnswers,
-                            explanation: explanation
-                        });
-                        imported++;
-                    }
-                    
-                    showToast(`成功导入${imported}道题目`, 'success');
-                    document.getElementById('importModal').classList.add('hidden');
-                    renderQuestionList();
-                };
-                reader.readAsText(file);
-            });
-            
-            document.getElementById('submitExamBtn').addEventListener('click', () => {
-                if (confirm('确定要提交试卷吗？')) {
-                    submitExam();
-                }
-            });
-            
-            document.getElementById('closeResultModal').addEventListener('click', () => {
-                document.getElementById('resultModal').classList.add('hidden');
-            });
-            
-            document.getElementById('examStatusFilter').addEventListener('change', renderExamList);
-            document.getElementById('questionTypeFilter').addEventListener('change', renderQuestionList);
-            document.getElementById('questionSearchInput').addEventListener('input', renderQuestionList);
-            document.getElementById('exportRecordsBtn').addEventListener('click', exportRecords);
-            
-            document.getElementById('notificationBtn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                renderNotifications();
-                document.getElementById('notificationModal').classList.remove('hidden');
-            });
-            
-            document.getElementById('closeNotificationModal').addEventListener('click', () => {
-                document.getElementById('notificationModal').classList.add('hidden');
-            });
-            
-            document.getElementById('notificationModal').addEventListener('click', (e) => {
-                if (e.target.id === 'notificationModal') {
-                    document.getElementById('notificationModal').classList.add('hidden');
-                }
-            });
-            
-            document.getElementById('closeQrCodeModal').addEventListener('click', () => {
-                document.getElementById('qrCodeModal').classList.add('hidden');
-            });
-            
-            document.getElementById('qrCodeModal').addEventListener('click', (e) => {
-                if (e.target.id === 'qrCodeModal') {
-                    document.getElementById('qrCodeModal').classList.add('hidden');
-                }
-            });
-            
-            document.getElementById('userMenuBtn').addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const menu = document.getElementById('userMenu');
-                menu.classList.toggle('hidden');
-            });
-            
-            document.getElementById('userMenu').addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-            
-            document.getElementById('logoutBtn').addEventListener('click', (e) => {
-                e.preventDefault();
-                DataService.clearCurrentUser();
-                window.location.href = 'index.html';
-            });
-            
-            document.getElementById('logoutMenuBtn').addEventListener('click', (e) => {
-                e.preventDefault();
-                DataService.clearCurrentUser();
-                window.location.href = 'index.html';
-            });
-            
-            const sidebar = document.getElementById('sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-            
-            function toggleSidebar() {
-                sidebar.classList.toggle('-translate-x-full');
-                sidebar.classList.toggle('translate-x-0');
-            }
-            
-            sidebarToggle.addEventListener('click', toggleSidebar);
-            
-            if (closeSidebarBtn) {
-                closeSidebarBtn.addEventListener('click', toggleSidebar);
-            }
-            
-            document.addEventListener('click', (e) => {
-                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                    if (window.innerWidth < 768) {
-                        sidebar.classList.add('-translate-x-full');
-                        sidebar.classList.remove('translate-x-0');
-                    }
-                }
-            });
-            
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#userMenuBtn') && !e.target.closest('#userMenu')) {
-                    document.getElementById('userMenu').classList.add('hidden');
-                }
-            });
-        });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
+</html>

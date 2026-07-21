@@ -1,7 +1,63 @@
 const SupabaseService = {
     initialized: false,
     supabase: null,
-    
+
+    toSnakeCase(str) {
+        if (str === null || str === undefined) return str;
+        if (typeof str !== 'string') return str;
+        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    },
+
+    toCamelCase(str) {
+        if (str === null || str === undefined) return str;
+        if (typeof str !== 'string') return str;
+        return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    },
+
+    convertKeysToSnakeCase(obj) {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.convertKeysToSnakeCase(item));
+        }
+        if (typeof obj === 'object') {
+            const result = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const snakeKey = this.toSnakeCase(key);
+                    let value = obj[key];
+                    if (value && typeof value === 'object' && !Array.isArray(value)) {
+                        value = this.convertKeysToSnakeCase(value);
+                    }
+                    result[snakeKey] = value;
+                }
+            }
+            return result;
+        }
+        return obj;
+    },
+
+    convertKeysToCamelCase(obj) {
+        if (obj === null || obj === undefined) return obj;
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.convertKeysToCamelCase(item));
+        }
+        if (typeof obj === 'object') {
+            const result = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const camelKey = this.toCamelCase(key);
+                    let value = obj[key];
+                    if (value && typeof value === 'object' && !Array.isArray(value)) {
+                        value = this.convertKeysToCamelCase(value);
+                    }
+                    result[camelKey] = value;
+                }
+            }
+            return result;
+        }
+        return obj;
+    },
+
     cleanData(data) {
         const cleaned = { ...data };
         Object.keys(cleaned).forEach(key => {
@@ -17,12 +73,25 @@ const SupabaseService = {
         
         try {
             const config = window.SupabaseConfig;
-            if (!config || config.url === 'YOUR_SUPABASE_URL') {
-                console.log('Supabase not configured, using LocalStorage');
+            if (!config || !config.url || config.url === 'YOUR_SUPABASE_URL' || config.url === '') {
+                console.log('Supabase URL not configured');
                 return false;
             }
             
-            const { createClient } = supabase;
+            if (!config.anonKey || config.anonKey === 'YOUR_SUPABASE_ANON_KEY' || config.anonKey === '') {
+                console.log('Supabase API key not configured');
+                return false;
+            }
+            
+            console.log('Initializing Supabase with URL:', config.url);
+            console.log('API key provided:', config.anonKey ? 'Yes' : 'No');
+            
+            const { createClient } = window.supabase;
+            if (!createClient) {
+                console.error('supabase library not loaded');
+                return false;
+            }
+            
             this.supabase = createClient(config.url, config.anonKey);
             this.initialized = true;
             console.log('Supabase initialized successfully');
@@ -73,7 +142,11 @@ const SupabaseService = {
         const userJson = localStorage.getItem('currentUser');
         return userJson ? JSON.parse(userJson) : null;
     },
-    
+
+    getCurrentUserFromStorage() {
+        return this.getCurrentUser();
+    },
+
     clearCurrentUser() {
         localStorage.removeItem('currentUser');
     },
@@ -98,24 +171,6 @@ const SupabaseService = {
         }
     },
     
-    async getUserById(id) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('users')
-                .select('*')
-                .eq('id', id)
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Get user error:', error);
-            return null;
-        }
-    },
-    
     async getUserByUsername(username) {
         if (!await this.ensureInit()) return null;
         
@@ -124,9 +179,9 @@ const SupabaseService = {
                 .from('users')
                 .select('*')
                 .eq('username', username)
-                .single();
+                .maybeSingle();
             
-            if (error && error.code !== 'PGRST116') throw error;
+            if (error) throw error;
             return data;
         } catch (error) {
             console.error('Get user by username error:', error);
@@ -134,38 +189,35 @@ const SupabaseService = {
         }
     },
     
-    async addUser(userData) {
-        console.log('SupabaseService.addUser called');
-        if (!await this.ensureInit()) {
-            console.log('Supabase not initialized');
-            return null;
-        }
+    async getUserById(id) {
+        if (!await this.ensureInit()) return null;
         
         try {
-            const users = await this.getUsers();
-            const maxId = users.length > 0 ? Math.max(...users.map(u => parseInt(u.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newUser = {
-                id: newId,
-                ...this.cleanData(userData),
-                createdat: new Date().toISOString()
-            };
-            
-            console.log('Inserting user into Supabase:', newUser);
-            
             const { data, error } = await this.supabase
                 .from('users')
-                .insert([newUser])
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get user by id error:', error);
+            return null;
+        }
+    },
+    
+    async addUser(userData) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('users')
+                .insert([this.cleanData(userData)])
                 .select()
-                .single();
+                .maybeSingle();
             
-            if (error) {
-                console.error('Supabase insert error:', error);
-                throw error;
-            }
-            
-            console.log('Supabase insert success:', data);
+            if (error) throw error;
             return data;
         } catch (error) {
             console.error('Add user error:', error);
@@ -182,7 +234,7 @@ const SupabaseService = {
                 .update(this.cleanData(updates))
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
@@ -225,25 +277,33 @@ const SupabaseService = {
         }
     },
     
+    async getGroupById(id) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('groups')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get group by id error:', error);
+            return null;
+        }
+    },
+    
     async addGroup(groupData) {
         if (!await this.ensureInit()) return null;
         
         try {
-            const groups = await this.getGroups();
-            const maxId = groups.length > 0 ? Math.max(...groups.map(g => parseInt(g.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newGroup = {
-                id: newId,
-                ...this.cleanData(groupData),
-                createdat: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('groups')
-                .insert([newGroup])
+                .insert([this.cleanData(groupData)])
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
@@ -262,7 +322,7 @@ const SupabaseService = {
                 .update(this.cleanData(updates))
                 .eq('id', id)
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
@@ -289,62 +349,54 @@ const SupabaseService = {
         }
     },
     
-    async getGroupById(id) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('groups')
-                .select('*')
-                .eq('id', id)
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Get group by id error:', error);
-            return null;
-        }
-    },
-    
     async getAttendances() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('attendances')
-                .select('*');
-            
+                .select('*')
+                .order('createdat', { ascending: false });
+
             if (error) throw error;
-            return data || [];
+            return this.convertKeysToCamelCase(data || []);
         } catch (error) {
             console.error('Get attendances error:', error);
             return [];
         }
     },
     
-    async addAttendance(attendanceData) {
+    async getAttendanceById(id) {
         if (!await this.ensureInit()) return null;
         
         try {
-            const attendances = await this.getAttendances();
-            const maxId = attendances.length > 0 ? Math.max(...attendances.map(a => parseInt(a.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newAttendance = {
-                id: newId,
-                ...this.cleanData(attendanceData),
-                createdat: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('attendances')
-                .insert([newAttendance])
-                .select()
-                .single();
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
             
             if (error) throw error;
             return data;
+        } catch (error) {
+            console.error('Get attendance by id error:', error);
+            return null;
+        }
+    },
+    
+    async addAttendance(attendance) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(attendance);
+            const { data, error } = await this.supabase
+                .from('attendances')
+                .insert([this.cleanData(dataWithSnakeKeys)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
         } catch (error) {
             console.error('Add attendance error:', error);
             throw error;
@@ -353,17 +405,18 @@ const SupabaseService = {
     
     async updateAttendance(id, updates) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(updates);
             const { data, error } = await this.supabase
                 .from('attendances')
-                .update(this.cleanData(updates))
+                .update(this.cleanData(dataWithSnakeKeys))
                 .eq('id', id)
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
-            return data;
+            return this.convertKeysToCamelCase(data);
         } catch (error) {
             console.error('Update attendance error:', error);
             throw error;
@@ -374,11 +427,6 @@ const SupabaseService = {
         if (!await this.ensureInit()) return false;
         
         try {
-            await this.supabase
-                .from('attendance_records')
-                .delete()
-                .eq('attendanceId', id);
-            
             const { error } = await this.supabase
                 .from('attendances')
                 .delete()
@@ -394,129 +442,36 @@ const SupabaseService = {
     
     async getAttendanceRecords() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('attendance_records')
-                .select('*');
-            
+                .select('*')
+                .order('createdat', { ascending: false });
+
             if (error) throw error;
-            return data || [];
+            return this.convertKeysToCamelCase(data || []);
         } catch (error) {
             console.error('Get attendance records error:', error);
             return [];
         }
     },
     
-    async addAttendanceRecord(recordData) {
+    async addAttendanceRecord(record) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const records = await this.getAttendanceRecords();
-            const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newRecord = {
-                id: newId,
-                ...this.cleanData(recordData),
-                createdat: new Date().toISOString()
-            };
-            
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(record);
             const { data, error } = await this.supabase
                 .from('attendance_records')
-                .insert([newRecord])
+                .insert([this.cleanData(dataWithSnakeKeys)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
-            return data;
+            return this.convertKeysToCamelCase(data);
         } catch (error) {
             console.error('Add attendance record error:', error);
-            throw error;
-        }
-    },
-    
-    async getExams() {
-        if (!await this.ensureInit()) return [];
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('exams')
-                .select('*');
-            
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            console.error('Get exams error:', error);
-            return [];
-        }
-    },
-    
-    async addExam(examData) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const exams = await this.getExams();
-            const maxId = exams.length > 0 ? Math.max(...exams.map(e => parseInt(e.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newExam = {
-                id: newId,
-                ...this.cleanData(examData),
-                createdat: new Date().toISOString()
-            };
-            
-            const { data, error } = await this.supabase
-                .from('exams')
-                .insert([newExam])
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Add exam error:', error);
-            throw error;
-        }
-    },
-    
-    async updateExam(id, updates) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('exams')
-                .update(this.cleanData(updates))
-                .eq('id', id)
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Update exam error:', error);
-            throw error;
-        }
-    },
-    
-    async deleteExam(id) {
-        if (!await this.ensureInit()) return false;
-        
-        try {
-            await this.supabase
-                .from('exam_records')
-                .delete()
-                .or(`examId.eq.${id},examid.eq.${id}`);
-            
-            const { error } = await this.supabase
-                .from('exams')
-                .delete()
-                .eq('id', id);
-            
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            console.error('Delete exam error:', error);
             throw error;
         }
     },
@@ -537,30 +492,57 @@ const SupabaseService = {
         }
     },
     
-    async addQuestion(questionData) {
+    async getQuestionById(id) {
         if (!await this.ensureInit()) return null;
         
         try {
-            const questions = await this.getQuestions();
-            const maxId = questions.length > 0 ? Math.max(...questions.map(q => parseInt(q.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newQuestion = {
-                id: newId,
-                ...this.cleanData(questionData),
-                createdat: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('questions')
-                .insert([newQuestion])
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get question by id error:', error);
+            return null;
+        }
+    },
+    
+    async addQuestion(question) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('questions')
+                .insert([this.cleanData(question)])
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
         } catch (error) {
             console.error('Add question error:', error);
+            throw error;
+        }
+    },
+    
+    async updateQuestion(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('questions')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update question error:', error);
             throw error;
         }
     },
@@ -582,6 +564,95 @@ const SupabaseService = {
         }
     },
     
+    async getExams() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('exams')
+                .select('*')
+                .order('createdat', { ascending: false });
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get exams error:', error);
+            return [];
+        }
+    },
+    
+    async getExamById(id) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('exams')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get exam by id error:', error);
+            return null;
+        }
+    },
+    
+    async addExam(exam) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('exams')
+                .insert([this.cleanData(exam)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add exam error:', error);
+            throw error;
+        }
+    },
+    
+    async updateExam(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('exams')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update exam error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteExam(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            const { error } = await this.supabase
+                .from('exams')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete exam error:', error);
+            throw error;
+        }
+    },
+    
     async getExamRecords() {
         if (!await this.ensureInit()) return [];
         
@@ -598,158 +669,20 @@ const SupabaseService = {
         }
     },
     
-    async addExamRecord(recordData) {
+    async addExamRecord(record) {
         if (!await this.ensureInit()) return null;
         
         try {
-            const records = await this.getExamRecords();
-            const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newRecord = {
-                id: newId,
-                ...this.cleanData(recordData),
-                submittedAt: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('exam_records')
-                .insert([newRecord])
+                .insert([this.cleanData(record)])
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
         } catch (error) {
             console.error('Add exam record error:', error);
-            throw error;
-        }
-    },
-    
-    async updateExamRecord(record) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('exam_records')
-                .update(this.cleanData({
-                    score: record.score,
-                    totalScore: record.totalScore,
-                    essayAnswers: record.essayAnswers,
-                    details: record.details,
-                    status: record.status
-                }))
-                .eq('id', record.id)
-                .select()
-                .single();
-            
-            if (error) throw error;
-            console.log('Exam record updated:', data);
-            return data;
-        } catch (error) {
-            console.error('Update exam record error:', error);
-            throw error;
-        }
-    },
-    
-    async saveExamRecords(records) {
-        if (!await this.ensureInit()) return;
-        
-        try {
-            for (const record of records) {
-                const { error } = await this.supabase
-                    .from('exam_records')
-                    .upsert(record, { onConflict: 'id' });
-                
-                if (error) throw error;
-            }
-        } catch (error) {
-            console.error('Save exam records error:', error);
-            throw error;
-        }
-    },
-    
-    async getVotes() {
-        if (!await this.ensureInit()) return [];
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('votes')
-                .select('*');
-            
-            if (error) throw error;
-            return data || [];
-        } catch (error) {
-            console.error('Get votes error:', error);
-            return [];
-        }
-    },
-    
-    async addVote(voteData) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const votes = await this.getVotes();
-            const maxId = votes.length > 0 ? Math.max(...votes.map(v => parseInt(v.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newVote = {
-                id: newId,
-                ...this.cleanData(voteData),
-                createdat: new Date().toISOString()
-            };
-            
-            const { data, error } = await this.supabase
-                .from('votes')
-                .insert([newVote])
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Add vote error:', error);
-            throw error;
-        }
-    },
-    
-    async updateVote(id, updates) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('votes')
-                .update(this.cleanData(updates))
-                .eq('id', id)
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Update vote error:', error);
-            throw error;
-        }
-    },
-    
-    async deleteVote(id) {
-        if (!await this.ensureInit()) return false;
-        
-        try {
-            await this.supabase
-                .from('vote_records')
-                .delete()
-                .or(`voteId.eq.${id},voteid.eq.${id}`);
-            
-            const { error } = await this.supabase
-                .from('votes')
-                .delete()
-                .eq('id', id);
-            
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            console.error('Delete vote error:', error);
             throw error;
         }
     },
@@ -770,25 +703,15 @@ const SupabaseService = {
         }
     },
     
-    async addVoteRecord(recordData) {
+    async addVoteRecord(record) {
         if (!await this.ensureInit()) return null;
         
         try {
-            const records = await this.getVoteRecords();
-            const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newRecord = {
-                id: newId,
-                ...this.cleanData(recordData),
-                votedAt: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('vote_records')
-                .insert([newRecord])
+                .insert([this.cleanData(record)])
                 .select()
-                .single();
+                .maybeSingle();
             
             if (error) throw error;
             return data;
@@ -798,14 +721,838 @@ const SupabaseService = {
         }
     },
     
-    async getLotteries() {
+    async getSubjects() {
         if (!await this.ensureInit()) return [];
         
         try {
             const { data, error } = await this.supabase
-                .from('lotteries')
+                .from('subjects')
                 .select('*');
             
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get subjects error:', error);
+            return [];
+        }
+    },
+    
+    async addSubject(subject) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('subjects')
+                .insert([this.cleanData(subject)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add subject error:', error);
+            throw error;
+        }
+    },
+    
+    async updateSubject(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            console.log('Updating subject in database:', { id, updates });
+            const { data, error } = await this.supabase
+                .from('subjects')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select();
+            
+            if (error) {
+                console.error('Supabase update error:', error);
+                throw error;
+            }
+            console.log('Update result array:', data);
+            const result = data && data.length > 0 ? data[0] : null;
+            if (!result) {
+                console.warn('Update returned no data - check RLS policies or ensure the record exists');
+            }
+            return result;
+        } catch (error) {
+            console.error('Update subject error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteSubject(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            console.log('Deleting subject:', id);
+            
+            const { error: deleteKnowledgeError } = await this.supabase
+                .from('knowledge_points')
+                .delete()
+                .eq('subject_id', id);
+            
+            if (deleteKnowledgeError) {
+                console.warn('Error deleting knowledge points:', deleteKnowledgeError);
+            }
+            
+            const { error } = await this.supabase
+                .from('subjects')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            console.log('Subject deleted successfully:', id);
+            return true;
+        } catch (error) {
+            console.error('Delete subject error:', error);
+            throw error;
+        }
+    },
+    
+    async getQuestionTypes() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get question types error:', error);
+            return [];
+        }
+    },
+    
+    async addQuestionType(questionType) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .insert([this.cleanData(questionType)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add question type error:', error);
+            throw error;
+        }
+    },
+    
+    async updateQuestionType(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update question type error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteQuestionType(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            const { error } = await this.supabase
+                .from('question_types')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete question type error:', error);
+            throw error;
+        }
+    },
+    
+    async getKnowledgePoints() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get knowledge points error:', error);
+            return [];
+        }
+    },
+    
+    async addKnowledgePoint(knowledgePoint) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .insert([this.cleanData(knowledgePoint)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add knowledge point error:', error);
+            throw error;
+        }
+    },
+    
+    async updateKnowledgePoint(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update knowledge point error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteKnowledgePoint(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            const { error } = await this.supabase
+                .from('knowledge_points')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete knowledge point error:', error);
+            throw error;
+        }
+    },
+    
+    async getWrongQuestions() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get wrong questions error:', error);
+            return [];
+        }
+    },
+    
+    async addWrongQuestion(question) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .insert([this.cleanData(question)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add wrong question error:', error);
+            throw error;
+        }
+    },
+    
+    async updateWrongQuestion(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update wrong question error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteWrongQuestion(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            const { error } = await this.supabase
+                .from('wrong_questions')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete wrong question error:', error);
+            throw error;
+        }
+    },
+    
+    async getVocabulary() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get vocabulary error:', error);
+            return [];
+        }
+    },
+    
+    async addVocabulary(word) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .insert([this.cleanData(word)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add vocabulary error:', error);
+            throw error;
+        }
+    },
+    
+    async updateVocabulary(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update vocabulary error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteVocabulary(id) {
+        if (!await this.ensureInit()) return false;
+        
+        try {
+            const { error } = await this.supabase
+                .from('vocabulary')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete vocabulary error:', error);
+            throw error;
+        }
+    },
+    
+    async getFileRecords() {
+        if (!await this.ensureInit()) return [];
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .select('*');
+            
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get file records error:', error);
+            return [];
+        }
+    },
+    
+    async addFileRecord(record) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .insert([this.cleanData(record)])
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add file record error:', error);
+            throw error;
+        }
+    },
+    
+    async updateFileRecord(id, updates) {
+        if (!await this.ensureInit()) return null;
+        
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+            
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update file record error:', error);
+            throw error;
+        }
+    },
+    
+    async deleteFileRecord(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('file_records')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete file record error:', error);
+            throw error;
+        }
+    },
+
+    async getVotes() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('votes')
+                .select('*')
+                .order('createdat', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get votes error:', error);
+            return [];
+        }
+    },
+
+    async getVoteById(id) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('votes')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get vote by id error:', error);
+            return null;
+        }
+    },
+
+    async addVote(vote) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('votes')
+                .insert([this.cleanData(vote)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add vote error:', error);
+            throw error;
+        }
+    },
+
+    async updateVote(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('votes')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update vote error:', error);
+            throw error;
+        }
+    },
+
+    async deleteVote(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('votes')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete vote error:', error);
+            throw error;
+        }
+    },
+
+    async getNotifications() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .select('*')
+                .order('createdat', { ascending: false });
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data || []);
+        } catch (error) {
+            console.error('Get notifications error:', error);
+            return [];
+        }
+    },
+
+    async getNotificationById(id) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Get notification by id error:', error);
+            return null;
+        }
+    },
+
+    async addNotification(notification) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(notification);
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .insert([this.cleanData(dataWithSnakeKeys)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Add notification error:', error);
+            throw error;
+        }
+    },
+
+    async updateNotification(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(updates);
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .update(this.cleanData(dataWithSnakeKeys))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Update notification error:', error);
+            throw error;
+        }
+    },
+
+    async deleteNotification(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('notifications')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete notification error:', error);
+            throw error;
+        }
+    },
+
+    async markNotificationAsRead(id) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .update({ read: true })
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Mark notification as read error:', error);
+            throw error;
+        }
+    },
+
+    // 错题集相关方法
+    async getWrongQuestionSets() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .select('*')
+                .order('createdat', { ascending: false });
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data || []);
+        } catch (error) {
+            console.error('Get wrong question sets error:', error);
+            return [];
+        }
+    },
+
+    async createWrongQuestionSet(set) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(set);
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .insert([this.cleanData(dataWithSnakeKeys)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Create wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async updateWrongQuestionSet(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(updates);
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .update(this.cleanData(dataWithSnakeKeys))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Update wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async deleteWrongQuestionSet(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_sets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async addQuestionToSet(setId, questionId) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_set_items')
+                .insert([{
+                    set_id: setId,
+                    question_id: questionId
+                }]);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Add question to set error:', error);
+            throw error;
+        }
+    },
+
+    async removeQuestionFromSet(setId, questionId) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_set_items')
+                .delete()
+                .eq('set_id', setId)
+                .eq('question_id', questionId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Remove question from set error:', error);
+            throw error;
+        }
+    },
+
+    // 文件相关方法
+    async getFiles(userId, path = '') {
+        if (!await this.ensureInit()) return { folders: [], files: [] };
+
+        try {
+            let query = this.supabase
+                .from('file_records')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (path) {
+                query = query.eq('folder_path', path);
+            }
+
+            const { data, error } = await query.order('createdat', { ascending: false });
+
+            if (error) throw error;
+
+            const files = this.convertKeysToCamelCase(data || []);
+            const folders = [];
+            const regularFiles = [];
+
+            files.forEach(file => {
+                if (file.isFolder) {
+                    folders.push(file);
+                } else {
+                    regularFiles.push(file);
+                }
+            });
+
+            return { folders, files: regularFiles };
+        } catch (error) {
+            console.error('Get files error:', error);
+            return { folders: [], files: [] };
+        }
+    },
+
+    async createFile(file) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const dataWithSnakeKeys = this.convertKeysToSnakeCase(file);
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .insert([this.cleanData(dataWithSnakeKeys)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return this.convertKeysToCamelCase(data);
+        } catch (error) {
+            console.error('Create file error:', error);
+            throw error;
+        }
+    },
+
+    async deleteFile(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('file_records')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete file error:', error);
+            throw error;
+        }
+    },
+
+    async getLotteries() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('lotteries')
+                .select('*')
+                .order('createdat', { ascending: false });
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -813,27 +1560,35 @@ const SupabaseService = {
             return [];
         }
     },
-    
-    async addLottery(lotteryData) {
+
+    async getLotteryById(id) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const lotteries = await this.getLotteries();
-            const maxId = lotteries.length > 0 ? Math.max(...lotteries.map(l => parseInt(l.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newLottery = {
-                id: newId,
-                ...this.cleanData(lotteryData),
-                createdat: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('lotteries')
-                .insert([newLottery])
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Get lottery by id error:', error);
+            return null;
+        }
+    },
+
+    async addLottery(lottery) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('lotteries')
+                .insert([this.cleanData(lottery)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -841,18 +1596,18 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async updateLottery(id, updates) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('lotteries')
                 .update(this.cleanData(updates))
                 .eq('id', id)
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -860,21 +1615,16 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async deleteLottery(id) {
         if (!await this.ensureInit()) return false;
-        
+
         try {
-            await this.supabase
-                .from('lottery_records')
-                .delete()
-                .or(`lotteryId.eq.${id},lotteryid.eq.${id}`);
-            
             const { error } = await this.supabase
                 .from('lotteries')
                 .delete()
                 .eq('id', id);
-            
+
             if (error) throw error;
             return true;
         } catch (error) {
@@ -882,15 +1632,15 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async getLotteryRecords() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('lottery_records')
                 .select('*');
-            
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -898,27 +1648,17 @@ const SupabaseService = {
             return [];
         }
     },
-    
-    async addLotteryRecord(recordData) {
+
+    async addLotteryRecord(record) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const records = await this.getLotteryRecords();
-            const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newRecord = {
-                id: newId,
-                ...this.cleanData(recordData),
-                drawnAt: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('lottery_records')
-                .insert([newRecord])
+                .insert([this.cleanData(record)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -926,86 +1666,15 @@ const SupabaseService = {
             throw error;
         }
     },
-    
-    async getNotifications() {
-        if (!await this.ensureInit()) return [];
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('notifications')
-                .select('*')
-                .order('createdat', { ascending: false });
-            
-            if (error) throw error;
-            
-            // 转换字段名以匹配前端期望的格式
-            return (data || []).map(notification => ({
-                id: notification.id,
-                title: notification.title,
-                message: notification.content,
-                type: notification.type,
-                userId: null,
-                read: notification.read,
-                createdAt: notification.createdat
-            }));
-        } catch (error) {
-            console.error('Get notifications error:', error);
-            return [];
-        }
-    },
-    
-    async addNotification(notificationData) {
-        if (!await this.ensureInit()) return null;
-        
-        try {
-            const newNotification = {
-                id: Date.now(),
-                title: notificationData.title,
-                content: notificationData.message,
-                type: notificationData.type || 'info',
-                read: false,
-                createdat: new Date().toISOString()
-            };
-            
-            const { data, error } = await this.supabase
-                .from('notifications')
-                .insert([newNotification])
-                .select()
-                .single();
-            
-            if (error) throw error;
-            return data;
-        } catch (error) {
-            console.error('Add notification error:', error);
-            throw error;
-        }
-    },
-    
-    async markNotificationRead(id) {
-        if (!await this.ensureInit()) return false;
-        
-        try {
-            const { error } = await this.supabase
-                .from('notifications')
-                .update({ read: true })
-                .eq('id', id);
-            
-            if (error) throw error;
-            return true;
-        } catch (error) {
-            console.error('Mark notification read error:', error);
-            throw error;
-        }
-    },
-    
+
     async getPasswordResetRequests() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('password_reset_requests')
                 .select('*');
-            
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -1013,24 +1682,17 @@ const SupabaseService = {
             return [];
         }
     },
-    
-    async addPasswordResetRequest(requestData) {
+
+    async addPasswordResetRequest(request) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const newRequest = {
-                id: Date.now(),
-                ...this.cleanData(requestData),
-                createdat: new Date().toISOString(),
-                status: 'pending'
-            };
-            
             const { data, error } = await this.supabase
                 .from('password_reset_requests')
-                .insert([newRequest])
+                .insert([this.cleanData(request)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -1038,115 +1700,92 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async processPasswordResetRequest(id, processed) {
-        if (!await this.ensureInit()) return false;
-        
+        if (!await this.ensureInit()) return null;
+
         try {
-            const { data: request, error: error1 } = await this.supabase
+            const { data, error } = await this.supabase
                 .from('password_reset_requests')
-                .select('*')
+                .update({ status: processed ? 'processed' : 'rejected', processed_at: new Date().toISOString() })
                 .eq('id', id)
-                .single();
-            
-            if (error1) throw error1;
-            
-            const { error: error2 } = await this.supabase
-                .from('password_reset_requests')
-                .update({
-                    status: processed ? 'processed' : 'rejected',
-                    processedAt: new Date().toISOString()
-                })
-                .eq('id', id);
-            
-            if (error2) throw error2;
-            
-            if (processed && request) {
-                await this.updateUser(request.userId, { password: '123456' });
-            }
-            
-            return true;
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
         } catch (error) {
             console.error('Process password reset request error:', error);
             throw error;
         }
     },
-    
-    async getSettings() {
-        const saved = localStorage.getItem('settings');
-        return saved ? JSON.parse(saved) : {};
-    },
-    
-    async saveSettings(settings) {
-        localStorage.setItem('settings', JSON.stringify(settings));
-        return settings;
-    },
-    
+
     async getPermissionSettings() {
-        const saved = localStorage.getItem('permissionSettings');
-        return saved ? JSON.parse(saved) : {
-            attendance: { showMemberList: true, showSignedCount: true, showUnsignedList: false },
-            exam: { showMemberList: true, showScores: false, showAnswers: false, showRanking: false },
-            vote: { showMemberList: true, showVoteCount: true, showVoteDetails: false },
-            lottery: { showMemberList: true, showPrizeList: true, showWinnerList: false }
-        };
+        if (!await this.ensureInit()) return {};
+
+        try {
+            const { data, error } = await this.supabase
+                .from('permission_settings')
+                .select('*')
+                .maybeSingle();
+
+            if (error) throw error;
+            return data || {};
+        } catch (error) {
+            console.error('Get permission settings error:', error);
+            return {};
+        }
     },
-    
+
     async savePermissionSettings(settings) {
-        localStorage.setItem('permissionSettings', JSON.stringify(settings));
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const existing = await this.getPermissionSettings();
+            if (existing && existing.id) {
+                const { data, error } = await this.supabase
+                    .from('permission_settings')
+                    .update(this.cleanData(settings))
+                    .eq('id', existing.id)
+                    .select()
+                    .maybeSingle();
+                if (error) throw error;
+                return data;
+            } else {
+                const { data, error } = await this.supabase
+                    .from('permission_settings')
+                    .insert([this.cleanData(settings)])
+                    .select()
+                    .maybeSingle();
+                if (error) throw error;
+                return data;
+            }
+        } catch (error) {
+            console.error('Save permission settings error:', error);
+            throw error;
+        }
     },
-    
+
     async canView(module, permission) {
         const user = this.getCurrentUser();
         if (!user) return false;
-        
-        if (user.role === 'admin' || user.role === 'subAdmin') {
-            return true;
-        }
-        
+        if (user.role === 'admin' || user.role === 'subAdmin') return true;
         const settings = await this.getPermissionSettings();
         if (settings[module] && settings[module][permission] !== undefined) {
             return settings[module][permission];
         }
-        
         return false;
     },
-    
-    exportToCSV(data, filename) {
-        if (!data || data.length === 0) {
-            alert('没有数据可导出');
-            return;
-        }
-        
-        const headers = Object.keys(data[0]);
-        const csvContent = [
-            headers.join(','),
-            ...data.map(row => headers.map(h => {
-                let value = row[h];
-                if (typeof value === 'object') value = JSON.stringify(value);
-                value = String(value || '').replace(/"/g, '""');
-                return `"${value}"`;
-            }).join(','))
-        ].join('\n');
-        
-        const BOM = '\uFEFF';
-        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename + '.csv';
-        link.click();
-    },
-    
-    // 问卷相关方法
+
     async getQuestionnaires() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('questionnaires')
                 .select('*')
                 .order('createdat', { ascending: false });
-            
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -1154,45 +1793,35 @@ const SupabaseService = {
             return [];
         }
     },
-    
+
     async getQuestionnaireById(id) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('questionnaires')
                 .select('*')
                 .eq('id', id)
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
-            console.error('Get questionnaire error:', error);
+            console.error('Get questionnaire by id error:', error);
             return null;
         }
     },
-    
-    async addQuestionnaire(questionnaireData) {
+
+    async addQuestionnaire(questionnaire) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const questionnaires = await this.getQuestionnaires();
-            const maxId = questionnaires.length > 0 ? Math.max(...questionnaires.map(q => parseInt(q.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newQuestionnaire = {
-                id: newId,
-                ...this.cleanData(questionnaireData),
-                createdat: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('questionnaires')
-                .insert([newQuestionnaire])
+                .insert([this.cleanData(questionnaire)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -1200,18 +1829,18 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async updateQuestionnaire(id, updates) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('questionnaires')
                 .update(this.cleanData(updates))
                 .eq('id', id)
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
@@ -1219,21 +1848,16 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async deleteQuestionnaire(id) {
         if (!await this.ensureInit()) return false;
-        
+
         try {
-            await this.supabase
-                .from('questionnaire_records')
-                .delete()
-                .or(`questionnaireId.eq.${id},questionnaireid.eq.${id}`);
-            
             const { error } = await this.supabase
                 .from('questionnaires')
                 .delete()
                 .eq('id', id);
-            
+
             if (error) throw error;
             return true;
         } catch (error) {
@@ -1241,16 +1865,15 @@ const SupabaseService = {
             throw error;
         }
     },
-    
+
     async getQuestionnaireRecords() {
         if (!await this.ensureInit()) return [];
-        
+
         try {
             const { data, error } = await this.supabase
                 .from('questionnaire_records')
-                .select('*')
-                .order('createdat', { ascending: false });
-            
+                .select('*');
+
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -1258,34 +1881,542 @@ const SupabaseService = {
             return [];
         }
     },
-    
-    async addQuestionnaireRecord(recordData) {
+
+    async addQuestionnaireRecord(record) {
         if (!await this.ensureInit()) return null;
-        
+
         try {
-            const records = await this.getQuestionnaireRecords();
-            const maxId = records.length > 0 ? Math.max(...records.map(r => parseInt(r.id) || 0)) : 0;
-            const newId = maxId + 1;
-            
-            const newRecord = {
-                id: newId,
-                ...this.cleanData(recordData),
-                submittedAt: new Date().toISOString()
-            };
-            
             const { data, error } = await this.supabase
                 .from('questionnaire_records')
-                .insert([newRecord])
+                .insert([this.cleanData(record)])
                 .select()
-                .single();
-            
+                .maybeSingle();
+
             if (error) throw error;
             return data;
         } catch (error) {
             console.error('Add questionnaire record error:', error);
             throw error;
         }
+    },
+
+    async getSettings() {
+        if (!await this.ensureInit()) return {};
+
+        try {
+            const { data, error } = await this.supabase
+                .from('settings')
+                .select('*')
+                .maybeSingle();
+
+            if (error) throw error;
+            return data || {};
+        } catch (error) {
+            console.error('Get settings error:', error);
+            return {};
+        }
+    },
+
+    async saveSettings(settings) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const existing = await this.getSettings();
+            if (existing && existing.id) {
+                const { data, error } = await this.supabase
+                    .from('settings')
+                    .update(this.cleanData(settings))
+                    .eq('id', existing.id)
+                    .select()
+                    .maybeSingle();
+                if (error) throw error;
+                return data;
+            } else {
+                const { data, error } = await this.supabase
+                    .from('settings')
+                    .insert([this.cleanData(settings)])
+                    .select()
+                    .maybeSingle();
+                if (error) throw error;
+                return data;
+            }
+        } catch (error) {
+            console.error('Save settings error:', error);
+            throw error;
+        }
+    },
+
+    async markNotificationRead(id) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('notifications')
+                .update({ read: true })
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Mark notification read error:', error);
+            throw error;
+        }
+    },
+
+    async getWrongQuestions() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .select('*');
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get wrong questions error:', error);
+            return [];
+        }
+    },
+
+    async addWrongQuestion(question) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .insert([this.cleanData(question)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add wrong question error:', error);
+            throw error;
+        }
+    },
+
+    async updateWrongQuestion(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_questions')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update wrong question error:', error);
+            throw error;
+        }
+    },
+
+    async deleteWrongQuestion(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_questions')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete wrong question error:', error);
+            throw error;
+        }
+    },
+
+    async getWrongQuestionSets() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .select('*')
+                .order('createdat', { ascending: false });
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get wrong question sets error:', error);
+            return [];
+        }
+    },
+
+    async createWrongQuestionSet(set) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .insert([this.cleanData(set)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Create wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async updateWrongQuestionSet(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('wrong_question_sets')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async deleteWrongQuestionSet(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_sets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete wrong question set error:', error);
+            throw error;
+        }
+    },
+
+    async addQuestionToSet(setId, questionId) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_set_items')
+                .insert([{ set_id: setId, question_id: questionId }]);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Add question to set error:', error);
+            throw error;
+        }
+    },
+
+    async removeQuestionFromSet(setId, questionId) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('wrong_question_set_items')
+                .delete()
+                .eq('set_id', setId)
+                .eq('question_id', questionId);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Remove question from set error:', error);
+            throw error;
+        }
+    },
+
+    async getQuestionTypes() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .select('*');
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get question types error:', error);
+            return [];
+        }
+    },
+
+    async addQuestionType(type) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .insert([this.cleanData(type)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add question type error:', error);
+            throw error;
+        }
+    },
+
+    async updateQuestionType(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('question_types')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update question type error:', error);
+            throw error;
+        }
+    },
+
+    async deleteQuestionType(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('question_types')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete question type error:', error);
+            throw error;
+        }
+    },
+
+    async getKnowledgePoints() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .select('*');
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get knowledge points error:', error);
+            return [];
+        }
+    },
+
+    async addKnowledgePoint(kp) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .insert([this.cleanData(kp)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add knowledge point error:', error);
+            throw error;
+        }
+    },
+
+    async updateKnowledgePoint(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('knowledge_points')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update knowledge point error:', error);
+            throw error;
+        }
+    },
+
+    async deleteKnowledgePoint(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('knowledge_points')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete knowledge point error:', error);
+            throw error;
+        }
+    },
+
+    async getVocabulary() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .select('*');
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get vocabulary error:', error);
+            return [];
+        }
+    },
+
+    async addVocabulary(word) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .insert([this.cleanData(word)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add vocabulary error:', error);
+            throw error;
+        }
+    },
+
+    async updateVocabulary(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('vocabulary')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update vocabulary error:', error);
+            throw error;
+        }
+    },
+
+    async deleteVocabulary(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('vocabulary')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete vocabulary error:', error);
+            throw error;
+        }
+    },
+
+    async getFileRecords() {
+        if (!await this.ensureInit()) return [];
+
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .select('*');
+
+            if (error) throw error;
+            return data || [];
+        } catch (error) {
+            console.error('Get file records error:', error);
+            return [];
+        }
+    },
+
+    async addFileRecord(record) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .insert([this.cleanData(record)])
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Add file record error:', error);
+            throw error;
+        }
+    },
+
+    async updateFileRecord(id, updates) {
+        if (!await this.ensureInit()) return null;
+
+        try {
+            const { data, error } = await this.supabase
+                .from('file_records')
+                .update(this.cleanData(updates))
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+            return data;
+        } catch (error) {
+            console.error('Update file record error:', error);
+            throw error;
+        }
+    },
+
+    async deleteFileRecord(id) {
+        if (!await this.ensureInit()) return false;
+
+        try {
+            const { error } = await this.supabase
+                .from('file_records')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            return true;
+        } catch (error) {
+            console.error('Delete file record error:', error);
+            throw error;
+        }
     }
 };
-
-window.SupabaseService = SupabaseService;

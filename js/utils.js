@@ -1,68 +1,9 @@
 const Utils = {
-    showToast: function(message, type = 'info') {
-        const toast = document.createElement('div');
-        const bgColor = {
-            success: 'bg-green-500',
-            error: 'bg-red-500',
-            warning: 'bg-yellow-500',
-            info: 'bg-blue-500'
-        }[type] || 'bg-blue-500';
+    formatDate(date, format = 'YYYY-MM-DD') {
+        if (!date) return '';
         
-        toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full`;
-        toast.innerHTML = `
-            <div class="flex items-center">
-                <i class="fa ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
-                <span>${message}</span>
-            </div>
-        `;
-        document.body.appendChild(toast);
+        const d = typeof date === 'string' ? new Date(date) : date;
         
-        setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-        setTimeout(() => {
-            toast.classList.add('translate-x-full');
-            setTimeout(() => toast.remove(), 300);
-        }, 3000);
-    },
-    
-    showModal: function(title, content, onConfirm, onCancel) {
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-        modal.innerHTML = `
-            <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-gray-900">${title}</h3>
-                    <button class="text-gray-500 hover:text-gray-700 close-modal">
-                        <i class="fa fa-times"></i>
-                    </button>
-                </div>
-                <div class="mb-6 text-gray-600">${content}</div>
-                <div class="flex justify-end space-x-3">
-                    <button class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
-                    <button class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark confirm-btn">确定</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        const closeModal = () => modal.remove();
-        
-        modal.querySelector('.close-modal').addEventListener('click', closeModal);
-        modal.querySelector('.cancel-btn').addEventListener('click', () => {
-            closeModal();
-            if (onCancel) onCancel();
-        });
-        modal.querySelector('.confirm-btn').addEventListener('click', () => {
-            closeModal();
-            if (onConfirm) onConfirm();
-        });
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
-        });
-    },
-    
-    formatDate: function(date, format = 'YYYY-MM-DD HH:mm:ss') {
-        const d = new Date(date);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
@@ -79,190 +20,800 @@ const Utils = {
             .replace('ss', seconds);
     },
     
-    formatRelativeTime: function(date) {
-        const now = new Date();
-        const d = new Date(date);
-        const diff = now - d;
+    formatDateTime(date) {
+        return this.formatDate(date, 'YYYY-MM-DD HH:mm:ss');
+    },
+    
+    formatTime(date) {
+        return this.formatDate(date, 'HH:mm:ss');
+    },
+    
+    formatRelativeTime(date) {
+        if (!date) return '';
         
-        const minutes = Math.floor(diff / 60000);
-        const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
+        const now = new Date();
+        const d = typeof date === 'string' ? new Date(date) : date;
+        const diff = now.getTime() - d.getTime();
+        
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const weeks = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
+        const months = Math.floor(diff / (1000 * 60 * 60 * 24 * 30));
+        const years = Math.floor(diff / (1000 * 60 * 60 * 24 * 365));
         
         if (minutes < 1) return '刚刚';
         if (minutes < 60) return `${minutes}分钟前`;
         if (hours < 24) return `${hours}小时前`;
         if (days < 7) return `${days}天前`;
-        return this.formatDate(date, 'YYYY-MM-DD');
+        if (weeks < 4) return `${weeks}周前`;
+        if (months < 12) return `${months}个月前`;
+        return `${years}年前`;
     },
     
-    calculateDistance: function(lat1, lng1, lat2, lng2) {
-        const R = 6371000;
-        const dLat = this.toRad(lat2 - lat1);
-        const dLng = this.toRad(lng2 - lng1);
-        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                  Math.cos(this.toRad(lat1)) * Math.cos(this.toRad(lat2)) *
-                  Math.sin(dLng / 2) * Math.sin(dLng / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    },
-    
-    toRad: function(deg) {
-        return deg * (Math.PI / 180);
-    },
-    
-    shuffleArray: function(array) {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    },
-    
-    generateQRCode: function(text, size = 200) {
-        return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(text)}`;
-    },
-    
-    validatePassword: function(password) {
-        if (password.length < 6) {
-            return { valid: false, message: '密码长度至少6位' };
-        }
-        return { valid: true, message: '' };
-    },
-    
-    validateUsername: function(username) {
-        if (!username || username.length < 3) {
-            return { valid: false, message: '账号长度至少3位' };
-        }
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            return { valid: false, message: '账号只能包含字母、数字和下划线' };
-        }
-        return { valid: true, message: '' };
-    },
-    
-    getRoleName: function(role) {
-        const roleNames = {
-            admin: '超级管理员',
-            subAdmin: '子管理员',
-            user: '普通成员'
-        };
-        return roleNames[role] || '未知角色';
-    },
-    
-    getRoleBadgeClass: function(role) {
-        const classes = {
-            admin: 'bg-red-100 text-red-800',
-            subAdmin: 'bg-orange-100 text-orange-800',
-            user: 'bg-green-100 text-green-800'
-        };
-        return classes[role] || 'bg-gray-100 text-gray-800';
-    },
-    
-    debounce: function(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    },
-    
-    throttle: function(func, limit) {
-        let inThrottle;
-        return function(...args) {
-            if (!inThrottle) {
-                func.apply(this, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    },
-    
-    escapeHtml: function(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-    
-    parseCSV: function(content) {
-        const lines = content.split('\n');
-        const result = [];
-        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    formatDuration(minutes) {
+        if (minutes < 60) return `${minutes}分钟`;
         
-        for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            
-            const values = [];
-            let current = '';
-            let inQuotes = false;
-            
-            for (let char of lines[i]) {
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    values.push(current.trim());
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            values.push(current.trim());
-            
-            const obj = {};
-            headers.forEach((header, index) => {
-                obj[header] = values[index] || '';
-            });
-            result.push(obj);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        
+        if (mins === 0) return `${hours}小时`;
+        return `${hours}小时${mins}分钟`;
+    },
+    
+    formatNumber(num, decimals = 0) {
+        if (num === undefined || num === null || isNaN(num)) return '0';
+        
+        return Number(num).toLocaleString('zh-CN', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    },
+    
+    formatCurrency(amount, currency = 'CNY') {
+        if (amount === undefined || amount === null || isNaN(amount)) return '¥0.00';
+        
+        const formatter = new Intl.NumberFormat('zh-CN', {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: 2
+        });
+        
+        return formatter.format(amount);
+    },
+    
+    formatFileSize(bytes) {
+        if (bytes === undefined || bytes === null || bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    },
+    
+    generateId(prefix = '') {
+        const uuid = crypto.randomUUID();
+        return prefix ? `${prefix}_${uuid}` : uuid;
+    },
+    
+    generateShortId(length = 8) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         
         return result;
     },
     
-    downloadFile: function(content, filename, type = 'text/plain') {
-        const blob = new Blob([content], { type });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
+    debounce(func, wait) {
+        let timeout;
+        
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     },
     
-    getInitials: function(name) {
-        if (!name) return '?';
-        return name.charAt(0).toUpperCase();
+    throttle(func, limit) {
+        let inThrottle;
+        
+        return function executedFunction(...args) {
+            if (!inThrottle) {
+                func(...args);
+                inThrottle = true;
+                setTimeout(() => (inThrottle = false), limit);
+            }
+        };
     },
     
-    getAvatarColor: function(name) {
+    async sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    },
+    
+    random(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    },
+    
+    shuffle(array) {
+        const arr = [...array];
+        
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        
+        return arr;
+    },
+    
+    truncate(text, maxLength, suffix = '...') {
+        if (!text) return '';
+        
+        if (text.length <= maxLength) return text;
+        
+        return text.substring(0, maxLength) + suffix;
+    },
+    
+    capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+    
+    capitalizeWords(str) {
+        if (!str) return '';
+        return str.replace(/\b\w/g, char => char.toUpperCase());
+    },
+    
+    snakeToCamel(str) {
+        if (!str) return '';
+        return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    },
+    
+    camelToSnake(str) {
+        if (!str) return '';
+        return str.replace(/([A-Z])/g, '_$1').toLowerCase();
+    },
+    
+    kebabToCamel(str) {
+        if (!str) return '';
+        return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    },
+    
+    camelToKebab(str) {
+        if (!str) return '';
+        return str.replace(/([A-Z])/g, '-$1').toLowerCase();
+    },
+    
+    isValidEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    },
+    
+    isValidPhone(phone) {
+        const re = /^1[3-9]\d{9}$/;
+        return re.test(phone);
+    },
+    
+    isValidUrl(url) {
+        const re = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w.-]*)*\/?$/;
+        return re.test(url);
+    },
+    
+    isValidIdCard(idCard) {
+        const re = /^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/;
+        return re.test(idCard);
+    },
+    
+    isValidDate(date) {
+        return !isNaN(new Date(date).getTime());
+    },
+    
+    parseQueryString(queryString) {
+        if (!queryString) return {};
+        
+        const params = {};
+        const pairs = queryString.startsWith('?') ? queryString.slice(1).split('&') : queryString.split('&');
+        
+        for (const pair of pairs) {
+            const [key, value] = pair.split('=');
+            params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+        }
+        
+        return params;
+    },
+    
+    stringifyQueryString(params) {
+        if (!params || Object.keys(params).length === 0) return '';
+        
+        const pairs = [];
+        
+        for (const [key, value] of Object.entries(params)) {
+            if (value !== undefined && value !== null && value !== '') {
+                pairs.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+            }
+        }
+        
+        return pairs.join('&');
+    },
+    
+    getUrlParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(name);
+    },
+    
+    setUrlParam(name, value) {
+        const params = new URLSearchParams(window.location.search);
+        params.set(name, value);
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    },
+    
+    removeUrlParam(name) {
+        const params = new URLSearchParams(window.location.search);
+        params.delete(name);
+        window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    },
+    
+    getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    },
+    
+    setCookie(name, value, days = 7) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = `expires=${date.toUTCString()}`;
+        document.cookie = `${name}=${value}; ${expires}; path=/; SameSite=Lax`;
+    },
+    
+    deleteCookie(name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    },
+    
+    storageGet(key) {
+        try {
+            const value = localStorage.getItem(key);
+            return value ? JSON.parse(value) : null;
+        } catch (error) {
+            console.error('[Utils] localStorage读取失败:', error);
+            return null;
+        }
+    },
+    
+    storageSet(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            console.error('[Utils] localStorage写入失败:', error);
+        }
+    },
+    
+    storageRemove(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.error('[Utils] localStorage删除失败:', error);
+        }
+    },
+    
+    storageClear() {
+        try {
+            localStorage.clear();
+        } catch (error) {
+            console.error('[Utils] localStorage清空失败:', error);
+        }
+    },
+    
+    deepClone(obj) {
+        if (obj === null || typeof obj !== 'object') return obj;
+        
+        if (obj instanceof Date) return new Date(obj.getTime());
+        if (obj instanceof Array) return obj.map(item => this.deepClone(item));
+        
+        const clone = {};
+        for (const key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                clone[key] = this.deepClone(obj[key]);
+            }
+        }
+        
+        return clone;
+    },
+    
+    mergeDeep(target, ...sources) {
+        if (!sources.length) return target;
+        const source = sources.shift();
+        
+        if (this.isObject(target) && this.isObject(source)) {
+            for (const key in source) {
+                if (this.isObject(source[key])) {
+                    if (!target[key]) Object.assign(target, { [key]: {} });
+                    this.mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(target, { [key]: source[key] });
+                }
+            }
+        }
+        
+        return this.mergeDeep(target, ...sources);
+    },
+    
+    isObject(item) {
+        return item !== null && typeof item === 'object';
+    },
+    
+    arrayUnique(array) {
+        return [...new Set(array)];
+    },
+    
+    arrayIntersection(...arrays) {
+        return arrays.reduce((a, b) => a.filter(c => b.includes(c)));
+    },
+    
+    arrayDifference(a, b) {
+        return a.filter(item => !b.includes(item));
+    },
+    
+    arrayChunk(array, size) {
+        const chunks = [];
+        for (let i = 0; i < array.length; i += size) {
+            chunks.push(array.slice(i, i + size));
+        }
+        return chunks;
+    },
+    
+    flattenArray(array) {
+        return array.reduce((acc, val) => 
+            acc.concat(Array.isArray(val) ? this.flattenArray(val) : val), []
+        );
+    },
+    
+    groupBy(array, key) {
+        return array.reduce((groups, item) => {
+            const group = item[key];
+            groups[group] = groups[group] || [];
+            groups[group].push(item);
+            return groups;
+        }, {});
+    },
+    
+    sortBy(array, key, order = 'asc') {
+        return [...array].sort((a, b) => {
+            const aVal = a[key];
+            const bVal = b[key];
+            
+            if (aVal < bVal) return order === 'asc' ? -1 : 1;
+            if (aVal > bVal) return order === 'asc' ? 1 : -1;
+            return 0;
+        });
+    },
+    
+    sumBy(array, key) {
+        return array.reduce((sum, item) => sum + (item[key] || 0), 0);
+    },
+    
+    averageBy(array, key) {
+        if (array.length === 0) return 0;
+        return this.sumBy(array, key) / array.length;
+    },
+    
+    maxBy(array, key) {
+        if (array.length === 0) return null;
+        return array.reduce((max, item) => 
+            item[key] > max[key] ? item : max
+        );
+    },
+    
+    minBy(array, key) {
+        if (array.length === 0) return null;
+        return array.reduce((min, item) => 
+            item[key] < min[key] ? item : min
+        );
+    },
+    
+    findBy(array, key, value) {
+        return array.find(item => item[key] === value);
+    },
+    
+    findIndexBy(array, key, value) {
+        return array.findIndex(item => item[key] === value);
+    },
+    
+    removeBy(array, key, value) {
+        return array.filter(item => item[key] !== value);
+    },
+    
+    replaceBy(array, key, value, newItem) {
+        return array.map(item => 
+            item[key] === value ? { ...item, ...newItem } : item
+        );
+    },
+    
+    pick(obj, keys) {
+        return keys.reduce((acc, key) => {
+            if (key in obj) acc[key] = obj[key];
+            return acc;
+        }, {});
+    },
+    
+    omit(obj, keys) {
+        return Object.keys(obj).reduce((acc, key) => {
+            if (!keys.includes(key)) acc[key] = obj[key];
+            return acc;
+        }, {});
+    },
+    
+    has(obj, key) {
+        return Object.prototype.hasOwnProperty.call(obj, key);
+    },
+    
+    size(obj) {
+        if (Array.isArray(obj)) return obj.length;
+        if (obj && typeof obj === 'object') return Object.keys(obj).length;
+        return 0;
+    },
+    
+    isEmpty(obj) {
+        return this.size(obj) === 0;
+    },
+    
+    isEqual(a, b) {
+        if (a === b) return true;
+        if (a === null || b === null) return false;
+        if (typeof a !== typeof b) return false;
+        
+        if (typeof a === 'object') {
+            const aKeys = Object.keys(a);
+            const bKeys = Object.keys(b);
+            
+            if (aKeys.length !== bKeys.length) return false;
+            
+            for (const key of aKeys) {
+                if (!this.isEqual(a[key], b[key])) return false;
+            }
+            
+            return true;
+        }
+        
+        return false;
+    },
+    
+    generateColor() {
         const colors = [
-            'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
-            'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
+            '#EF4444', '#F97316', '#F59E0B', '#EAB308', '#84CC16',
+            '#22C55E', '#10B981', '#14B8A6', '#06B6D4', '#0EA5E9',
+            '#3B82F6', '#6366F1', '#8B5CF6', '#A855F7', '#D946EF', '#EC4899'
         ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    },
+    
+    hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    },
+    
+    rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(x => {
+            const hex = Math.round(x).toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        }).join('');
+    },
+    
+    darkenColor(hex, percent) {
+        const rgb = this.hexToRgb(hex);
+        if (!rgb) return hex;
+        
+        const factor = 1 - (percent / 100);
+        return this.rgbToHex(
+            Math.max(0, rgb.r * factor),
+            Math.max(0, rgb.g * factor),
+            Math.max(0, rgb.b * factor)
+        );
+    },
+    
+    lightenColor(hex, percent) {
+        const rgb = this.hexToRgb(hex);
+        if (!rgb) return hex;
+        
+        const factor = percent / 100;
+        return this.rgbToHex(
+            Math.min(255, rgb.r + (255 - rgb.r) * factor),
+            Math.min(255, rgb.g + (255 - rgb.g) * factor),
+            Math.min(255, rgb.b + (255 - rgb.b) * factor)
+        );
+    },
+    
+    scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    
+    scrollToElement(selector) {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    },
+    
+    smoothScroll(destination, duration = 500) {
+        const start = window.scrollY;
+        const startTime = performance.now();
+        
+        function scroll(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+            window.scrollTo(0, start + (destination - start) * easeOutQuart);
+            
+            if (progress < 1) {
+                requestAnimationFrame(scroll);
+            }
+        }
+        
+        requestAnimationFrame(scroll);
+    },
+    
+    isInViewport(element) {
+        const rect = element.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    },
+    
+    observeIntersection(element, callback, options = {}) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    callback(entry);
+                }
+            });
+        }, {
+            root: options.root || null,
+            rootMargin: options.rootMargin || '0px',
+            threshold: options.threshold || 0.1
+        });
+        
+        observer.observe(element);
+        return observer;
+    },
+    
+    getDeviceType() {
+        const userAgent = navigator.userAgent;
+        
+        if (/mobile/i.test(userAgent)) return 'mobile';
+        if (/tablet/i.test(userAgent)) return 'tablet';
+        return 'desktop';
+    },
+    
+    isTouchDevice() {
+        return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    },
+    
+    getBrowserInfo() {
+        const userAgent = navigator.userAgent;
+        
+        let browser = 'Unknown';
+        let version = 'Unknown';
+        
+        if (userAgent.includes('Chrome')) {
+            browser = 'Chrome';
+            version = userAgent.match(/Chrome\/(\d+)/)[1];
+        } else if (userAgent.includes('Firefox')) {
+            browser = 'Firefox';
+            version = userAgent.match(/Firefox\/(\d+)/)[1];
+        } else if (userAgent.includes('Safari')) {
+            browser = 'Safari';
+            version = userAgent.match(/Version\/(\d+)/)[1];
+        } else if (userAgent.includes('Edge')) {
+            browser = 'Edge';
+            version = userAgent.match(/Edge\/(\d+)/)[1];
+        } else if (userAgent.includes('Opera') || userAgent.includes('OPR')) {
+            browser = 'Opera';
+            version = userAgent.match(/OPR\/(\d+)/)[1];
+        }
+        
+        return { browser, version, userAgent };
+    },
+    
+    getScreenSize() {
+        return {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            screenWidth: screen.width,
+            screenHeight: screen.height
+        };
+    },
+    
+    getNetworkInfo() {
+        if (!navigator.connection) {
+            return { type: 'unknown', effectiveType: 'unknown' };
+        }
+        
+        return {
+            type: navigator.connection.type,
+            effectiveType: navigator.connection.effectiveType,
+            downlink: navigator.connection.downlink,
+            rtt: navigator.connection.rtt
+        };
+    },
+    
+    async fetchJson(url, options = {}) {
+        const defaultOptions = {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        };
+        
+        const config = { ...defaultOptions, ...options };
+        
+        if (config.body && typeof config.body !== 'string') {
+            config.body = JSON.stringify(config.body);
+        }
+        
+        try {
+            const response = await fetch(url, config);
+            
+            if (!response.ok) {
+                const error = await response.json().catch(() => ({ message: 'Network error' }));
+                throw new Error(error.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('[Utils] fetchJson失败:', error);
+            throw error;
+        }
+    },
+    
+    async fetchText(url, options = {}) {
+        const defaultOptions = {
+            method: 'GET',
+            credentials: 'same-origin'
+        };
+        
+        const config = { ...defaultOptions, ...options };
+        
+        try {
+            const response = await fetch(url, config);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.text();
+        } catch (error) {
+            console.error('[Utils] fetchText失败:', error);
+            throw error;
+        }
+    },
+    
+    async fetchBlob(url, options = {}) {
+        const defaultOptions = {
+            method: 'GET',
+            credentials: 'same-origin'
+        };
+        
+        const config = { ...defaultOptions, ...options };
+        
+        try {
+            const response = await fetch(url, config);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.blob();
+        } catch (error) {
+            console.error('[Utils] fetchBlob失败:', error);
+            throw error;
+        }
+    },
+    
+    base64Encode(str) {
+        return btoa(unescape(encodeURIComponent(str)));
+    },
+    
+    base64Decode(str) {
+        return decodeURIComponent(escape(atob(str)));
+    },
+    
+    async asyncForEach(array, callback) {
+        for (let index = 0; index < array.length; index++) {
+            await callback(array[index], index, array);
+        }
+    },
+    
+    async promiseAllSettled(promises) {
+        const results = await Promise.allSettled(promises);
+        
+        return results.map((result, index) => ({
+            index,
+            status: result.status,
+            value: result.status === 'fulfilled' ? result.value : null,
+            reason: result.status === 'rejected' ? result.reason : null
+        }));
+    },
+    
+    async retryPromise(fn, retries = 3, delay = 1000) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (retries > 0) {
+                await this.sleep(delay);
+                return this.retryPromise(fn, retries - 1, delay * 2);
+            }
+            throw error;
+        }
+    },
+    
+    uuid() {
+        return crypto.randomUUID();
+    },
+    
+    md5(str) {
         let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
         }
-        return colors[Math.abs(hash) % colors.length];
+        return Math.abs(hash).toString(16);
     },
     
-    checkAuth: function(requireAdmin = false) {
-        const user = DataStore.getCurrentUser();
-        if (!user) {
-            window.location.href = 'index.html';
-            return null;
+    sha1(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
         }
-        if (requireAdmin && user.role === 'user') {
-            window.location.href = 'dashboard.html';
-            return null;
-        }
-        return user;
+        return Math.abs(hash).toString(16);
     },
     
-    logout: function() {
-        DataStore.clearCurrentUser();
-        window.location.href = 'index.html';
+    generatePassword(length = 12) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&';
+        let password = '';
+        
+        for (let i = 0; i < length; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        return password;
+    },
+    
+    validatePassword(password) {
+        let score = 0;
+        
+        if (password.length >= 8) score++;
+        if (password.length >= 12) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[0-9]/.test(password)) score++;
+        if (/[@$!%*?&]/.test(password)) score++;
+        
+        const levels = ['弱', '一般', '中等', '强', '非常强'];
+        return {
+            score: Math.min(score, 5),
+            level: levels[Math.min(score, 4)]
+        };
     }
 };
+
+window.Utils = Utils;

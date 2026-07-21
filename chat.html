@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>班级管理系统 - 实时聊天</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0F172A">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/premium-ui.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateX(4px);
+        }
+
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            position: relative;
+        }
+
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #6366F1, #8B5CF6);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .chat-container {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .message-bubble.sent {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-bubble.received {
+            background: rgba(71, 85, 105, 0.5);
+            color: #E2E8F0;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: #6366F1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover {
+            color: #6366F1;
+        }
+
+        .dropdown-menu {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .dropdown-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .user-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .user-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            transform: translateX(4px);
+        }
+
+        .user-item.active {
+            background: rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen overflow-hidden">
+        <aside class="sidebar fixed lg:sticky top-0 left-0 h-full w-64 flex flex-col z-40">
+            <div class="p-6 border-b border-gray-700/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-graduation-cap text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white">班级管理系统</h1>
+                        <p class="text-xs text-gray-400 hidden sm:block">大学生综合管理平台</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-4 space-y-1">
+                <a href="dashboard.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                    <span class="font-medium">数据概览</span>
+                </a>
+                <a href="attendance-new.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-map-marker text-lg"></i>
+                    <span class="font-medium">签到管理</span>
+                </a>
+                <a href="exam.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-file-text text-lg"></i>
+                    <span class="font-medium">考试系统</span>
+                </a>
+                <a href="vote.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-check-square-o text-lg"></i>
+                    <span class="font-medium">投票抽奖</span>
+                </a>
+                <a href="chat.html" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-comments text-lg"></i>
+                    <span class="font-medium">实时聊天</span>
+                </a>
+                <a href="users.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-users text-lg"></i>
+                    <span class="font-medium">成员管理</span>
+                </a>
+                <a href="settings.html" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300">
+                    <i class="fa-solid fa-cog text-lg"></i>
+                    <span class="font-medium">系统设置</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700/50">
+                <button id="logoutBtn" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors">
+                    <i class="fa-solid fa-right-from-bracket text-lg"></i>
+                    <span class="font-medium">退出登录</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex overflow-hidden">
+            <div class="w-80 border-r border-gray-700/50 flex flex-col">
+                <div class="p-4 border-b border-gray-700/50">
+                    <h3 class="text-lg font-bold text-white">聊天列表</h3>
+                </div>
+                <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-2">
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col chat-container">
+                <div class="p-4 border-b border-gray-700/50 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 id="chatTitle" class="font-medium text-white">班级群聊</h4>
+                            <div class="flex items-center gap-2">
+                                <span class="online-dot"></span>
+                                <span class="text-xs text-gray-400">在线</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <button id="userMenuBtn" class="nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-gray-400 hover:text-white">
+                            <div class="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-medium">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <span class="hidden sm:block font-medium">管理员</span>
+                            <i class="fa-solid fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="userDropdown" class="dropdown-menu hidden absolute right-0 top-full mt-2 w-48 rounded-xl p-2 shadow-xl">
+                            <a href="profile.html" class="dropdown-item flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white">
+                                <i class="fa-solid fa-user"></i> 个人资料
+                            </a>
+                            <a href="settings.html" class="dropdown-item flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white">
+                                <i class="fa-solid fa-cog"></i> 设置
+                            </a>
+                            <div class="border-t border-gray-700/50 my-1"></div>
+                            <button id="userMenuLogoutBtn" class="dropdown-item w-full flex items-center gap-2 px-3 py-2 rounded-lg text-red-400 hover:text-red-300">
+                                <i class="fa-solid fa-right-from-bracket"></i> 退出登录
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="messageList" class="flex-1 overflow-y-auto p-6 space-y-4">
+                </div>
+
+                <div class="p-4 border-t border-gray-700/50">
+                    <div class="flex items-center gap-3">
+                        <input type="text" id="messageInput" 
+                            class="input-field flex-1 px-5 py-3 rounded-xl outline-none text-gray-100"
+                            placeholder="输入消息...">
+                        <button id="sendBtn" class="send-btn p-3 rounded-xl text-white">
+                            <i class="fa-solid fa-paper-plane text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toastContainer" class="fixed top-6 right-6 z-50 space-y-3"></div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+        }
+        const v = Date.now();
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2?v=4"></script>
+    <script src="js/supabase-config.js?v=4"></script>
+    <script src="js/supabase-service.js?v=4"></script>
+    <script src="js/leancloud-config.js?v=4"></script>
+    <script src="js/leancloud-service.js?v=4"></script>
+    <script src="js/firebase-config.js?v=4"></script>
+    <script src="js/firebase-service.js?v=4"></script>
+    <script src="js/data.js?v=4"></script>
+    <script src="js/chat-service.js?v=4"></script>
+    <script src="js/data-service.js?v=4"></script>
+    <script>
+        let currentUserId = null;
+
+        if (!window.DataService || !window.DataService.getMessages) {
+            window.DataService = window.DataService || {};
+            window.DataService.getMessages = async function() {
+                if (window.ChatService) {
+                    try {
+                        return await ChatService.getMessages(null, {});
+                    } catch (e) {
+                        console.warn('ChatService getMessages failed:', e);
+                    }
+                }
+                return [];
+            };
+            window.DataService.sendMessage = async function(content) {
+                if (window.ChatService) {
+                    try {
+                        return await ChatService.sendMessage('global', content);
+                    } catch (e) {
+                        console.warn('ChatService sendMessage failed:', e);
+                    }
+                }
+                return null;
+            };
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = {
+                success: 'toast-success',
+                error: 'toast-error',
+                warning: 'toast-warning',
+                info: 'toast-info'
+            }[type] || 'toast-info';
+
+            const icon = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            }[type] || 'fa-info-circle';
+
+            toast.className = `animate-slide-in-right ${bgClass} text-white px-6 py-4 rounded-xl shadow-lg flex items-center space-x-3 min-w-[280px]`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} text-lg"></i>
+                <span class="font-medium">${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        async function checkLogin() {
+            await DataService.init();
+            const user = await DataService.getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            currentUserId = user.id;
+            return user;
+        }
+
+        async function logout() {
+            await DataService.signOut();
+            window.location.href = 'index.html';
+        }
+
+        async function loadMessages() {
+            try {
+                const messages = await DataService.getMessages();
+                renderMessages(messages);
+            } catch (error) {
+                console.error('加载消息失败:', error);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const users = await DataService.getUsers();
+                renderUserList(users);
+            } catch (error) {
+                console.error('加载用户失败:', error);
+            }
+        }
+
+        function renderMessages(messages) {
+            const container = document.getElementById('messageList');
+            
+            if (messages.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-500">
+                        <div class="w-20 h-20 bg-gray-800/50 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-comments text-2xl"></i>
+                        </div>
+                        <p>暂无消息</p>
+                        <p class="text-sm mt-2">发送一条消息开始聊天吧</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => {
+                const isSent = msg.userId === currentUserId;
+                return `
+                    <div class="flex ${isSent ? 'justify-end' : 'justify-start'}">
+                        <div class="message-bubble ${isSent ? 'sent' : 'received'}">
+                            <p>${msg.content}</p>
+                            <span class="text-xs opacity-70 mt-2 block text-right">${formatTime(msg.createdAt)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function renderUserList(users) {
+            const container = document.getElementById('chatList');
+
+            container.innerHTML = `
+                <div class="user-item active p-3 rounded-xl flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-white">班级群聊</p>
+                        <p class="text-xs text-gray-400">${users.length} 位成员</p>
+                    </div>
+                </div>
+            ` + users.map(user => `
+                <div class="user-item p-3 rounded-xl flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-medium">
+                        ${user.name.charAt(0)}
+                    </div>
+                    <div>
+                        <p class="font-medium text-white">${user.name}</p>
+                        <p class="text-xs text-gray-400">${user.username}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+
+            if (!content) return;
+
+            try {
+                const result = await DataService.sendMessage(content);
+                
+                if (result.success) {
+                    input.value = '';
+                    await loadMessages();
+                } else {
+                    showToast('发送失败', 'error');
+                }
+            } catch (error) {
+                showToast('发送失败: ' + error.message, 'error');
+            }
+        }
+
+        async function init() {
+            const user = await checkLogin();
+            if (!user) return;
+
+            await loadMessages();
+            await loadUsers();
+
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+            document.getElementById('userMenuLogoutBtn').addEventListener('click', logout);
+
+            document.getElementById('userMenuBtn').addEventListener('click', () => {
+                document.getElementById('userDropdown').classList.toggle('hidden');
+            });
+
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+            document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            setInterval(async () => {
+                await loadMessages();
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

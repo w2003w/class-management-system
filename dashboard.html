@@ -2,819 +2,1046 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>班级管理系统 - 仪表盘</title>
-    <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 统一的 Tailwind 配置 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#1E40AF', // 深蓝
-                        secondary: '#3B82F6', // 中蓝
-                        accent: '#F97316', // 橙色
-                        light: '#F3F4F6', // 浅灰
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                    }
-                }
-            }
+    <link rel="stylesheet" href="css/premium-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
         }
-    </script>
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .bg-gradient-primary {
-                background: linear-gradient(135deg, theme('colors.primary'), theme('colors.secondary'));
-            }
-            .text-shadow {
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            }
-            .transition-all-300 {
-                transition: all 0.3s ease;
-            }
-            .sidebar-link {
-                @apply flex items-center px-4 py-3 text-gray-600 transition-all-300 hover:bg-blue-50 hover:text-primary rounded-md;
-            }
-            .sidebar-link.active {
-                @apply bg-blue-50 text-primary font-medium;
-            }
-            .sidebar-link i {
-                @apply mr-3 text-lg;
-            }
-            .card-stat {
-                @apply bg-white rounded-lg shadow-card p-6 transition-all-300 hover:shadow-card-hover;
-            }
-            .card-stat-icon {
-                @apply w-12 h-12 rounded-full flex items-center justify-center text-white text-xl mb-4;
-            }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 260px;
+            z-index: 100;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+        
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+            margin-bottom: 16px;
+        }
+        
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .sidebar-logo-text h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-logo-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 2px 0 0;
+        }
+        
+        .sidebar-nav {
+            padding: 0 12px;
+        }
+        
+        .sidebar-item {
+            margin-bottom: 4px;
+        }
+        
+        .sidebar-item.active .sidebar-link {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .sidebar-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-link i {
+            width: 24px;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        
+        .sidebar-link span {
+            flex: 1;
+        }
+        
+        .sidebar-link .badge {
+            padding: 2px 8px;
+            font-size: 11px;
+        }
+        
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            padding: 24px;
+        }
+        
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .header-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .header-title p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin: 4px 0 0;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .search-box {
+            position: relative;
+            max-width: 300px;
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .sidebar { width: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+        
+        .stat-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .stat-card.blue::before { background: linear-gradient(90deg, #3B82F6, #60A5FA); }
+        .stat-card.green::before { background: linear-gradient(90deg, #10B981, #34D399); }
+        .stat-card.purple::before { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
+        .stat-card.orange::before { background: linear-gradient(90deg, #F59E0B, #FBBF24); }
+        
+        .stat-card:hover::before { opacity: 1; }
+        
+        .stat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        
+        .stat-card.blue .stat-icon { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+        .stat-card.green .stat-icon { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .stat-card.purple .stat-icon { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+        .stat-card.orange .stat-icon { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .stat-trend.up { color: var(--success); }
+        .stat-trend.down { color: var(--danger); }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 480px) {
+            .quick-actions { grid-template-columns: 1fr; }
+        }
+        
+        .quick-action-card {
+            background: rgba(99, 102, 241, 0.05);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 14px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-action-card:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+        
+        .quick-action-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+        
+        .quick-action-card:nth-child(1) .quick-action-icon { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+        .quick-action-card:nth-child(2) .quick-action-icon { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+        .quick-action-card:nth-child(3) .quick-action-icon { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+        .quick-action-card:nth-child(4) .quick-action-icon { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+        .quick-action-card:nth-child(5) .quick-action-icon { background: rgba(6, 182, 212, 0.15); color: #22D3EE; }
+        .quick-action-card:nth-child(6) .quick-action-icon { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+        
+        .quick-action-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+        }
+        
+        .quick-action-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1024px) {
+            .bottom-grid { grid-template-columns: 1fr; }
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .activity-item:hover {
+            background: rgba(99, 102, 241, 0.08);
+        }
+        
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .activity-dot.success { background: var(--success); }
+        .activity-dot.warning { background: var(--warning); }
+        .activity-dot.info { background: var(--info); }
+        
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .activity-title {
+            font-size: 14px;
+            color: var(--text-primary);
+            margin: 0 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .activity-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+        
+        .chart-container {
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            width: 100%;
+            padding: 0 20px;
+        }
+        
+        .chart-bar {
+            width: 32px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 8px 8px 0 0;
+            transition: height 1s ease;
+            position: relative;
+        }
+        
+        .chart-bar::after {
+            content: attr(data-value);
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            margin-top: 12px;
+        }
+        
+        .chart-label {
+            width: 32px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 640px) {
+            .mobile-menu-btn { display: block; }
+        }
+        
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(99, 102, 241, 0.2);
+            z-index: 200;
+            transition: right 0.3s ease;
+            padding: 24px;
+        }
+        
+        .logout-modal.open { right: 0; }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            z-index: 150;
+            display: none;
+        }
+        
+        .modal-overlay.open { display: block; }
+        
+        .modal-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+            margin-bottom: 20px;
+        }
+        
+        .modal-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .modal-user-info h3 {
+            font-size: 16px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .modal-user-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 2px 0 0;
+        }
+        
+        .modal-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .modal-links li {
+            margin-bottom: 8px;
+        }
+        
+        .modal-links a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .modal-links a:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .modal-links a i {
+            width: 20px;
+        }
+        
+        .modal-logout {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(71, 85, 105, 0.3);
+        }
+        
+        .modal-logout-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .modal-logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="flex h-screen overflow-hidden">
-        <aside id="sidebar" class="w-64 bg-white shadow-lg fixed md:relative z-40 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
-            <div class="p-4 border-b">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <img src="https://p6-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/91e324bec4644418b45671ea1b3bcb27~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=2026032514475764D381C9985C9C849F5B&rrcfp=f06b921b&x-expires=1777013311&x-signature=r0B760ctK2YRksCXfM8bQkX9XNE%3D" alt="班级管理系统" class="h-10 w-10">
-                        <div class="ml-3">
-                            <h1 class="text-lg font-bold text-primary">班级管理系统</h1>
-                            <p class="text-xs text-gray-500">大学生班级综合管理平台</p>
-                        </div>
-                    </div>
-                    <button id="closeSidebarBtn" class="md:hidden text-gray-500 hover:text-gray-700">
-                        <i class="fa fa-times text-xl"></i>
-                    </button>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div class="sidebar-logo-text">
+                    <h2>班级管理系统</h2>
+                    <p>综合管理平台</p>
                 </div>
             </div>
-            
-            <nav class="p-4">
-                <div class="mb-6">
-                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">主菜单</h2>
-                    <ul>
-                        <li class="mb-1">
-                            <a href="dashboard.html" class="sidebar-link active">
-                                <i class="fa fa-dashboard"></i>
-                                <span>仪表盘</span>
-                            </a>
-                        </li>
-                        <li class="mb-1">
-                            <a href="attendance.html" class="sidebar-link">
-                                <i class="fa fa-calendar-check-o"></i>
-                                <span>签到管理</span>
-                            </a>
-                        </li>
-                        <li class="mb-1">
-                            <a href="exam.html" class="sidebar-link">
-                                <i class="fa fa-file-text-o"></i>
-                                <span>考试系统</span>
-                            </a>
-                        </li>
-                        <li class="mb-1">
-                            <a href="vote.html" class="sidebar-link">
-                                <i class="fa fa-check-square-o"></i>
-                                <span>投票抽奖</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="mb-6" id="adminMenu">
-                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">管理中心</h2>
-                    <ul>
-                        <li class="mb-1" id="userManagementMenu">
-                            <a href="users.html" class="sidebar-link">
-                                <i class="fa fa-users"></i>
-                                <span>用户管理</span>
-                            </a>
-                        </li>
-                        <li class="mb-1">
-                            <a href="grading.html" class="sidebar-link">
-                                <i class="fa fa-edit"></i>
-                                <span>考试阅卷</span>
-                            </a>
-                        </li>
-                        <li class="mb-1" id="systemSettingsMenu">
-                            <a href="settings.html" class="sidebar-link">
-                                <i class="fa fa-cog"></i>
-                                <span>系统设置</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div>
-                    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">个人</h2>
-                    <ul>
-                        <li class="mb-1">
-                            <a href="profile.html" class="sidebar-link">
-                                <i class="fa fa-user"></i>
-                                <span>个人资料</span>
-                            </a>
-                        </li>
-                        <li class="mb-1">
-                            <a href="#" id="logoutBtn" class="sidebar-link">
-                                <i class="fa fa-sign-out"></i>
-                                <span>退出登录</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        </aside>
+        </div>
         
-        <!-- 主内容区 -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- 顶部导航栏 -->
-            <header class="bg-white shadow-sm z-10">
-                <div class="flex items-center justify-between p-4">
-                    <div class="flex items-center">
-                        <button id="sidebarToggle" class="text-gray-500 hover:text-primary focus:outline-none mr-4 p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <i class="fa fa-bars text-xl"></i>
-                        </button>
-                        <h2 class="text-xl font-semibold text-gray-800">仪表盘</h2>
-                    </div>
-                    
-                    <div class="flex items-center">
-                        <div class="relative mr-4">
-                            <button id="notificationBtn" class="text-gray-500 hover:text-primary focus:outline-none relative">
-                                <i class="fa fa-bell text-xl"></i>
-                                <span id="notificationBadge" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center hidden">0</span>
-                            </button>
-                        </div>
-                        
-                        <div class="relative">
-                            <button id="userMenuBtn" class="flex items-center">
-                                <div id="userAvatar" class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-medium">WT</div>
-                                <div class="ml-2 hidden md:block text-left">
-                                    <p class="text-sm font-medium text-gray-700" id="userName">吴涛</p>
-                                    <p class="text-xs text-gray-500" id="userRole">超级管理员</p>
-                                </div>
-                                <i class="fa fa-chevron-down ml-2 text-gray-400 text-xs"></i>
-                            </button>
-                            
-                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 hidden z-50">
-                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-user mr-2"></i>个人资料</a>
-                                <a href="dashboard.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><i class="fa fa-home mr-2"></i>返回主页</a>
-                                <div class="border-t my-1"></div>
-                                <a href="#" id="logoutMenuBtn" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50"><i class="fa fa-sign-out mr-2"></i>退出登录</a>
-                            </div>
-                        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-item active">
+                <a href="dashboard.html" class="sidebar-link">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>仪表盘</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="attendance-new.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>签到管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="exam.html" class="sidebar-link">
+                    <i class="fa-solid fa-file-text"></i>
+                    <span>考试系统</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="vote.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-square"></i>
+                    <span>投票抽奖</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="chat.html" class="sidebar-link">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>班级群聊</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="users.html" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i>
+                    <span>用户管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="settings.html" class="sidebar-link">
+                    <i class="fa-solid fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        <div class="page-header">
+            <div class="header-title">
+                <h1>欢迎回来</h1>
+                <p>今天是 <span id="currentDate"></span></p>
+            </div>
+            <div class="header-actions">
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="search-box search-container">
+                    <input type="text" class="input-field" placeholder="搜索...">
+                    <i class="fa-solid fa-search"></i>
+                </div>
+                <div class="user-menu" onclick="toggleLogoutModal()">
+                    <div class="user-avatar">
+                        <i class="fa-solid fa-user"></i>
                     </div>
                 </div>
-            </header>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="totalUsers">-</div>
+                <div class="stat-label">班级成员</div>
+                <div class="stat-trend up">
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span id="usersTrend">-</span>
+                </div>
+            </div>
             
-            <!-- 页面内容 -->
-            <main class="flex-1 overflow-y-auto p-4 bg-gray-100">
-                <!-- 欢迎信息 -->
-                <div class="bg-gradient-primary rounded-lg shadow-lg p-6 mb-6 text-white">
-                    <h1 class="text-2xl font-bold mb-2">欢迎回来，<span id="welcomeUserName">吴涛</span>！</h1>
-                    <p class="text-blue-100">今天是 <span id="currentDate">2026年7月21日</span>，祝您有愉快的一天！</p>
-                </div>
-                
-                <!-- 统计卡片 -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="card-stat">
-                        <div class="card-stat-icon bg-blue-500">
-                            <i class="fa fa-users"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-1">班级成员</h3>
-                        <p class="text-3xl font-bold text-primary" id="totalUsers">0</p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            <span>已注册用户</span>
-                        </p>
-                    </div>
-                    
-                    <div class="card-stat">
-                        <div class="card-stat-icon bg-green-500">
-                            <i class="fa fa-calendar-check-o"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-1">今日签到</h3>
-                        <p class="text-3xl font-bold text-primary" id="todayCheckIns">0</p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            <span>签到活动: <span id="totalAttendances">0</span></span>
-                        </p>
-                    </div>
-                    
-                    <div class="card-stat">
-                        <div class="card-stat-icon bg-purple-500">
-                            <i class="fa fa-file-text-o"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-1">考试系统</h3>
-                        <p class="text-3xl font-bold text-primary" id="totalExams">0</p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            <span>平均分: <span id="avgExamScore">-</span></span>
-                        </p>
-                    </div>
-                    
-                    <div class="card-stat">
-                        <div class="card-stat-icon bg-orange-500">
-                            <i class="fa fa-check-square-o"></i>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-700 mb-1">投票抽奖</h3>
-                        <p class="text-3xl font-bold text-primary" id="totalVotes">0</p>
-                        <p class="text-sm text-gray-500 mt-2">
-                            <span>进行中的活动</span>
-                        </p>
+            <div class="stat-card green">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-check-circle"></i>
                     </div>
                 </div>
-                
-                <!-- 图表和数据 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- 签到统计图表 -->
-                    <div class="bg-white rounded-lg shadow-card p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-semibold text-gray-700">本周签到统计</h3>
-                            <div class="flex">
-                                <button class="text-sm text-gray-500 hover:text-primary focus:outline-none mr-4">
-                                    <i class="fa fa-download mr-1"></i>
-                                    导出
-                                </button>
-                                <button class="text-sm text-gray-500 hover:text-primary focus:outline-none">
-                                    <i class="fa fa-ellipsis-v"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="h-64">
-                            <canvas id="attendanceChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- 最近活动 -->
-                    <div class="bg-white rounded-lg shadow-card p-6">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-semibold text-gray-700">最近活动</h3>
-                            <button onclick="window.location.href='attendance.html'" class="text-sm text-primary hover:text-primary-dark focus:outline-none cursor-pointer">
-                                查看全部
-                            </button>
-                        </div>
-                        <div id="recentActivities" class="space-y-4">
-                            <p class="text-gray-500 text-center py-4">暂无活动记录</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 快速操作 -->
-                <div class="bg-white rounded-lg shadow-card p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">快速操作</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quickActions">
-                        <a href="attendance.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-all-300" id="quickCreateAttendance">
-                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-calendar-plus-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">创建签到</span>
-                        </a>
-                        
-                        <a href="exam.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all-300" id="quickCreateExam">
-                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-file-text-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">创建考试</span>
-                        </a>
-                        
-                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-200 transition-all-300" id="quickCreateVote">
-                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-check-square-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">创建投票</span>
-                        </a>
-                        
-                        <a href="users.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all-300" id="quickAddUser">
-                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-user-plus text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">添加成员</span>
-                        </a>
-                    </div>
-                </div>
-            </main>
-        </div>
-    </div>
-    
-    <!-- 退出登录确认模态框 -->
-    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-            <div class="mb-4">
-                <h3 class="text-lg font-bold text-gray-900">确认退出登录</h3>
-                <p class="text-gray-600 mt-2">您确定要退出当前账号吗？</p>
-            </div>
-            <div class="flex justify-end space-x-3">
-                <button id="cancelLogout" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-all-300">
-                    取消
-                </button>
-                <button id="confirmLogout" class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-all-300">
-                    确认退出
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 消息通知模态框 -->
-    <div id="notificationModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden modal-overlay">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden modal-content mx-4">
-            <div class="p-4 border-b sticky top-0 bg-white z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fa fa-bell text-primary mr-2"></i>消息通知</h3>
-                    <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+                <div class="stat-value" id="checkinRate">-</div>
+                <div class="stat-label">签到率</div>
+                <div class="stat-trend up">
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span id="checkinTrend">-</span>
                 </div>
             </div>
-            <div id="notificationList" class="overflow-y-auto max-h-96">
-                <div class="p-8 text-center text-gray-500">
-                    <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                    <p>暂无通知</p>
+            
+            <div class="stat-card purple">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-file-text"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="examCount">-</div>
+                <div class="stat-label">进行中考试</div>
+                <div class="stat-trend down">
+                    <i class="fa-solid fa-arrow-down"></i>
+                    <span id="examTrend">-</span>
+                </div>
+            </div>
+            
+            <div class="stat-card orange">
+                <div class="stat-header">
+                    <div class="stat-icon">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="messageCount">-</div>
+                <div class="stat-label">今日消息</div>
+                <div class="stat-trend up">
+                    <i class="fa-solid fa-arrow-up"></i>
+                    <span id="messageTrend">-</span>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="quick-actions">
+            <div class="quick-action-card" onclick="window.location.href='attendance-new.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+                <h3 class="quick-action-title">发起签到</h3>
+                <p class="quick-action-desc">快速创建签到活动</p>
+            </div>
+            
+            <div class="quick-action-card" onclick="window.location.href='exam.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+                <h3 class="quick-action-title">创建考试</h3>
+                <p class="quick-action-desc">发布新的考试任务</p>
+            </div>
+            
+            <div class="quick-action-card" onclick="window.location.href='vote.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-gift"></i>
+                </div>
+                <h3 class="quick-action-title">发起抽奖</h3>
+                <p class="quick-action-desc">组织班级抽奖活动</p>
+            </div>
+            
+            <div class="quick-action-card" onclick="window.location.href='vote.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-poll"></i>
+                </div>
+                <h3 class="quick-action-title">创建投票</h3>
+                <p class="quick-action-desc">发起班级投票</p>
+            </div>
+            
+            <div class="quick-action-card" onclick="window.location.href='chat.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-message"></i>
+                </div>
+                <h3 class="quick-action-title">发送通知</h3>
+                <p class="quick-action-desc">发布班级通知</p>
+            </div>
+            
+            <div class="quick-action-card" onclick="window.location.href='users.html'">
+                <div class="quick-action-icon">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <h3 class="quick-action-title">添加成员</h3>
+                <p class="quick-action-desc">邀请新成员加入</p>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="glass-card rounded-2xl p-6">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa-solid fa-chart-line text-primary"></i>
+                        签到趋势
+                    </h3>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-bars" id="checkinChartBars"></div>
+                </div>
+                <div class="chart-labels" id="checkinChartLabels">
+                    <span class="chart-label">周一</span>
+                    <span class="chart-label">周二</span>
+                    <span class="chart-label">周三</span>
+                    <span class="chart-label">周四</span>
+                    <span class="chart-label">周五</span>
+                    <span class="chart-label">周六</span>
+                    <span class="chart-label">周日</span>
+                </div>
+            </div>
+            
+            <div class="glass-card rounded-2xl p-6">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fa-solid fa-clock text-primary"></i>
+                        最近动态
+                    </h3>
+                </div>
+                <div class="space-y-4" id="recentActivity">
+                    <div class="activity-item text-center py-8 text-muted">
+                        <i class="fa-solid fa-inbox fa-3x mb-2 opacity-50"></i>
+                        <p>暂无活动记录</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/supabase-service.js"></script>
-    <script src="js/leancloud-config.js"></script>
-    <script src="js/leancloud-service.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/firebase-service.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/data-service.js"></script>
+    <div class="modal-overlay" id="modalOverlay" onclick="toggleLogoutModal()"></div>
+    <div class="logout-modal" id="logoutModal">
+        <div class="modal-user">
+            <div class="modal-user-avatar">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="modal-user-info">
+                <h3>管理员</h3>
+                <p>班级管理员</p>
+            </div>
+        </div>
+        
+        <ul class="modal-links">
+            <li>
+                <a href="profile.html">
+                    <i class="fa-solid fa-user-circle"></i>
+                    <span>个人资料</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="fa-solid fa-cog"></i>
+                    <span>系统设置</span>
+                </a>
+            </li>
+            <li>
+                <a href="#">
+                    <i class="fa-solid fa-question-circle"></i>
+                    <span>帮助中心</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="modal-logout">
+            <button class="modal-logout-btn" onclick="logout()">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>退出登录</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2?v=4"></script>
+    <script src="js/supabase-config.js?v=4"></script>
+    <script src="js/supabase-service.js?v=4"></script>
+    <script src="js/leancloud-config.js?v=4"></script>
+    <script src="js/leancloud-service.js?v=4"></script>
+    <script src="js/firebase-config.js?v=4"></script>
+    <script src="js/firebase-service.js?v=4"></script>
+    <script src="js/data.js?v=4"></script>
+    <script src="js/data-service.js?v=4"></script>
     <script>
-        let currentUser = null;
-        
-        function updateUserInfo() {
-            if (currentUser) {
-                document.getElementById('userName').textContent = currentUser.name;
-                document.getElementById('welcomeUserName').textContent = currentUser.name;
-                document.getElementById('userAvatar').textContent = currentUser.name.substring(0, 2).toUpperCase();
-                
-                let roleText = '普通成员';
-                if (currentUser.role === 'admin') {
-                    roleText = '超级管理员';
-                } else if (currentUser.role === 'subAdmin') {
-                    roleText = '子管理员';
-                }
-                document.getElementById('userRole').textContent = roleText;
-                
-                const adminMenu = document.getElementById('adminMenu');
-                const mobileAdminMenu = document.getElementById('mobileAdminMenu');
-                const userManagementMenu = document.getElementById('userManagementMenu');
-                const mobileUserManagementMenu = document.getElementById('mobileUserManagementMenu');
-                
-                if (currentUser.role === 'admin' || currentUser.role === 'subAdmin') {
-                    if (adminMenu) {
-                        adminMenu.classList.remove('hidden');
-                        adminMenu.style.display = '';
-                    }
-                    if (mobileAdminMenu) {
-                        mobileAdminMenu.classList.remove('hidden');
-                        mobileAdminMenu.style.display = '';
-                    }
-                } else {
-                    if (adminMenu) {
-                        adminMenu.classList.add('hidden');
-                        adminMenu.style.display = 'none';
-                    }
-                    if (mobileAdminMenu) {
-                        mobileAdminMenu.classList.add('hidden');
-                        mobileAdminMenu.style.display = 'none';
-                    }
-                }
-                
-                if (currentUser.role === 'user') {
-                    if (userManagementMenu) userManagementMenu.style.display = 'none';
-                    if (mobileUserManagementMenu) mobileUserManagementMenu.style.display = 'none';
-                }
-                
-                if (currentUser.role === 'user') {
-                    const quickActions = document.getElementById('quickActions');
-                    quickActions.innerHTML = `
-                        <a href="attendance.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-all-300">
-                            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-calendar-check-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">参与签到</span>
-                        </a>
-                        
-                        <a href="exam.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-all-300">
-                            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-file-text-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">参与考试</span>
-                        </a>
-                        
-                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-200 transition-all-300">
-                            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-gift text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">参与抽奖</span>
-                        </a>
-                        
-                        <a href="vote.html" class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-all-300">
-                            <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center mb-2">
-                                <i class="fa fa-check-square-o text-xl"></i>
-                            </div>
-                            <span class="text-sm font-medium text-gray-700">参与投票</span>
-                        </a>
-                    `;
-                    
-                    const quickAddUser = document.getElementById('quickAddUser');
-                    if (quickAddUser) quickAddUser.style.display = 'none';
-                }
-                
-                const settingsLink = document.querySelector('#userMenu a[href="settings.html"]');
-                if (settingsLink && currentUser.role === 'user') {
-                    settingsLink.style.display = 'none';
-                }
-            }
-        }
-
-        function updateCurrentDate() {
+        function updateDate() {
             const now = new Date();
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
             document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', options);
         }
         
-        function formatDateTime(dateStr) {
-            const d = new Date(dateStr);
-            return d.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-        }
+        updateDate();
         
-        async function renderNotifications() {
-            const notifications = await DataService.getNotifications();
-            const container = document.getElementById('notificationList');
-            const badge = document.getElementById('notificationBadge');
-            
-            let filteredNotifications = notifications;
-            if (currentUser.role === 'user') {
-                filteredNotifications = notifications.filter(n => !n.forAdmin);
-            }
-            
-            const unreadCount = filteredNotifications.filter(n => !n.read).length;
-            if (unreadCount > 0) {
-                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-            
-            if (filteredNotifications.length === 0) {
-                container.innerHTML = `
-                    <div class="p-8 text-center text-gray-500">
-                        <i class="fa fa-bell-slash text-4xl mb-2 text-gray-300"></i>
-                        <p>暂无通知</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            container.innerHTML = filteredNotifications.map(n => `
-                <div class="p-4 border-b hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}" onclick="handleNotificationClick(${n.id}, '${n.type}', ${n.relatedId || 'null'})">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
-                            <i class="fa ${n.type === 'attendance' ? 'fa-calendar-check-o' : n.type === 'exam' ? 'fa-file-text-o' : n.type === 'vote' ? 'fa-check-square-o' : n.type === 'password_reset' ? 'fa-key' : 'fa-bell'} text-primary"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">${n.title}</p>
-                            <p class="text-xs text-gray-500 mt-1">${n.message}</p>
-                            <p class="text-xs text-gray-400 mt-1">${formatDateTime(n.createdAt)}</p>
-                        </div>
-                        ${!n.read ? '<span class="w-2 h-2 bg-red-500 rounded-full"></span>' : ''}
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        async function handleNotificationClick(notificationId, type, relatedId) {
-            await markAsRead(notificationId);
-            
-            if (type === 'password_reset' && (currentUser.role === 'admin' || currentUser.role === 'subAdmin')) {
-                document.getElementById('notificationModal').classList.add('hidden');
-                window.location.href = 'users.html';
-            }
-        }
-        
-        async function markAsRead(id) {
-            await DataService.markNotificationRead(id);
-            await renderNotifications();
-        }
-        
-        async function updateStatistics() {
-            const users = await DataService.getUsers();
-            const attendances = await DataService.getAttendances();
-            const attendanceRecords = await DataService.getAttendanceRecords();
-            const exams = await DataService.getExams();
-            const examRecords = await DataService.getExamRecords();
-            const votes = await DataService.getVotes();
-            const lotteries = await DataService.getLotteries();
-            
-            document.getElementById('totalUsers').textContent = users.length;
-            document.getElementById('totalAttendances').textContent = attendances.length;
-            document.getElementById('totalExams').textContent = exams.length;
-            document.getElementById('totalVotes').textContent = votes.length + lotteries.length;
-            
-            const todayRecords = attendanceRecords.filter(r => {
-                const recordDate = new Date(r.checkInTime).toDateString();
-                return recordDate === new Date().toDateString();
-            });
-            document.getElementById('todayCheckIns').textContent = todayRecords.length;
-            
-            if (examRecords.length > 0) {
-                const avgScore = Math.round(examRecords.reduce((sum, r) => sum + r.score, 0) / examRecords.length);
-                document.getElementById('avgExamScore').textContent = avgScore;
-            }
-        }
-
-        async function initAttendanceChart() {
-            const ctx = document.getElementById('attendanceChart').getContext('2d');
-            
-            const attendanceRecords = await DataService.getAttendanceRecords();
-            const users = await DataService.getUsers();
-            
-            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-            const today = new Date();
-            const weekStart = new Date(today);
-            weekStart.setDate(today.getDate() - today.getDay() + 1);
-            
-            const attendanceData = days.map((_, index) => {
-                const date = new Date(weekStart);
-                date.setDate(weekStart.getDate() + index);
-                const dateStr = date.toDateString();
-                return attendanceRecords.filter(r => new Date(r.checkInTime).toDateString() === dateStr).length;
-            });
-            
-            const totalData = days.map(() => users.length);
-            
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: days,
-                    datasets: [
-                        {
-                            label: '签到人数',
-                            data: attendanceData,
-                            backgroundColor: '#3B82F6',
-                            borderRadius: 4
-                        },
-                        {
-                            label: '班级总人数',
-                            data: totalData,
-                            backgroundColor: '#E5E7EB',
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: Math.max(...totalData, 10) + 5,
-                            ticks: {
-                                stepSize: Math.max(1, Math.floor(users.length / 5))
-                            }
-                        }
-                    }
+        async function loadDashboardData() {
+            try {
+                await DataService.init();
+                const currentUser = await DataService.getCurrentUser();
+                const users = await DataService.getUsers();
+                const attendances = await DataService.getAttendances();
+                const attendanceRecords = await DataService.getAttendanceRecords();
+                const exams = await DataService.getExams();
+                const votes = await DataService.getVotes();
+                const notifications = await DataService.getNotifications();
+                
+                let filteredUsers = users;
+                if (currentUser && currentUser.role !== 'admin') {
+                    filteredUsers = users.filter(u => String(u.group_id) === String(currentUser.group_id));
                 }
+                
+                document.getElementById('totalUsers').textContent = filteredUsers.length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todayRecords = attendanceRecords.filter(r => r.createdAt && r.createdAt.startsWith(today));
+            const activeAttendances = attendances.filter(a => a.status === 'active');
+            
+            let checkinRate = 0;
+                if (activeAttendances.length > 0 && filteredUsers.length > 0) {
+                    checkinRate = Math.round((todayRecords.length / filteredUsers.length) * 100);
+                }
+                document.getElementById('checkinRate').textContent = checkinRate + '%';
+                
+                const ongoingExams = exams.filter(e => {
+                    const endTime = new Date(e.endTime);
+                    return endTime > new Date();
+                });
+                document.getElementById('examCount').textContent = ongoingExams.length;
+                
+                const todayMessages = notifications.filter(n => n.createdAt && n.createdAt.startsWith(today));
+                document.getElementById('messageCount').textContent = todayMessages.length;
+                
+                renderCheckinChart(attendanceRecords);
+                renderRecentActivity(attendanceRecords, exams, votes, filteredUsers);
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+            }
+        }
+        
+        function renderCheckinChart(records) {
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const counts = [0, 0, 0, 0, 0, 0, 0];
+            
+            const now = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(now);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                const dayIndex = date.getDay();
+                const dayOfWeek = dayIndex === 0 ? 6 : dayIndex - 1;
+                counts[dayOfWeek] += records.filter(r => r.createdAt && r.createdAt.startsWith(dateStr)).length;
+            }
+            
+            const maxCount = Math.max(...counts, 1);
+            const barsContainer = document.getElementById('checkinChartBars');
+            barsContainer.innerHTML = '';
+            
+            counts.forEach(count => {
+                const height = (count / maxCount) * 100;
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.dataset.value = count;
+                bar.style.height = height + '%';
+                barsContainer.appendChild(bar);
             });
         }
         
-        async function loadRecentActivities() {
-            const attendanceRecords = await DataService.getAttendanceRecords();
-            const examRecords = await DataService.getExamRecords();
-            const users = await DataService.getUsers();
-            const exams = await DataService.getExams();
-            const votes = await DataService.getVotes();
-            const voteRecords = await DataService.getVoteRecords();
-            const lotteryRecords = await DataService.getLotteryRecords();
-            const lotteries = await DataService.getLotteries();
-            
+        function renderRecentActivity(attendanceRecords, exams, votes, users) {
             const activities = [];
             
-            attendanceRecords.slice(-10).forEach(record => {
+            attendanceRecords.forEach(record => {
                 const user = users.find(u => u.id === record.userId);
                 if (user) {
                     activities.push({
                         type: 'attendance',
                         user: user.name,
-                        time: record.signedAt || record.checkInTime,
-                        content: '完成签到'
+                        time: record.createdAt,
+                        action: '完成了签到'
                     });
                 }
             });
             
-            examRecords.slice(-10).forEach(record => {
-                const user = users.find(u => u.id === record.userId);
-                const exam = exams.find(e => e.id === record.examId);
-                if (user && exam) {
-                    activities.push({
-                        type: 'exam',
-                        user: user.name,
-                        time: record.submittedAt,
-                        content: `完成考试「${exam.title}」，得分：${record.score}分`
-                    });
-                }
+            exams.forEach(exam => {
+                activities.push({
+                    type: 'exam',
+                    user: exam.createdBy || '管理员',
+                    time: exam.createdAt,
+                    action: '创建了考试: ' + exam.title
+                });
             });
             
-            voteRecords.slice(-10).forEach(record => {
-                const user = users.find(u => u.id === record.userId);
-                const vote = votes.find(v => v.id === record.voteId);
-                if (user && vote) {
-                    activities.push({
-                        type: 'vote',
-                        user: user.name,
-                        time: record.participatedAt,
-                        content: `参与投票「${vote.title}」`
-                    });
-                }
-            });
-            
-            lotteryRecords.slice(-10).forEach(record => {
-                const user = users.find(u => u.id === record.userId);
-                const lottery = lotteries.find(l => l.id === record.lotteryId);
-                if (user && lottery) {
-                    activities.push({
-                        type: 'lottery',
-                        user: user.name,
-                        time: record.participatedAt,
-                        content: `参与抽奖「${lottery.title}」${record.prize ? '，获得：' + record.prize : ''}`
-                    });
-                }
+            votes.forEach(vote => {
+                activities.push({
+                    type: 'vote',
+                    user: vote.createdBy || '管理员',
+                    time: vote.createdAt,
+                    action: '创建了投票: ' + vote.title
+                });
             });
             
             activities.sort((a, b) => new Date(b.time) - new Date(a.time));
             
-            const container = document.getElementById('recentActivities');
+            const container = document.getElementById('recentActivity');
+            
             if (activities.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">暂无活动记录</p>';
+                container.innerHTML = `
+                    <div class="activity-item text-center py-8 text-muted">
+                        <i class="fa-solid fa-inbox fa-3x mb-2 opacity-50"></i>
+                        <p>暂无活动记录</p>
+                    </div>
+                `;
                 return;
             }
             
-            container.innerHTML = activities.slice(0, 10).map(activity => {
-                let icon = 'fa-calendar-check-o text-green-500';
-                if (activity.type === 'exam') icon = 'fa-file-text-o text-blue-500';
-                else if (activity.type === 'vote') icon = 'fa-check-square-o text-orange-500';
-                else if (activity.type === 'lottery') icon = 'fa-gift text-purple-500';
+            container.innerHTML = activities.slice(0, 5).map(act => {
+                let dotClass = 'success';
+                if (act.type === 'exam') dotClass = 'warning';
+                if (act.type === 'vote') dotClass = 'info';
                 
-                const time = new Date(activity.time).toLocaleString('zh-CN');
+                const timeAgo = formatTimeAgo(act.time);
+                
                 return `
-                    <div class="flex items-center py-3 border-b border-gray-100 last:border-0">
-                        <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                            <i class="fa ${icon}"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-800">${activity.user} ${activity.content}</p>
-                            <p class="text-xs text-gray-500">${time}</p>
+                    <div class="activity-item">
+                        <div class="activity-dot ${dotClass}"></div>
+                        <div class="activity-content">
+                            <h4 class="activity-title">${act.user} ${act.action}</h4>
+                            <p class="activity-time">${timeAgo}</p>
                         </div>
                     </div>
                 `;
             }).join('');
         }
-
-        const userMenuBtn = document.getElementById('userMenuBtn');
-        const userMenu = document.getElementById('userMenu');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const logoutMenuBtn = document.getElementById('logoutMenuBtn');
-        const logoutModal = document.getElementById('logoutModal');
-        const cancelLogout = document.getElementById('cancelLogout');
-        const confirmLogout = document.getElementById('confirmLogout');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-
-        function toggleSidebar() {
-            sidebar.classList.toggle('-translate-x-full');
-            sidebar.classList.toggle('translate-x-0');
-        }
-
-        sidebarToggle.addEventListener('click', toggleSidebar);
-
-        if (closeSidebarBtn) {
-            closeSidebarBtn.addEventListener('click', toggleSidebar);
-        }
-
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
-                if (window.innerWidth < 768) {
-                    sidebar.classList.add('-translate-x-full');
-                    sidebar.classList.remove('translate-x-0');
-                }
-            }
-        });
-
-        userMenuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            userMenu.classList.toggle('hidden');
-        });
         
-        userMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!userMenuBtn.contains(e.target) && !userMenu.contains(e.target)) {
-                userMenu.classList.add('hidden');
-            }
-        });
-
-        function showLogoutModal() {
-            logoutModal.classList.remove('hidden');
-        }
-
-        logoutBtn.addEventListener('click', showLogoutModal);
-        logoutMenuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLogoutModal();
-        });
-
-        cancelLogout.addEventListener('click', () => {
-            logoutModal.classList.add('hidden');
-        });
-
-        confirmLogout.addEventListener('click', async () => {
-            await DataService.clearCurrentUser();
-            window.location.href = 'index.html';
-        });
-
-        window.addEventListener('click', (e) => {
-            if (e.target === logoutModal) {
-                logoutModal.classList.add('hidden');
-            }
-        });
-        
-        document.getElementById('notificationBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            renderNotifications();
-            document.getElementById('notificationModal').classList.remove('hidden');
-        });
-        
-        document.getElementById('closeNotificationModal').addEventListener('click', () => {
-            document.getElementById('notificationModal').classList.add('hidden');
-        });
-        
-        document.getElementById('notificationModal').addEventListener('click', (e) => {
-            if (e.target.id === 'notificationModal') {
-                document.getElementById('notificationModal').classList.add('hidden');
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            currentUser = await DataService.getCurrentUser();
-            if (!currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
+        function formatTimeAgo(dateStr) {
+            if (!dateStr) return '未知时间';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
             
-            await updateUserInfo();
-            updateCurrentDate();
-            await updateStatistics();
-            await initAttendanceChart();
-            await loadRecentActivities();
-            await renderNotifications();
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return '刚刚';
+            if (minutes < 60) return minutes + '分钟前';
+            if (hours < 24) return hours + '小时前';
+            if (days < 7) return days + '天前';
+            return date.toLocaleDateString('zh-CN');
+        }
+        
+        function toggleLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            const overlay = document.getElementById('modalOverlay');
+            
+            modal.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+        
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('open');
+        }
+        
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
         });
     </script>
 </body>
