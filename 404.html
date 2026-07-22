@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>页面未找到</title>
+    <script>
+        (function() {
+            var path = window.location.pathname;
+            var pages = ['dashboard', 'attendance', 'attendance-new', 'exam', 'vote', 'profile', 'users', 'settings', 'grading', 'participate', 'chat'];
+            var pageName = path.substring(1).split('?')[0].split('#')[0];
+
+            // 防止重定向循环：如果已经重定向过一次，直接跳首页
+            if (sessionStorage.getItem('404_redirected') === path) {
+                sessionStorage.removeItem('404_redirected');
+                window.location.replace('/index.html');
+                return;
+            }
+
+            if (pages.includes(pageName) && !path.includes('.')) {
+                sessionStorage.setItem('404_redirected', path);
+                window.location.replace('/' + pageName + '.html');
+                return;
+            }
+
+            window.location.replace('/index.html');
+        })();
+    </script>
+</head>
+<body>
+</body>
+</html>

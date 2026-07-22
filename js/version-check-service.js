@@ -88,35 +88,20 @@ const VersionCheckService = {
     },
 
     showUpdateNotification(version) {
+        console.log('[VersionCheckService] 检测到新版本:', version.version, '，自动刷新页面...');
+        
         if (typeof window !== 'undefined' && window.showToast) {
-            window.showToast(`检测到新版本 v${version.version}，请刷新页面以获取最新功能`, 'info');
-        } else if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            new Notification('网站更新', {
-                body: `检测到新版本 v${version.version}`,
-                icon: '/icon.png'
-            });
+            window.showToast(`正在更新到新版本 v${version.version}...`, 'info');
         }
-
-        if (confirm(`检测到新版本 v${version.version}！\n\n更新内容：${version.changelog || '无'}\n\n是否立即刷新页面？`)) {
+        
+        setTimeout(() => {
             window.location.reload(true);
-        }
+        }, 1000);
     },
 
     forceRefresh() {
         this.stopAutoCheck();
-        
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(registrations => {
-                registrations.forEach(reg => {
-                    reg.unregister().then(() => {
-                        console.log('[VersionCheckService] Service Worker 已注销');
-                    });
-                });
-            });
-        }
-
         localStorage.clear();
-        
         window.location.href = window.location.href.split('?')[0];
     },
 

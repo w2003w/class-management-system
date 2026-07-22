@@ -1,5 +1,5 @@
 {
-    "version": "5.0.0",
-    "buildDate": "2026-07-21",
-    "changelog": "更新缓存机制，修复Service Worker问题，统一版本号"
+    "version": "6.0.0",
+    "buildDate": "2026-07-22",
+    "changelog": "移除Service Worker，修复Supabase多关系查询错误，修复路径重定向"
 }

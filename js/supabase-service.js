@@ -119,6 +119,30 @@ const SupabaseService = {
         }
         return this.initialized;
     },
+
+    async withRetry(fn, maxRetries = 3, delayMs = 1000) {
+        let lastError;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error;
+                console.warn(`[SupabaseService] 请求失败，尝试 ${attempt}/${maxRetries}:`, error.message);
+                
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delayMs * Math.pow(2, attempt - 1)));
+                }
+            }
+        }
+        throw lastError;
+    },
+
+    async withTimeout(promise, ms = 30000) {
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(`请求超时 (${ms}ms)`)), ms);
+        });
+        return Promise.race([promise, timeoutPromise]);
+    },
     
     async signIn(username, password) {
         if (!await this.ensureInit()) {
@@ -170,19 +194,28 @@ const SupabaseService = {
         if (!await this.ensureInit()) return [];
         
         try {
-            const { data, error } = await this.supabase
-                .from('users')
-                .select('*, groups(name)')
-                .order('id', { ascending: true });
-            
-            if (error) throw error;
-            return (data || []).map(user => {
-                const { groups, ...rest } = user;
-                return {
-                    ...rest,
-                    group_name: groups?.name || null
-                };
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    Promise.all([
+                        this.supabase.from('users').select('*').order('id', { ascending: true }),
+                        this.supabase.from('groups').select('id, name')
+                    ]),
+                    15000
+                );
             });
+            
+            const [usersResult, groupsResult] = result;
+            if (usersResult.error) throw usersResult.error;
+            
+            const groupsMap = {};
+            if (groupsResult.data) {
+                groupsResult.data.forEach(g => { groupsMap[g.id] = g.name; });
+            }
+            
+            return (usersResult.data || []).map(user => ({
+                ...user,
+                group_name: groupsMap[user.group_id] || null
+            }));
         } catch (error) {
             console.error('Get users error:', error);
             return [];
@@ -193,12 +226,18 @@ const SupabaseService = {
         if (!await this.ensureInit()) return null;
         
         try {
-            const { data, error } = await this.supabase
-                .from('users')
-                .select('*')
-                .eq('username', username)
-                .maybeSingle();
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    this.supabase
+                        .from('users')
+                        .select('*')
+                        .eq('username', username)
+                        .maybeSingle(),
+                    10000
+                );
+            });
             
+            const { data, error } = result;
             if (error) throw error;
             return data;
         } catch (error) {
@@ -283,10 +322,16 @@ const SupabaseService = {
         if (!await this.ensureInit()) return [];
         
         try {
-            const { data, error } = await this.supabase
-                .from('groups')
-                .select('*');
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    this.supabase
+                        .from('groups')
+                        .select('*'),
+                    10000
+                );
+            });
             
+            const { data, error } = result;
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -371,11 +416,17 @@ const SupabaseService = {
         if (!await this.ensureInit()) return [];
 
         try {
-            const { data, error } = await this.supabase
-                .from('attendances')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    this.supabase
+                        .from('attendances')
+                        .select('*')
+                        .order('created_at', { ascending: false }),
+                    15000
+                );
+            });
+            
+            const { data, error } = result;
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
         } catch (error) {
@@ -462,11 +513,17 @@ const SupabaseService = {
         if (!await this.ensureInit()) return [];
 
         try {
-            const { data, error } = await this.supabase
-                .from('attendance_records')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    this.supabase
+                        .from('attendance_records')
+                        .select('*')
+                        .order('created_at', { ascending: false }),
+                    15000
+                );
+            });
+            
+            const { data, error } = result;
             if (error) throw error;
             return this.convertKeysToCamelCase(data || []);
         } catch (error) {
@@ -586,11 +643,17 @@ const SupabaseService = {
         if (!await this.ensureInit()) return [];
         
         try {
-            const { data, error } = await this.supabase
-                .from('exams')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const result = await this.withRetry(async () => {
+                return await this.withTimeout(
+                    this.supabase
+                        .from('exams')
+                        .select('*')
+                        .order('created_at', { ascending: false }),
+                    15000
+                );
+            });
             
+            const { data, error } = result;
             if (error) throw error;
             return data || [];
         } catch (error) {
