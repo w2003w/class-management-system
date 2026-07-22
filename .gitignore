@@ -17,9 +17,9 @@ Thumbs.db
 npm-debug.log*
 
 # Environment
-.env
 .env.local
 .env.*.local
+!nbjm/.env
 
 # Build
 dist/
