@@ -486,12 +486,20 @@ def get_all_model_deduct_rules():
 def update_model_deduct_rule(model_name, module_name, deduct_count):
     """更新模型扣费规则"""
     client = get_client()
-    client.table('model_deduct_rules').upsert({
-        'model_name': model_name,
-        'module_name': module_name,
+    # 先尝试更新
+    result = client.table('model_deduct_rules').update({
         'deduct_count': deduct_count,
         'updated_at': datetime.utcnow().isoformat()
-    }).execute()
+    }).eq('model_name', model_name).eq('module_name', module_name).execute()
+    
+    # 如果没有更新任何行，则插入新记录
+    if not result.data:
+        client.table('model_deduct_rules').insert({
+            'model_name': model_name,
+            'module_name': module_name,
+            'deduct_count': deduct_count,
+            'updated_at': datetime.utcnow().isoformat()
+        }).execute()
 
 
 def delete_model_deduct_rule(model_name, module_name):
