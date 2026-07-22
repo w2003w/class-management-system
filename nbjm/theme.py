@@ -208,6 +208,9 @@ def apply_theme():
     return is_dark
 
 def theme_toggle_button():
+    # 确保 theme 已初始化
+    if 'theme' not in st.session_state:
+        st.session_state['theme'] = 'light'
     theme_icon = "🌙" if st.session_state['theme'] == 'light' else "☀️"
     label = f"{theme_icon} {'切换暗色' if st.session_state['theme'] == 'light' else '切换亮色'}"
     if st.sidebar.button(label, key="theme_toggle"):
