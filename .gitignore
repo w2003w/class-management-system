@@ -30,3 +30,10 @@ build/
 *.temp
 
 .vercel
+
+# NBjm Python project
+nbjm/.venv/
+nbjm/__pycache__/
+nbjm/**/__pycache__/
+nbjm/data/
+nbjm/.env

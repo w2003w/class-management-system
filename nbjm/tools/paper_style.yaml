@@ -1,0 +1,50 @@
+h1:
+  font:
+    default: 黑体
+    east-asia: 黑体
+    size: 22
+  line-spacing: 0
+  space:
+    before: 11
+    after: 11
+
+h2:
+  font:
+    default: 黑体
+    east-asia: 黑体
+    size: 16
+  space:
+    before: 11
+    after: 11
+
+h3:
+  font:
+    default: 黑体
+    east-asia: 黑体
+    size: 14
+  space:
+    before: 11
+    after: 11
+
+h4:
+  font:
+    default: 楷体
+    east-asia: 楷体
+    size: 12
+    extra:
+      - bold
+  space:
+    before: 11
+    after: 11
+
+normal:
+  font:
+    default: Times New Roman
+    east-asia: 宋体
+    size: 12
+    color: "000000"
+  line-spacing: 1.5
+  first-line-indent: 2
+  space:
+    before: 7
+    after: 7
