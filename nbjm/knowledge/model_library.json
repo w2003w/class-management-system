@@ -1,0 +1,146 @@
+{
+    "灰色预测模型 GM(1,1)": {
+        "category": "预测类",
+        "description": "基于灰色系统理论，适用于小样本（≥4个数据点）、贫信息、不确定系统的预测。通过累加生成序列减弱随机性，建立一阶微分方程模型。",
+        "applicable": "GDP预测、人口预测、用电量预测、气象数据预测等",
+        "pros": ["样本需求量小（4个数据点即可）", "计算简单", "短期预测精度高"],
+        "cons": ["长期预测误差累积", "对非线性数据适应性差", "只能预测单调趋势"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef GM11(x0):\n    x0 = np.array(x0, dtype=float)\n    x1 = np.cumsum(x0)\n    z1 = (x1[:-1] + x1[1:]) / 2.0\n    B = np.column_stack([-z1, np.ones(len(z1))])\n    Y = x0[1:].reshape(-1, 1)\n    ab, _, _, _ = np.linalg.lstsq(B, Y, rcond=None)\n    a, b = ab[0][0], ab[1][0]\n    x1_hat = (x0[0] - b/a) * np.exp(-a * np.arange(len(x0))) + b/a\n    x0_hat = np.diff(x1_hat)\n    x0_hat = np.insert(x0_hat, 0, x0[0])\n    return x0_hat, a, b\n\n# 示例数据\nx0 = [100, 120, 150, 180, 220]\nx0_hat, a, b = GM11(x0)\n\n# 绘制预测结果图\nplt.figure(figsize=(10, 6))\nplt.plot(x0, 'o-', label='原始数据', color='blue')\nplt.plot(x0_hat, 's--', label='预测数据', color='red')\nplt.title('灰色预测模型 GM(1,1) 预测结果')\nplt.xlabel('时间')\nplt.ylabel('数值')\nplt.legend()\nplt.grid(True)\nplt.savefig('gm11_prediction.png', dpi=100)\nplt.show()\n\nprint(f\"原始数据: {x0}\")\nprint(f\"预测数据: {x0_hat}\")\nprint(f\"发展系数a: {a:.4f}\")\nprint(f\"灰色作用量b: {b:.4f}\")"
+    },
+    "层次分析法 (AHP)": {
+        "category": "评价类",
+        "description": "将决策问题分解为目标层、准则层、方案层，通过构造两两比较判断矩阵，计算权重向量，进行一致性检验，最终得出综合排序。",
+        "applicable": "方案选优、风险评估、资源分配、选址问题等",
+        "pros": ["系统性、层次化", "定性与定量结合", "不需要大量样本"],
+        "cons": ["主观性强", "指标过多时一致性难保证", "比较矩阵构造较繁琐"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef ahp(comparison_matrix):\n    n = comparison_matrix.shape[0]\n    eigenvalues, eigenvectors = np.linalg.eig(comparison_matrix)\n    max_idx = np.argmax(eigenvalues)\n    weights = eigenvectors[:, max_idx].real\n    weights = weights / np.sum(weights)\n    ci = (eigenvalues[max_idx].real - n) / (n - 1)\n    ri = [0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45]\n    cr = ci / ri[n-1] if n > 2 else 0\n    return weights, cr\n\n# 示例：3个方案的比较矩阵\ncomparison_matrix = np.array([[1, 2, 5], [1/2, 1, 3], [1/5, 1/3, 1]])\nweights, cr = ahp(comparison_matrix)\n\n# 绘制权重分布图\nlabels = ['方案A', '方案B', '方案C']\nplt.figure(figsize=(8, 6))\nplt.bar(labels, weights, color=['#1f77b4', '#ff7f0e', '#2ca02c'])\nplt.title('层次分析法权重分布')\nplt.xlabel('方案')\nplt.ylabel('权重')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('ahp_weights.png', dpi=100)\nplt.show()\n\nprint(f\"权重向量: {weights}\")\nprint(f\"一致性比率CR: {cr:.4f}\")\nprint(f\"一致性检验{'通过' if cr < 0.1 else '未通过'}\")"
+    },
+    "TOPSIS 法": {
+        "category": "评价类",
+        "description": "通过构造多属性决策问题的理想解和负理想解，计算各评价对象与理想解的相对贴近度进行排序。",
+        "applicable": "综合评价、供应商选择、方案排序等",
+        "pros": ["原理简单直观", "充分利用原始数据", "计算结果客观"],
+        "cons": ["需要预先确定权重", "对指标相关性敏感", "不能处理模糊信息"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef topsis(data, weights=None):\n    n, m = data.shape\n    if weights is None:\n        weights = np.ones(m) / m\n    normalized = data / np.sqrt(np.sum(data**2, axis=0))\n    weighted = normalized * weights\n    ideal_positive = np.max(weighted, axis=0)\n    ideal_negative = np.min(weighted, axis=0)\n    d_positive = np.sqrt(np.sum((weighted - ideal_positive)**2, axis=1))\n    d_negative = np.sqrt(np.sum((weighted - ideal_negative)**2, axis=1))\n    closeness = d_negative / (d_positive + d_negative)\n    return closeness, np.argsort(closeness)[::-1]\n\n# 示例：4个评价对象，3个评价指标\ndata = np.array([[90, 85, 95], [80, 90, 85], [85, 80, 90], [95, 85, 80]])\nweights = [0.3, 0.3, 0.4]\ncloseness, ranking = topsis(data, weights)\n\n# 绘制TOPSIS评价结果\nlabels = ['对象A', '对象B', '对象C', '对象D']\nplt.figure(figsize=(10, 6))\nplt.bar(labels, closeness, color='#1f77b4')\nplt.title('TOPSIS法评价结果')\nplt.xlabel('评价对象')\nplt.ylabel('贴近度')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('topsis_result.png', dpi=100)\nplt.show()\n\nprint(f\"贴近度: {closeness}\")\nprint(f\"排序: {ranking + 1}\")"
+    },
+    "熵权法": {
+        "category": "评价类",
+        "description": "根据指标的变异程度来确定权重，熵值越小，指标提供的信息量越大，权重越大。",
+        "applicable": "多指标综合评价、权重确定",
+        "pros": ["客观赋权", "避免主观因素", "反映数据本身的信息含量"],
+        "cons": ["对数据依赖性强", "指标间独立性要求高", "极端值影响大"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef entropy_weight(data):\n    normalized = data / np.sum(data, axis=0)\n    p = normalized / np.sum(normalized, axis=0)\n    p = np.where(p == 0, 1e-10, p)\n    entropy = -np.sum(p * np.log(p), axis=0) / np.log(len(data))\n    weights = (1 - entropy) / np.sum(1 - entropy)\n    return weights\n\n# 示例数据\ndata = np.array([[100, 80, 90], [85, 95, 75], [90, 85, 95], [75, 90, 80]])\nweights = entropy_weight(data)\n\n# 绘制熵权法权重分布\nlabels = ['指标1', '指标2', '指标3']\nplt.figure(figsize=(8, 6))\nplt.pie(weights, labels=labels, autopct='%1.2f%%', colors=['#1f77b4', '#ff7f0e', '#2ca02c'])\nplt.title('熵权法权重分布')\nplt.savefig('entropy_weights.png', dpi=100)\nplt.show()\n\nprint(f\"熵权法权重: {weights}\")"
+    },
+    "线性规划 (LP)": {
+        "category": "优化类",
+        "description": "在满足一组线性约束条件下，求解线性目标函数的最大值或最小值。标准形式为 min/max cᵀx s.t. Ax ≤ b, x ≥ 0。",
+        "applicable": "生产调度、资源分配、运输问题、投资组合等",
+        "pros": ["数学理论成熟", "求解效率高", "有标准求解器"],
+        "cons": ["要求所有关系都是线性的", "不能处理整数变量"],
+        "baseline": true,
+        "code_template": "from scipy.optimize import linprog\nimport numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef linear_programming(c, A_ub, b_ub, A_eq=None, b_eq=None):\n    result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, method='highs')\n    return result.x, result.fun\n\n# 示例：max z = 3x1 + 4x2, s.t. x1 + x2 ≤ 10, 2x1 + x2 ≤ 16, x1,x2 ≥ 0\nc = [-3, -4]\nA_ub = [[1, 1], [2, 1]]\nb_ub = [10, 16]\nx, z = linear_programming(c, A_ub, b_ub)\n\n# 绘制可行域\nx1 = np.linspace(0, 10, 100)\nx2_1 = 10 - x1\nx2_2 = 16 - 2 * x1\n\nplt.figure(figsize=(8, 6))\nplt.fill_between(x1, np.minimum(x2_1, x2_2), where=(x1 >= 0) & (np.minimum(x2_1, x2_2) >= 0), alpha=0.3, color='#1f77b4')\nplt.plot(x1, x2_1, 'r--', label='x1 + x2 = 10')\nplt.plot(x1, x2_2, 'g--', label='2x1 + x2 = 16')\nplt.scatter(x[0], x[1], color='red', s=100, label=f'最优解 ({x[0]:.2f}, {x[1]:.2f})')\nplt.title('线性规划可行域与最优解')\nplt.xlabel('x1')\nplt.ylabel('x2')\nplt.legend()\nplt.grid(True)\nplt.savefig('lp_feasible_region.png', dpi=100)\nplt.show()\n\nprint(f\"最优解: x1={x[0]:.2f}, x2={x[1]:.2f}\")\nprint(f\"最优目标值: z={-z:.2f}\")"
+    },
+    "多目标规划": {
+        "category": "优化类",
+        "description": "同时考虑多个相互冲突的目标函数。常用方法：加权法、ε-约束法、帕累托最优、目标规划。",
+        "applicable": "经济调度、资源配置优化、工程设计中多目标权衡",
+        "pros": ["全面考虑多个目标", "提供帕累托最优解", "适合复杂决策"],
+        "cons": ["求解复杂", "需要决策者偏好信息", "计算量大"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.optimize import linprog\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 示例：双目标规划\n# min f1 = x1 + x2, max f2 = 3x1 + 2x2\ndef solve_multi_objective(weights):\n    c = [weights[0] - 3 * weights[1], weights[0] - 2 * weights[1]]\n    A_ub = [[1, 2], [3, 1], [-1, 0], [0, -1]]\n    b_ub = [8, 9, 0, 0]\n    result = linprog(c, A_ub=A_ub, b_ub=b_ub, method='highs')\n    return result.x, [-c[0]*result.x[0] - c[1]*result.x[1]]\n\n# 生成帕累托前沿\nf1_values = []\nf2_values = []\nfor w in np.linspace(0, 1, 20):\n    x, _ = solve_multi_objective([w, 1-w])\n    f1_values.append(x[0] + x[1])\n    f2_values.append(3*x[0] + 2*x[1])\n\nplt.figure(figsize=(8, 6))\nplt.plot(f1_values, f2_values, 'o-', color='#1f77b4')\nplt.title('多目标规划帕累托前沿')\nplt.xlabel('f1 = x1 + x2')\nplt.ylabel('f2 = 3x1 + 2x2')\nplt.grid(True)\nplt.savefig('multi_objective_pareto.png', dpi=100)\nplt.show()\n\nprint(\"帕累托前沿已生成并保存\")"
+    },
+    "蒙特卡洛仿真": {
+        "category": "优化类",
+        "description": "通过随机采样和统计模拟来求解复杂问题。多次重复随机试验，根据结果的统计特征得出结论。",
+        "applicable": "风险分析、可靠性评估、复杂系统仿真、参数优化",
+        "pros": ["适用范围广", "可以处理复杂非线性", "直观易懂"],
+        "cons": ["计算量大", "结果具有随机性", "收敛速度慢"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\ndef monte_carlo_simulation(func, param_ranges, n_samples=10000):\n    params = []\n    for low, high in param_ranges:\n        params.append(np.random.uniform(low, high, n_samples))\n    params = np.array(params).T\n    results = np.array([func(p) for p in params])\n    return params, results\n\ndef profit_function(params):\n    price, cost, demand = params\n    return (price - cost) * demand\n\n# 参数范围：价格[10, 50], 成本[5, 30], 需求[100, 1000]\nparam_ranges = [(10, 50), (5, 30), (100, 1000)]\n_, profits = monte_carlo_simulation(profit_function, param_ranges)\n\nplt.figure(figsize=(10, 6))\nplt.hist(profits, bins=50, color='#1f77b4', alpha=0.7)\nplt.title('蒙特卡洛仿真利润分布')\nplt.xlabel('利润')\nplt.ylabel('频数')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('monte_carlo_profit.png', dpi=100)\nplt.show()\n\nprint(f\"平均利润: {np.mean(profits):.2f}\")\nprint(f\"利润标准差: {np.std(profits):.2f}\")\nprint(f\"95%置信区间: [{np.percentile(profits, 2.5):.2f}, {np.percentile(profits, 97.5):.2f}]\")"
+    },
+    "K-means 聚类": {
+        "category": "机器学习",
+        "description": "基于距离的无监督聚类算法，将数据划分为K个簇，每个簇内的数据点距离最近的聚类中心。",
+        "applicable": "客户细分、市场定位、图像分割、异常检测",
+        "pros": ["简单高效", "易于理解", "可处理大规模数据"],
+        "cons": ["需要预先指定K", "对初始中心敏感", "对异常值敏感"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.cluster import KMeans\nfrom sklearn.datasets import make_blobs\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 生成示例数据\nX, y_true = make_blobs(n_samples=300, centers=4, cluster_std=0.60, random_state=0)\n\n# K-means聚类\nkmeans = KMeans(n_clusters=4, random_state=0)\ny_kmeans = kmeans.fit_predict(X)\n\n# 绘制聚类结果\nplt.figure(figsize=(10, 6))\nplt.scatter(X[:, 0], X[:, 1], c=y_kmeans, s=50, cmap='viridis')\ncenters = kmeans.cluster_centers_\nplt.scatter(centers[:, 0], centers[:, 1], c='red', s=200, alpha=0.75, marker='X')\nplt.title('K-means聚类结果')\nplt.xlabel('特征1')\nplt.ylabel('特征2')\nplt.savefig('kmeans_clustering.png', dpi=100)\nplt.show()\n\nprint(f\"聚类中心: {centers}\")\nprint(f\"每个簇的样本数: {np.bincount(y_kmeans)}\")"
+    },
+    "DBSCAN 聚类": {
+        "category": "机器学习",
+        "description": "基于密度的空间聚类算法，可以发现任意形状的簇，并识别噪声点。",
+        "applicable": "空间数据分析、异常检测、地理信息系统",
+        "pros": ["不需要预先指定K", "可以发现任意形状", "能识别噪声"],
+        "cons": ["参数选择敏感", "对密度变化的数据效果差", "计算复杂度高"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.cluster import DBSCAN\nfrom sklearn.datasets import make_moons\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 生成月亮形状数据\nX, y_true = make_moons(n_samples=200, noise=0.05, random_state=0)\n\n# DBSCAN聚类\ndbscan = DBSCAN(eps=0.3, min_samples=5)\ny_dbscan = dbscan.fit_predict(X)\n\n# 绘制聚类结果\nplt.figure(figsize=(10, 6))\nplt.scatter(X[:, 0], X[:, 1], c=y_dbscan, s=50, cmap='viridis')\nplt.title('DBSCAN聚类结果')\nplt.xlabel('特征1')\nplt.ylabel('特征2')\nplt.savefig('dbscan_clustering.png', dpi=100)\nplt.show()\n\nprint(f\"簇的数量: {len(set(y_dbscan)) - (1 if -1 in y_dbscan else 0)}\")\nprint(f\"噪声点数量: {np.sum(y_dbscan == -1)}\")"
+    },
+    "Logistic 回归": {
+        "category": "机器学习",
+        "description": "用于二分类问题的统计模型，通过sigmoid函数将线性组合映射到[0,1]区间，表示概率。",
+        "applicable": "信用评分、疾病诊断、客户流失预测、垃圾邮件过滤",
+        "pros": ["输出可解释", "训练速度快", "计算资源需求低"],
+        "cons": ["假设线性关系", "对特征工程依赖强", "容易欠拟合"],
+        "baseline": true,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.linear_model import LogisticRegression\nfrom sklearn.datasets import make_classification\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 生成分类数据\nX, y = make_classification(n_samples=200, n_features=2, n_redundant=0, random_state=0)\n\n# Logistic回归\nclf = LogisticRegression()\nclf.fit(X, y)\n\n# 绘制决策边界\nh = 0.02\nx_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1\ny_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1\nxx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))\nZ = clf.predict(np.c_[xx.ravel(), yy.ravel()])\nZ = Z.reshape(xx.shape)\n\nplt.figure(figsize=(10, 6))\nplt.contourf(xx, yy, Z, alpha=0.3, cmap='viridis')\nplt.scatter(X[:, 0], X[:, 1], c=y, s=50, cmap='viridis')\nplt.title('Logistic回归决策边界')\nplt.xlabel('特征1')\nplt.ylabel('特征2')\nplt.savefig('logistic_decision_boundary.png', dpi=100)\nplt.show()\n\nprint(f\"准确率: {clf.score(X, y):.4f}\")\nprint(f\"系数: {clf.coef_[0]}\")\nprint(f\"截距: {clf.intercept_[0]:.4f}\")"
+    },
+    "随机森林": {
+        "category": "机器学习",
+        "description": "集成学习算法，通过构建多个决策树并投票得出结果，具有良好的抗过拟合能力。",
+        "applicable": "分类回归、特征重要性分析、缺失值处理",
+        "pros": ["精度高", "抗过拟合", "可以处理高维数据"],
+        "cons": ["训练时间长", "模型复杂度高", "可解释性差"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.datasets import load_iris\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 加载鸢尾花数据集\niris = load_iris()\nX, y = iris.data, iris.target\n\n# 随机森林分类\nrf = RandomForestClassifier(n_estimators=100, random_state=0)\nrf.fit(X, y)\n\n# 特征重要性\nimportances = rf.feature_importances_\nfeatures = iris.feature_names\n\nplt.figure(figsize=(10, 6))\nplt.barh(features, importances, color='#1f77b4')\nplt.title('随机森林特征重要性')\nplt.xlabel('重要性')\nplt.savefig('random_forest_importance.png', dpi=100)\nplt.show()\n\nprint(f\"准确率: {rf.score(X, y):.4f}\")\nprint(f\"特征重要性: {dict(zip(features, importances))}\")"
+    },
+    "XGBoost": {
+        "category": "机器学习",
+        "description": "梯度提升树算法，通过串行训练多个弱分类器，每棵树拟合前一棵树的残差。",
+        "applicable": "分类回归、排序问题、特征选择",
+        "pros": ["精度极高", "支持并行计算", "内置正则化"],
+        "cons": ["训练时间较长", "参数调优复杂", "内存消耗大"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom xgboost import XGBClassifier\nfrom sklearn.datasets import load_wine\nfrom sklearn.model_selection import train_test_split\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 加载葡萄酒数据集\nwine = load_wine()\nX, y = wine.data, wine.target\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)\n\n# XGBoost分类\nmodel = XGBClassifier(n_estimators=100, learning_rate=0.1, random_state=0)\nmodel.fit(X_train, y_train)\n\n# 特征重要性\nimportances = model.feature_importances_\nfeatures = wine.feature_names\n\nplt.figure(figsize=(10, 6))\nplt.barh(features, importances, color='#2ca02c')\nplt.title('XGBoost特征重要性')\nplt.xlabel('重要性')\nplt.savefig('xgboost_importance.png', dpi=100)\nplt.show()\n\nprint(f\"训练准确率: {model.score(X_train, y_train):.4f}\")\nprint(f\"测试准确率: {model.score(X_test, y_test):.4f}\")"
+    },
+    "PCA 主成分分析": {
+        "category": "评价类",
+        "description": "通过正交变换将高维数据转换为低维数据，保留数据的最大方差。",
+        "applicable": "数据降维、特征提取、可视化、数据压缩",
+        "pros": ["减少维度", "去除噪声", "便于可视化"],
+        "cons": ["需要标准化", "主成分解释性可能不强", "丢失部分信息"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom sklearn.decomposition import PCA\nfrom sklearn.datasets import load_iris\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 加载鸢尾花数据集\niris = load_iris()\nX, y = iris.data, iris.target\n\n# PCA降维到2维\npca = PCA(n_components=2)\nX_pca = pca.fit_transform(X)\n\n# 绘制降维结果\nplt.figure(figsize=(10, 6))\nfor target, color in zip(range(3), ['#1f77b4', '#ff7f0e', '#2ca02c']):\n    plt.scatter(X_pca[y == target, 0], X_pca[y == target, 1], c=color, label=iris.target_names[target])\nplt.title('PCA降维可视化')\nplt.xlabel(f'主成分1 ({pca.explained_variance_ratio_[0]:.2%})')\nplt.ylabel(f'主成分2 ({pca.explained_variance_ratio_[1]:.2%})')\nplt.legend()\nplt.savefig('pca_result.png', dpi=100)\nplt.show()\n\nprint(f\"总方差解释率: {sum(pca.explained_variance_ratio_):.2%}\")\nprint(f\"特征值: {pca.explained_variance_}\")"
+    },
+    "ARIMA 模型": {
+        "category": "预测类",
+        "description": "自回归综合移动平均模型，适用于平稳时间序列预测。包含自回归(AR)、差分(I)、移动平均(MA)三个部分。",
+        "applicable": "经济预测、销售预测、库存预测、气象预测",
+        "pros": ["理论成熟", "短期预测精度高", "可以处理季节性"],
+        "cons": ["需要平稳序列", "参数选择复杂", "对异常值敏感"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom statsmodels.tsa.arima.model import ARIMA\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 生成示例时间序列\nnp.random.seed(0)\ndata = np.cumsum(np.random.randn(100)) + 100\n\n# ARIMA模型\nmodel = ARIMA(data, order=(5, 1, 0))\nresult = model.fit()\n\n# 预测\nforecast = result.get_forecast(steps=20)\nforecast_values = forecast.predicted_mean\nconf_int = forecast.conf_int()\n\nplt.figure(figsize=(12, 6))\nplt.plot(data, label='原始数据', color='blue')\nplt.plot(np.arange(len(data), len(data)+20), forecast_values, label='预测数据', color='red')\nplt.fill_between(np.arange(len(data), len(data)+20), conf_int[:, 0], conf_int[:, 1], color='red', alpha=0.2)\nplt.title('ARIMA时间序列预测')\nplt.xlabel('时间')\nplt.ylabel('数值')\nplt.legend()\nplt.grid(True)\nplt.savefig('arima_forecast.png', dpi=100)\nplt.show()\n\nprint(f\"预测值: {forecast_values}\")\nprint(f\"95%置信区间: {conf_int}\")"
+    },
+    "LSTM 神经网络": {
+        "category": "预测类",
+        "description": "长短期记忆网络，一种特殊的循环神经网络，可以学习长期依赖关系。",
+        "applicable": "时间序列预测、语音识别、自然语言处理、序列生成",
+        "pros": ["可以处理长期依赖", "自适应特征提取", "适合复杂序列"],
+        "cons": ["训练慢", "需要大量数据", "调参复杂"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom tensorflow.keras.models import Sequential\nfrom tensorflow.keras.layers import LSTM, Dense\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# 生成示例数据\ntime = np.linspace(0, 10, 200)\ndata = np.sin(time) + np.random.normal(0, 0.1, 200)\n\n# 准备数据\ndef create_dataset(data, look_back=10):\n    X, Y = [], []\n    for i in range(len(data)-look_back):\n        X.append(data[i:i+look_back])\n        Y.append(data[i+look_back])\n    return np.array(X), np.array(Y)\n\nlook_back = 10\nX, y = create_dataset(data, look_back)\nX = np.reshape(X, (X.shape[0], X.shape[1], 1))\n\n# LSTM模型\nmodel = Sequential()\nmodel.add(LSTM(50, input_shape=(look_back, 1)))\nmodel.add(Dense(1))\nmodel.compile(loss='mse', optimizer='adam')\nmodel.fit(X, y, epochs=50, batch_size=32, verbose=0)\n\n# 预测\npredictions = model.predict(X)\n\nplt.figure(figsize=(12, 6))\nplt.plot(data, label='原始数据', color='blue')\nplt.plot(np.arange(look_back, len(data)), predictions, label='预测数据', color='red')\nplt.title('LSTM时间序列预测')\nplt.xlabel('时间')\nplt.ylabel('数值')\nplt.legend()\nplt.grid(True)\nplt.savefig('lstm_forecast.png', dpi=100)\nplt.show()\n\nprint(\"LSTM预测完成，结果已保存\")"
+    },
+    "微分方程模型": {
+        "category": "机理建模",
+        "description": "基于物理规律或系统机理建立的数学模型，通过微分方程描述系统的动态变化。",
+        "applicable": "物理系统建模、生物种群增长、传染病传播、化学动力学",
+        "pros": ["具有物理意义", "可以预测系统行为", "参数可解释"],
+        "cons": ["需要先验知识", "参数估计困难", "模型验证复杂"],
+        "baseline": false,
+        "code_template": "import numpy as np\nimport matplotlib.pyplot as plt\nfrom scipy.integrate import odeint\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\n# SIR传染病模型\ndef sir_model(y, t, beta, gamma):\n    S, I, R = y\n    dSdt = -beta * S * I\n    dIdt = beta * S * I - gamma * I\n    dRdt = gamma * I\n    return [dSdt, dIdt, dRdt]\n\n# 参数\nbeta = 0.3\ngamma = 0.1\n\n# 初始条件\nS0, I0, R0 = 999, 1, 0\n\n# 时间范围\nt = np.linspace(0, 100, 100)\n\n# 求解\nresult = odeint(sir_model, [S0, I0, R0], t, args=(beta, gamma))\nS, I, R = result.T\n\nplt.figure(figsize=(10, 6))\nplt.plot(t, S, label='易感人群', color='blue')\nplt.plot(t, I, label='感染人群', color='red')\nplt.plot(t, R, label='康复人群', color='green')\nplt.title('SIR传染病模型')\nplt.xlabel('时间')\nplt.ylabel('人数')\nplt.legend()\nplt.grid(True)\nplt.savefig('sir_model.png', dpi=100)\nplt.show()\n\nprint(f\"基本再生数R0: {beta/gamma:.2f}\")\nprint(f\"峰值感染人数: {max(I):.0f}\")"
+    }
+}

@@ -1,0 +1,86 @@
+{
+    "折线图": {
+        "category": "趋势分析",
+        "description": "展示数据随时间或连续变量的变化趋势",
+        "applicable": "时间序列预测、趋势分析、数据对比",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.plot(x_data, y_data, 'o-', label='数据', color='#1f77b4')\nplt.title('折线图标题')\nplt.xlabel('X轴标签')\nplt.ylabel('Y轴标签')\nplt.legend()\nplt.grid(True)\nplt.savefig('line_chart.png', dpi=100)\nplt.show()",
+        "suggested_models": ["灰色预测模型 GM(1,1)", "ARIMA 模型", "LSTM 神经网络"]
+    },
+    "柱状图": {
+        "category": "对比分析",
+        "description": "展示不同类别或组之间的数值对比",
+        "applicable": "分类数据对比、权重分布、频率统计",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.bar(labels, values, color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])\nplt.title('柱状图标题')\nplt.xlabel('类别')\nplt.ylabel('数值')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('bar_chart.png', dpi=100)\nplt.show()",
+        "suggested_models": ["层次分析法 (AHP)", "TOPSIS 法", "熵权法"]
+    },
+    "饼图": {
+        "category": "占比分析",
+        "description": "展示各部分占总体的比例关系",
+        "applicable": "权重分析、市场份额、资源分配",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(8, 8))\nplt.pie(values, labels=labels, autopct='%1.2f%%', colors=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'])\nplt.title('饼图标题')\nplt.savefig('pie_chart.png', dpi=100)\nplt.show()",
+        "suggested_models": ["熵权法", "层次分析法 (AHP)"]
+    },
+    "散点图": {
+        "category": "相关性分析",
+        "description": "展示两个变量之间的关系和分布",
+        "applicable": "相关性分析、聚类分析、异常检测",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.scatter(x_data, y_data, c=colors, s=50, cmap='viridis')\nplt.title('散点图标题')\nplt.xlabel('X轴标签')\nplt.ylabel('Y轴标签')\nplt.colorbar(label='颜色标签')\nplt.grid(True)\nplt.savefig('scatter_plot.png', dpi=100)\nplt.show()",
+        "suggested_models": ["K-means 聚类", "DBSCAN 聚类", "Logistic 回归"]
+    },
+    "热力图": {
+        "category": "相关性分析",
+        "description": "展示矩阵数据的相关性或密度",
+        "applicable": "相关系数矩阵、特征重要性、密度分析",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\nimport seaborn as sns\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 8))\nsns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', square=True)\nplt.title('热力图标题')\nplt.savefig('heatmap.png', dpi=100)\nplt.show()",
+        "suggested_models": ["PCA 主成分分析", "随机森林", "XGBoost"]
+    },
+    "直方图": {
+        "category": "分布分析",
+        "description": "展示数据的频率分布和统计特征",
+        "applicable": "数据分布、统计分析、蒙特卡洛仿真",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.hist(data, bins=30, color='#1f77b4', alpha=0.7, edgecolor='black')\nplt.title('直方图标题')\nplt.xlabel('数值')\nplt.ylabel('频数')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('histogram.png', dpi=100)\nplt.show()",
+        "suggested_models": ["蒙特卡洛仿真", "Logistic 回归"]
+    },
+    "箱线图": {
+        "category": "统计分析",
+        "description": "展示数据的五数概括和异常值",
+        "applicable": "数据统计、异常检测、对比分析",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.boxplot(data_list, labels=labels)\nplt.title('箱线图标题')\nplt.xlabel('类别')\nplt.ylabel('数值')\nplt.grid(axis='y', alpha=0.3)\nplt.savefig('box_plot.png', dpi=100)\nplt.show()",
+        "suggested_models": ["蒙特卡洛仿真", "K-means 聚类"]
+    },
+    "误差棒图": {
+        "category": "误差分析",
+        "description": "展示数据的均值和误差范围",
+        "applicable": "误差分析、置信区间、敏感性分析",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 6))\nplt.errorbar(x_data, y_data, yerr=error_data, fmt='o-', capsize=5, color='#1f77b4')\nplt.title('误差棒图标题')\nplt.xlabel('X轴标签')\nplt.ylabel('Y轴标签')\nplt.grid(True)\nplt.savefig('error_bar.png', dpi=100)\nplt.show()",
+        "suggested_models": ["蒙特卡洛仿真", "灰色预测模型 GM(1,1)"]
+    },
+    "等高线图": {
+        "category": "优化分析",
+        "description": "展示二维函数的等值线和极值",
+        "applicable": "优化问题、目标函数可视化、决策边界",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(10, 8))\nplt.contour(X, Y, Z, levels=20, cmap='viridis')\nplt.contourf(X, Y, Z, levels=20, cmap='viridis', alpha=0.5)\nplt.colorbar(label='函数值')\nplt.scatter(optimal_x, optimal_y, c='red', s=100, label='最优解')\nplt.title('等高线图标题')\nplt.xlabel('X轴')\nplt.ylabel('Y轴')\nplt.legend()\nplt.savefig('contour_plot.png', dpi=100)\nplt.show()",
+        "suggested_models": ["线性规划 (LP)", "多目标规划"]
+    },
+    "3D曲面图": {
+        "category": "多维分析",
+        "description": "展示三维数据的曲面形状",
+        "applicable": "三维数据可视化、优化曲面、函数拟合",
+        "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\nfrom mpl_toolkits.mplot3d import Axes3D\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nfig = plt.figure(figsize=(10, 8))\nax = fig.add_subplot(111, projection='3d')\nax.plot_surface(X, Y, Z, cmap='viridis')\nax.set_title('3D曲面图标题')\nax.set_xlabel('X轴')\nax.set_ylabel('Y轴')\nax.set_zlabel('Z轴')\nplt.savefig('3d_surface.png', dpi=100)\nplt.show()",
+        "suggested_models": ["多目标规划", "微分方程模型"]
+    },
+    "网络图": {
+        "category": "关系分析",
+        "description": "展示节点之间的连接关系",
+        "applicable": "社交网络、系统结构、关系分析",
+        "code_template": "import matplotlib.pyplot as plt\nimport networkx as nx\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nG = nx.Graph()\nG.add_nodes_from(nodes)\nG.add_edges_from(edges)\n\nplt.figure(figsize=(10, 8))\npos = nx.spring_layout(G)\nnx.draw(G, pos, with_labels=True, node_color='#1f77b4', node_size=1500, font_size=12)\nplt.title('网络图标题')\nplt.savefig('network_graph.png', dpi=100)\nplt.show()",
+        "suggested_models": ["微分方程模型"]
+    },
+    "决策树图": {
+        "category": "分类分析",
+        "description": "展示决策树的结构和决策路径",
+        "applicable": "分类问题、决策分析、规则提取",
+        "code_template": "import matplotlib.pyplot as plt\nfrom sklearn.tree import plot_tree\nfrom sklearn.tree import DecisionTreeClassifier\n\nplt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans']\nplt.rcParams['axes.unicode_minus'] = False\n\nplt.figure(figsize=(20, 10))\nplot_tree(clf, filled=True, feature_names=feature_names, class_names=class_names, fontsize=10)\nplt.title('决策树')\nplt.savefig('decision_tree.png', dpi=100)\nplt.show()",
+        "suggested_models": ["随机森林", "XGBoost"]
+    }
+}

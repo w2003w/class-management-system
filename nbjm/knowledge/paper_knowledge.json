@@ -1,0 +1,1184 @@
+{
+  "competitions": {
+    "全国大学生统计建模竞赛": {
+      "papers": [
+        {
+          "paper_title": "“双碳”目标下绿色生产生活水平的统计测度及动态演进研究——以江苏省为例",
+          "competition": "全国大学生统计建模竞赛",
+          "year": "2026",
+          "problem_type": "评价类+空间计量分析类+动态系统分析类（复合型）",
+          "keywords": [
+            "双碳",
+            "绿色生产生活",
+            "SDM模型",
+            "PVAR模型",
+            "组合赋权"
+          ],
+          "models": [
+            {
+              "name": "AHP-熵权-CRITIC组合赋权法",
+              "alias": "主客观融合赋权法",
+              "category": "综合评价模型",
+              "domain": "统计学、管理科学与工程",
+              "description": "通过层次分析法（AHP）引入专家主观判断，熵权法与CRITIC法分别从信息离散度与指标冲突性角度提取客观信息，按0.4:0.3:0.3加权合成最终权重，兼顾决策合理性与数据驱动性。",
+              "mathematical_principle": "AHP基于判断矩阵特征向量求解权重；熵权法依据指标信息熵反比于权重；CRITIC法综合标准差（离散性）与皮尔逊相关系数（冲突性）构建信息承载量I_j = s_j × (1 - ∑|r_{jt}|)。",
+              "assumptions": [
+                "专家判断具有一致性（CR < 0.1）",
+                "各指标间存在可量化差异性与独立性",
+                "标准化后数据满足线性加权可加性"
+              ],
+              "core_formula": "$$w_j = 0.4 \\cdot w_j^{\\text{AHP}} + 0.3 \\cdot w_j^{\\text{Entropy}} + 0.3 \\cdot w_j^{\\text{CRITIC}}$$",
+              "parameter_explanation": "w_j^{AHP}：AHP法计算的主观权重；w_j^{Entropy}：熵权法计算的客观权重；w_j^{CRITIC}：CRITIC法计算的客观权重；0.4, 0.3, 0.3：三者权重分配比例，经稳健性检验确定。",
+              "solution_method": "AHP采用几何平均法求特征向量；熵权法通过公式(6)-(9)迭代计算；CRITIC法按公式(10)-(13)推导；最终线性加权。",
+              "algorithm_flow": [
+                "Step 1：构建AHP判断矩阵并完成一致性检验（CR<0.1）",
+                "Step 2：对标准化数据计算各指标比重p_ij、信息熵e_j、差异系数g_j、熵权w_j^E",
+                "Step 3：计算各指标标准差s_j、冲突性c_j、信息承载量I_j、CRITIC权重w_j^C",
+                "Step 4：按0.4:0.3:0.3加权合成最终权重w_j",
+                "Step 5：代入公式GPLI = Σ w_j × x_ij^* 计算综合指数"
+              ],
+              "data_preprocessing": "3σ异常值检测 + 1%缩尾处理；线性插值填补缺失值；极差标准化（公式5）；负向指标正向化（公式4）",
+              "feature_engineering": "7项核心指标（4项生产+3项生活）+4项控制变量；全部指标经正向化与无量纲化；VIF检验确认无多重共线性（所有VIF<3）",
+              "applicable": "多维度、多层级、主客观并存的综合评价问题；适用于政策效果评估、区域发展水平测度、可持续发展指数构建等场景",
+              "not_applicable": "指标间存在强耦合或非线性交互关系时；样本量过小（n<30）导致熵值失真；专家打分严重分歧且无法达成共识",
+              "pros": [
+                "克服单一赋权法主观性强或客观性不足的缺陷",
+                "权重结果兼具理论支撑与数据证据",
+                "在江苏省13市×10年面板数据上验证稳定（附录表2权重一致性高）"
+              ],
+              "cons": [
+                "AHP依赖专家经验，存在认知偏差风险",
+                "熵权法对极端值敏感，需严格预处理",
+                "CRITIC法在高度相关指标下可能低估冗余性"
+              ],
+              "comparison_with_other_models": "相比单一AHP：避免主观随意性；相比单一熵权：防止‘数据噪声主导权重’；相比PCA：保留原始指标物理意义，不损失可解释性；相比TOPSIS：提供稳定权重而非相对排序。",
+              "code_template": "import numpy as np\nimport pandas as pd\nfrom sklearn.preprocessing import MinMaxScaler\n\ndef ahp_weight(judge_matrix):\n    # 判断矩阵归一化并求特征向量\n    norm_mat = judge_matrix / judge_matrix.sum(axis=0)\n    weights = norm_mat.mean(axis=1)\n    return weights / weights.sum()\n\ndef entropy_weight(data):\n    eps = 1e-6\n    p = (data + eps) / (data.sum(axis=0) + eps * data.shape[0])\n    e = -np.sum(p * np.log(p + eps), axis=0) / np.log(data.shape[0])\n    g = 1 - e\n    w = g / g.sum()\n    return w\n\ndef critic_weight(data):\n    # 标准差\n    s = np.std(data, axis=0, ddof=1)\n    # 相关系数矩阵\n    r = np.corrcoef(data.T)\n    c = np.sum(1 - np.abs(r), axis=0)\n    I = s * c\n    w = I / I.sum()\n    return w\n\n# 主客观融合赋权\ndata = pd.read_csv('preprocessed_data.csv')  # shape: (130, 7)\njudge_mat = np.array([[1,2,2,2,3,3,5],\n                      [0.5,1,2,2,2,2,5],\n                      [0.5,0.5,1,2,2,2,5],\n                      [0.5,0.5,0.5,1,2,2,3],\n                      [1/3,0.5,0.5,0.5,1,2,3],\n                      [1/3,0.5,0.5,0.5,0.5,1,3],\n                      [0.2,0.2,0.2,1/3,1/3,1/3,1]])\nw_ahp = ahp_weight(judge_mat)\nw_entropy = entropy_weight(data.values)\nw_critic = critic_weight(data.values)\nw_final = 0.4*w_ahp + 0.3*w_entropy + 0.3*w_critic\nprint('Final weights:', np.round(w_final, 4))"
+            },
+            {
+              "name": "Dagum基尼系数分解法",
+              "alias": "基尼系数三重分解",
+              "category": "区域差异分析模型",
+              "domain": "计量经济学、区域科学",
+              "description": "将总体基尼系数G分解为区域内差异Gw、区域间差异Gb和超变密度Gt三部分，精准识别区域差距来源，适用于多区域、长时间序列的不平等测度。",
+              "mathematical_principle": "基于洛伦兹曲线与均值差定义，G = Gw + Gb + Gt，其中Gw为各子群内部基尼系数加权平均；Gb为子群间均值差贡献；Gt为子群间分布重叠导致的交叉项。",
+              "assumptions": [
+                "各子群（苏南/苏中/苏北）内数据满足随机抽样",
+                "子群划分具有地理与经济合理性",
+                "指标可比性已通过标准化消除量纲影响"
+              ],
+              "core_formula": "$$G = \\sum_{k=1}^{K} \\frac{n_k}{n} \\cdot \\frac{\\mu_k}{\\mu} \\cdot G_k + \\sum_{k=1}^{K} \\sum_{l \\neq k} \\frac{n_k n_l}{n^2} \\cdot \\frac{|\\mu_k - \\mu_l|}{2\\mu} + \\sum_{k=1}^{K} \\sum_{l \\neq k} \\frac{n_k n_l}{n^2} \\cdot \\frac{\\mu_k + \\mu_l - 2\\mu_{kl}}{2\\mu}$$",
+              "parameter_explanation": "n_k：第k子群城市数；μ_k：第k子群均值；μ：总体均值；G_k：第k子群内部基尼系数；μ_{kl}：k与l子群交叠部分均值；K=3（苏南/苏中/苏北）",
+              "solution_method": "采用Dagum(1997)原始算法，基于Stata或Python custom实现，需输入分组标识与指标值。",
+              "algorithm_flow": [
+                "Step 1：按地理经济特征将13市划分为苏南（南京、苏州、无锡、常州、镇江）、苏中（南通、扬州、泰州）、苏北（徐州、淮安、盐城、连云港、宿迁）",
+                "Step 2：对每一年份GPLI数据计算总体基尼系数G",
+                "Step 3：分别计算各子群内部基尼系数G_k及权重项",
+                "Step 4：计算区域间均值差贡献Gb",
+                "Step 5：计算超变密度Gt（需Kernel密度估计辅助）",
+                "Step 6：验证G ≈ Gw + Gb + Gt"
+              ],
+              "data_preprocessing": "仅需GPLI时序面板数据（13×10），已标准化无需再处理；分组变量为地理标签",
+              "feature_engineering": "无新增特征；核心输入为分组标识向量与GPLI向量",
+              "applicable": "多区域发展差异溯源；城乡、东中西部、城市群内部差距分析；政策效果区域异质性评估",
+              "not_applicable": "两区域比较（此时Gt=0，退化为Theil分解）；时间截面过少（<5年）导致趋势不可靠；子群内样本量过小（n_k<3）",
+              "pros": [
+                "唯一能分离‘超变密度’的分解方法，揭示分布重叠程度",
+                "结果直观反映‘区域间差距主导’（Gb占比>50%）",
+                "与核密度估计形成方法互补（图6+图7）"
+              ],
+              "cons": [
+                "计算复杂，需专业软件支持",
+                "对子群划分敏感，不同划分方案结果差异大",
+                "未考虑空间邻接关系，纯统计分解"
+              ],
+              "comparison_with_other_models": "相比Theil指数：Theil可分解但无法分离Gt；相比CV系数：仅描述离散度，无结构分解；相比Moran's I：后者测空间自相关，前者测统计不平等。",
+              "code_template": "import numpy as np\nfrom scipy.stats import gaussian_kde\n\ndef dagum_gini_decomposition(data, groups):\n    # data: (n,) array of GPLI values; groups: (n,) array of group labels (1,2,3)\n    n = len(data)\n    mu = np.mean(data)\n    \n    # Within-group Gini\n    Gw = 0\n    for g in np.unique(groups):\n        sub_data = data[groups==g]\n        if len(sub_data) > 1:\n            mu_g = np.mean(sub_data)\n            G_g = np.mean(np.abs(np.subtract.outer(sub_data, sub_data))) / (2 * len(sub_data) * mu_g)\n            Gw += (len(sub_data)/n) * (mu_g/mu) * G_g\n    \n    # Between-group component (simplified)\n    group_means = [np.mean(data[groups==g]) for g in np.unique(groups)]\n    Gb = 0\n    for i, mu_i in enumerate(group_means):\n        for j, mu_j in enumerate(group_means):\n            if i != j:\n                Gb += (np.sum(groups==i)*np.sum(groups==j))/(n**2) * abs(mu_i - mu_j)/(2*mu)\n    \n    # Total Gini (empirical)\n    G_total = np.mean(np.abs(np.subtract.outer(data, data))) / (2 * n * mu)\n    Gt = G_total - Gw - Gb\n    \n    return {'G_total': G_total, 'Gw': Gw, 'Gb': Gb, 'Gt': Gt}\n\n# Example usage\nyears = list(range(2015,2025))\nresults = {}\nfor y in years:\n    # Load GPLI for year y\n    data_y = df[df['year']==y]['GPLI'].values\n    groups_y = df[df['year']==y]['region_group'].values  # 1=Sounth, 2=Middle, 3=North\n    results[y] = dagum_gini_decomposition(data_y, groups_y)"
+            },
+            {
+              "name": "空间杜宾模型（SDM）",
+              "alias": "Spatial Durbin Model",
+              "category": "空间计量模型",
+              "domain": "空间计量经济学、地理信息系统",
+              "description": "同时包含被解释变量与解释变量的空间滞后项，可完整分解直接效应、间接效应（空间溢出）与总效应，是处理空间外部性的基准模型。",
+              "mathematical_principle": "基于空间自回归框架，引入W·y与W·X项，克服SLX/SAR模型遗漏变量偏误，满足‘空间溢出完全内生’假设。",
+              "assumptions": [
+                "空间权重矩阵W合理（本文采用地理邻接矩阵）",
+                "误差项满足空间平稳性（ε ~ N(0, σ²I)）",
+                "变量间存在长期协整关系（已通过Kao检验）"
+              ],
+              "core_formula": "$$y = \\rho W y + X \\beta + W X \\theta + \\varepsilon$$",
+              "parameter_explanation": "y：被解释变量向量（GPLI）；W：13×13地理邻接空间权重矩阵（行标准化）；ρ：空间自回归系数；X：解释变量矩阵（11列）；β：直接效应系数；θ：空间溢出效应系数；ε：随机误差项",
+              "solution_method": "极大似然估计（ML）或广义矩估计（GMM），本文采用ML（Stata geostat或PySAL）",
+              "algorithm_flow": [
+                "Step 1：构建地理邻接空间权重矩阵W（13市，若相邻则W_ij=1，否则0；行标准化）",
+                "Step 2：进行全局Moran's I检验（表16证实显著正相关）",
+                "Step 3：设定SDM模型：GPLI_it = ρ·ΣW_ij·GPLI_jt + β·X_it + θ·ΣW_ij·X_jt + ε_it",
+                "Step 4：ML估计参数ρ, β, θ",
+                "Step 5：基于估计结果计算直接效应（∂y_i/∂x_ik）、间接效应（∂y_j/∂x_ik, j≠i）、总效应"
+              ],
+              "data_preprocessing": "面板数据已通过ADF检验（除ind_energy外均平稳）；Kao协整检验确认长期均衡；W矩阵需地理坐标或行政区划邻接关系",
+              "feature_engineering": "核心解释变量7个+控制变量4个=11维；所有变量经标准化处理；空间滞后项W·X由软件自动计算",
+              "applicable": "存在明显空间集聚现象的区域经济问题；需量化‘邻近地区政策外溢’效应；如环保政策、产业转移、基础设施联动等",
+              "not_applicable": "空间权重难以定义（如虚拟网络）；样本量过小（N<30）导致估计不稳定；存在严重内生性未处理（本文未报告工具变量）",
+              "pros": [
+                "唯一能同时估计X与y空间滞后项的模型，避免遗漏变量偏误",
+                "效应分解清晰（表17直接/间接/总效应列示）",
+                "发现ind_energy负向溢出、ind_waste_util正向溢出等关键机制"
+              ],
+              "cons": [
+                "参数估计复杂，计算量大",
+                "对W矩阵设定敏感（邻接vs距离衰减）",
+                "未处理潜在内生性（如GPLI与ind_energy互为因果）"
+              ],
+              "comparison_with_other_models": "相比SAR：SAR仅含Wy，忽略WX，会低估溢出效应；相比SLX：SLX仅含WX，忽略Wy，无法捕捉反馈循环；相比SEM：SEM仅含Wy，不能识别X的溢出。",
+              "code_template": "import pysal as ps\nimport spreg\nimport numpy as np\n\n# Load data: y (GPLI), X (11 vars), coords (13 cities)\n# Build spatial weights\nw = ps.weights.Queen.from_shapefile('jiangsu_cities.shp')\nw.transform = 'r'  # row-standardized\n\n# Prepare data matrices\ny = df['GPLI'].values.reshape(-1, 1)\nX = df[['ind_energy', 'ind_waste_util', ..., 'env_exp']].values\n\n# Fit SDM model\nmodel = spreg.SDM(y, X, w=w, name_y='GPLI', name_x=['ind_energy', ...])\nprint(model.summary)\n\n# Extract effects\n# Direct effect = beta\n# Indirect effect = (I - rho*W)^(-1) @ theta\n# Total effect = direct + indirect"
+            },
+            {
+              "name": "面板向量自回归模型（PVAR）",
+              "alias": "Panel Vector Autoregression",
+              "category": "动态系统分析模型",
+              "domain": "计量经济学、时间序列分析",
+              "description": "将VAR推广至面板数据，允许个体异质性，用于分析多变量间动态交互、脉冲响应与方差分解，揭示‘短平快’政策传导路径。",
+              "mathematical_principle": "基于向量自回归框架，引入个体固定效应α_i，估计系统内各变量滞后项对当前值的影响，满足弱外生性假设。",
+              "assumptions": [
+                "变量间存在长期协整关系（已通过Kao检验）",
+                "面板数据满足弱外生性（无严格内生性检验，但脉冲响应收敛）",
+                "滞后阶数p选择合理（本文采用AIC准则确定p=2）"
+              ],
+              "core_formula": "$$y_{it} = \\alpha_i + \\sum_{k=1}^{p} \\Phi_k y_{i,t-k} + \\varepsilon_{it}, \\quad \\varepsilon_{it} \\sim i.i.d.(0, \\Sigma)$$",
+              "parameter_explanation": "y_it：11维向量（GPLI, ind_energy, ..., env_exp）；α_i：第i市个体固定效应；Φ_k：滞后k期的系数矩阵（11×11）；ε_it：白噪声误差项；p=2（根据AIC选定）",
+              "solution_method": "两阶段最小二乘（2SLS）或广义矩估计（GMM），本文采用GMM（xtabond2 in Stata）",
+              "algorithm_flow": [
+                "Step 1：确认面板平稳性与协整性（表13-14）",
+                "Step 2：确定最优滞后阶数p（AIC/BIC准则）",
+                "Step 3：构建PVAR模型：y_it = α_i + Φ_1 y_{i,t-1} + Φ_2 y_{i,t-2} + ε_it",
+                "Step 4：进行方差分解（表18），计算各变量对GPLI预测误差方差的贡献率",
+                "Step 5：生成脉冲响应函数（图11），模拟单位冲击下的动态响应路径"
+              ],
+              "data_preprocessing": "所有变量一阶差分后平稳（ind_energy）；已通过Kao协整检验；无缺失值（线性插值补全）",
+              "feature_engineering": "11维系统变量（7核心+4控制）；全部变量同阶单整；无额外特征构造",
+              "applicable": "多变量动态传导机制研究；政策时滞效应评估（如基建投资→环境改善→消费转型）；系统稳定性诊断（脉冲响应收敛性）",
+              "not_applicable": "变量数过多导致自由度不足（n_vars > n_obs/3）；存在结构性突变未处理（如疫情冲击未建模）；长周期预测（>10期）可靠性下降",
+              "pros": [
+                "揭示‘污水处理能力→GPLI’的1-2年短周期带动效应（表18第1-2期）",
+                "证实系统长期均衡（脉冲响应6期内收敛，图11）",
+                "识别关键驱动因子：sewage_treat, msw_harmless, retail_ratio贡献度前3（表18）"
+              ],
+              "cons": [
+                "对滞后阶数敏感，p选择不当导致过度拟合",
+                "未处理疫情等外生冲击，可能影响脉冲响应真实性",
+                "方差分解结果依赖Cholesky排序（本文未说明排序依据）"
+              ],
+              "comparison_with_other_models": "相比普通VAR：PVAR控制个体异质性，更适合区域面板；相比Granger因果：PVAR提供动态路径而非单向因果；相比结构方程：PVAR无需先验理论约束，数据驱动。",
+              "code_template": "import statsmodels.api as sm\nfrom linearmodels.panel import PVAR\nimport numpy as np\n\n# Prepare panel data: y (130×11 matrix), index (city, year)\n# Ensure stationarity and cointegration first\n\n# Fit PVAR with 2 lags\npvar_model = PVAR(y, lags=2, cov_type='robust')\nresults = pvar_model.fit()\n\n# Variance decomposition\nvd = results.var_decomp(10)  # 10-step forecast error variance decomposition\nprint('Variance decomposition:\\n', vd)\n\n# Impulse response\nirf = results.irf(6)  # 6-period impulse response\nirf.plot(impulse='sewage_treat', response='GPLI')\nplt.show()"
+            }
+          ],
+          "images": [
+            {
+              "name": "核密度估计曲线图",
+              "category": "分布演进分析",
+              "description": "图7展示2015、2018、2021、2024四个关键年份江苏省13市GPLI的核密度曲线，呈现单峰右偏分布，峰值逐年右移且带宽收窄，表明整体水平提升且离散度下降。",
+              "purpose": "弥补Dagum基尼系数静态局限，可视化分布形态演变、集聚特征与收敛趋势，验证‘梯度式差异’而非‘断裂式极化’",
+              "data_source": "表10 GPLI综合得分（13市×10年）",
+              "visualization_technique": "采用高斯核函数，带宽h=0.1（Silverman规则），透明度alpha=0.7叠加绘制",
+              "color_scheme": "蓝（2015）→绿（2018）→橙（2021）→红（2024），渐变色强化时间维度",
+              "position_in_paper": "第四章（一）2.核密度特征分析，页码17",
+              "applicable": "多时期分布对比；区域发展均衡性诊断；政策效果可视化评估",
+              "code_template": "import matplotlib.pyplot as plt\nimport seaborn as sns\nimport numpy as np\n\n# Load GPLI data for key years\nyears = [2015, 2018, 2021, 2024]\ncolors = ['blue', 'green', 'orange', 'red']\n\nplt.figure(figsize=(10,6))\nfor i, y in enumerate(years):\n    data_y = df[df['year']==y]['GPLI']\n    sns.kdeplot(data_y, shade=True, alpha=0.7, color=colors[i], label=f'{y}')\nplt.xlabel('GPLI Index')\nplt.ylabel('Density')\nplt.title('Kernel Density Estimation of GPLI Distribution')\nplt.legend()\nplt.grid(True, alpha=0.3)\nplt.show()"
+            },
+            {
+              "name": "空间散点图（Moran's I）",
+              "category": "空间自相关分析",
+              "description": "图9为2015-2024年GPLI的Moran散点图，横轴为各市GPLI均值，纵轴为邻近城市GPLI均值，所有年份点均位于第一、三象限，且Q1/Q3象限点密集，证实正向空间集聚。",
+              "purpose": "直观验证全局Moran's I显著性（表16），识别高-高（苏南集群）、低-低（苏北集群）集聚模式，为SDM建模提供依据",
+              "data_source": "表10 GPLI综合得分 + 地理邻接矩阵W",
+              "visualization_technique": "四象限划分（均值线），点大小编码城市人口，颜色区分苏南/苏中/苏北",
+              "color_scheme": "苏南（深红）、苏中（橙）、苏北（浅蓝），高亮Q1（高-高）与Q3（低-低）",
+              "position_in_paper": "第四章（四）1.全局空间自相关检验，页码20",
+              "applicable": "空间依赖性诊断；集聚模式识别；空间权重矩阵有效性检验",
+              "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Calculate spatial lag: W @ GPLI\nspatial_lag = W @ gpli_vector  # W: 13x13, gpli_vector: 13x1\nmean_gpli = np.mean(gpli_vector)\nmean_spatial_lag = np.mean(spatial_lag)\n\nplt.figure(figsize=(8,8))\nplt.scatter(gpli_vector, spatial_lag, c=region_colors, s=population_size*10)\nplt.axhline(mean_spatial_lag, color='gray', linestyle='--')\nplt.axvline(mean_gpli, color='gray', linestyle='--')\nplt.xlabel('GPLI (Local)')\nplt.ylabel('Spatial Lag of GPLI (Neighbor Average)')\nplt.title('Moran Scatterplot')\nplt.text(mean_gpli+0.01, mean_spatial_lag+0.01, 'Q1', fontsize=12)\nplt.text(mean_gpli-0.02, mean_spatial_lag+0.01, 'Q2', fontsize=12)\nplt.text(mean_gpli-0.02, mean_spatial_lag-0.01, 'Q3', fontsize=12)\nplt.text(mean_gpli+0.01, mean_spatial_lag-0.01, 'Q4', fontsize=12)\nplt.show()"
+            },
+            {
+              "name": "脉冲响应函数图",
+              "category": "动态效应分析",
+              "description": "图11展示7个核心变量对GPLI的脉冲响应路径，横轴为期数（0-6期），纵轴为响应值，所有曲线在6期内收敛至稳态，且多数呈正向单调收敛。",
+              "purpose": "验证PVAR模型动态稳定性；量化各变量冲击的持续时间与强度；识别政策见效周期（如sewage_treat在第1期达峰）",
+              "data_source": "PVAR模型估计结果 + IRF计算",
+              "visualization_technique": "多子图布局（7×1），统一坐标轴；实线表示响应均值，阴影区表示90%置信区间",
+              "color_scheme": "主变量（sewage_treat）用粗红线，其余用细灰线，突出关键驱动因素",
+              "position_in_paper": "第四章（五）2.脉冲响应分析，页码23",
+              "applicable": "动态政策效应评估；系统稳定性诊断；变量重要性排序",
+              "code_template": "import matplotlib.pyplot as plt\n\n# Assuming irf_results is a dict with keys like 'sewage_treat', 'msw_harmless', etc.\nfig, axes = plt.subplots(7, 1, figsize=(10, 20))\nvariables = ['sewage_treat', 'msw_harmless', 'retail_ratio', 'ind_waste_util', 'poll_invest', 'pub_trans', 'ind_energy']\nfor i, var in enumerate(variables):\n    ax = axes[i]\n    irf_var = irf_results[var]\n    ax.plot(irf_var[:, 0], 'r-', linewidth=2 if var=='sewage_treat' else 1, label=var)\n    ax.fill_between(range(len(irf_var)), irf_var[:, 1], irf_var[:, 2], alpha=0.2)\n    ax.set_ylabel(f'IRF to {var}')\n    ax.grid(True, alpha=0.3)\n    if i == 0:\n        ax.set_title('Impulse Response Functions')\nplt.tight_layout()\nplt.show()"
+            }
+          ],
+          "prompts": {
+            "problem_analysis": [
+              {
+                "content": "如何从政策文本（如‘双碳’‘十五五规划’）中提取核心约束与目标？聚焦‘江苏省沿江沿海开发强度高、能源偏煤’等地理经济特征，识别‘绿色生产’与‘绿色生活’双维度需求。",
+                "usage_scenario": "引言撰写与问题界定",
+                "effect": "确保建模目标紧扣国家战略与地方实际，避免空泛讨论"
+              },
+              {
+                "content": "如何识别问题类型？本题表面为评价问题，但需结合空间差异（Dagum）、空间关联（SDM）、动态交互（PVAR）三层分析，属‘评价+空间+动态’复合型问题。",
+                "usage_scenario": "模型选择与技术路线设计",
+                "effect": "避免单一模型局限，构建递进式分析框架"
+              },
+              {
+                "content": "如何分析约束条件？从数据端识别‘异常值多（表3）、缺失值（表4）、量纲差异（表2单位各异）’；从方法端识别‘空间溢出（图9）、长期协整（表14）、动态时滞（图11）’。",
+                "usage_scenario": "数据预处理与模型假设设定",
+                "effect": "针对性设计3σ+缩尾、线性插值、标准化、协整检验等处理流程"
+              }
+            ],
+            "model_selection": [
+              {
+                "content": "如何根据问题特征选择模型？当需‘多源赋权’时选AHP-熵权-CRITIC；当需‘差异溯源’时选Dagum基尼；当需‘空间溢出’时选SDM；当需‘动态传导’时选PVAR。",
+                "usage_scenario": "方法论章节撰写",
+                "effect": "体现模型选择的逻辑必然性，而非简单罗列"
+              },
+              {
+                "content": "如何判断模型适用性？验证AHP一致性（CR<0.1）、Dagum分组合理性（苏南/苏中/苏北经济梯度）、SDM空间权重（Moran's I>0.2）、PVAR协整性（Kao p<0.05）。",
+                "usage_scenario": "稳健性检验设计",
+                "effect": "增强模型应用的可信度与说服力"
+              }
+            ],
+            "modeling_approach": [
+              {
+                "content": "如何建立数学模型？以‘绿色生产生活综合指数’为顶层目标，向下分解为GPI/GLI二级指标，再映射到7个可观测变量，形成‘目标-维度-指标’三级架构（图1）。",
+                "usage_scenario": "指标体系构建",
+                "effect": "确保模型结构清晰、层次分明、可操作性强"
+              },
+              {
+                "content": "如何推导核心公式？组合赋权公式（14）需明确各权重来源；GPLI公式（15）需注明标准化处理；SDM公式（隐含）需写出完整形式并定义W矩阵。",
+                "usage_scenario": "模型构建章节公式排版",
+                "effect": "保证公式严谨性与可复现性"
+              }
+            ],
+            "solution_method": [
+              {
+                "content": "如何选择求解算法？AHP用特征向量法；熵权用信息熵公式；SDM用ML估计；PVAR用GMM；所有算法需注明软件实现（Stata/Python）。",
+                "usage_scenario": "算法实现与结果报告",
+                "effect": "便于评审专家复现与验证"
+              },
+              {
+                "content": "如何验证求解结果？SDM需报告直接/间接/总效应（表17）；PVAR需展示方差分解（表18）与脉冲响应（图11）；所有结果需与经济直觉一致（如ind_energy系数为负）。",
+                "usage_scenario": "结果分析与讨论",
+                "effect": "将数学结果转化为政策含义"
+              }
+            ],
+            "result_analysis": [
+              {
+                "content": "如何分析模型输出？对GPLI时序结果（表10）提炼‘三阶段演进’；对Dagum结果（表11）强调‘Gb主导’；对SDM结果（表17）聚焦‘ind_energy负溢出’；对PVAR结果（表18）指出‘sewage_treat短周期带动’。",
+                "usage_scenario": "结果解读与政策启示",
+                "effect": "避免数据堆砌，突出关键发现"
+              },
+              {
+                "content": "如何进行敏感性分析？通过‘熵权法指数替代’‘随机效应模型’‘剔除连云港’‘替换GPI’四维度稳健性检验（表19），证明结论不受方法选择影响。",
+                "usage_scenario": "稳健性检验章节",
+                "effect": "大幅提升研究结论的可信度"
+              }
+            ],
+            "paper_structure": [
+              {
+                "content": "如何组织论文结构？严格遵循‘问题提出→数据清洗→指标构建→静态评价→空间分析→动态机制→政策建议’逻辑链，每章解决一个子问题。",
+                "usage_scenario": "全文框架设计",
+                "effect": "体现严密的学术思维与工程化建模流程"
+              },
+              {
+                "content": "如何撰写摘要？首句点明背景（双碳+江苏），次句说明方法（7指标+4控制+3模型），第三句概括核心发现（三阶段演进、Gb主导、sewage_treat关键），末句给出建议方向。",
+                "usage_scenario": "摘要写作",
+                "effect": "300字内精准传达全文精华"
+              }
+            ]
+          },
+          "structure": {
+            "sections": [
+              "一、引言",
+              "二、数据预处理",
+              "三、绿色发展指数的量化研究",
+              "四、江苏省绿色发展研究及实证分析",
+              "五、结论与建议"
+            ],
+            "subsection_hierarchy": "一级标题（汉字编号）→二级标题（括号编号）→三级标题（数字编号），如‘（一）研究背景与意义’→‘1.产业层面绿色生产方式’",
+            "word_count": {
+              "一、引言": 1280,
+              "二、数据预处理": 1420,
+              "三、绿色发展指数的量化研究": 1350,
+              "四、江苏省绿色发展研究及实证分析": 2860,
+              "五、结论与建议": 890
+            },
+            "total_words": 7800,
+            "formula_count": 14,
+            "figure_count": 12,
+            "table_count": 19,
+            "writing_style": "学术规范、逻辑严密、数据驱动；善用‘首先…接着…最后…’连接词构建叙事流；图表编号与正文引用严格对应（如‘见表10’‘如图5所示’）；政策建议具体到城市（南京向镇江输出技术）",
+            "abstract_writing_tips": "采用‘背景-方法-结果-建议’四段式；动词使用‘构建’‘运用’‘揭示’‘表明’等学术动词；避免‘本文’‘我们’等第一人称；关键词前置且与正文一致",
+            "keywords_selection": "选取论文中高频出现、方法论核心（SDM/PVAR）、政策热点（双碳）、研究对象（绿色生产生活）的术语，共5个，符合竞赛要求",
+            "result_analysis_depth": "达到‘现象→机制→根源→对策’四层深度：现象（GPLI三阶段）→机制（SDM溢出效应）→根源（产业结构服务化不足）→对策（苏南技术转移补偿机制）"
+          },
+          "experience_summary": "该论文展现了高水平数学建模的典范：① 问题导向精准——紧扣‘双碳’国家战略与江苏地域痛点；② 方法组合创新——AHP-熵权-CRITIC赋权、Dagum+核密度差异分析、SDM+PVAR动静结合，形成‘静态评价-空间关联-动态传导’完整证据链；③ 数据处理极致规范——3σ+缩尾+线性插值+VIF检验+正向化+标准化全流程闭环；④ 政策建议可操作——细化到13市差异化路径与‘技术转移补偿机制’等制度设计；⑤ 写作逻辑严密——从技术路线图（图1）到结论层层递进，图表编号与正文无缝嵌套。其‘多模型协同验证’范式可迁移至乡村振兴、共同富裕等复杂系统评价问题。"
+        }
+      ],
+      "prompts": {
+        "problem_analysis": [
+          {
+            "content": "如何从政策文本（如‘双碳’‘十五五规划’）中提取核心约束与目标？聚焦‘江苏省沿江沿海开发强度高、能源偏煤’等地理经济特征，识别‘绿色生产’与‘绿色生活’双维度需求。",
+            "usage_scenario": "引言撰写与问题界定",
+            "effect": "确保建模目标紧扣国家战略与地方实际，避免空泛讨论"
+          },
+          {
+            "content": "如何识别问题类型？本题表面为评价问题，但需结合空间差异（Dagum）、空间关联（SDM）、动态交互（PVAR）三层分析，属‘评价+空间+动态’复合型问题。",
+            "usage_scenario": "模型选择与技术路线设计",
+            "effect": "避免单一模型局限，构建递进式分析框架"
+          },
+          {
+            "content": "如何分析约束条件？从数据端识别‘异常值多（表3）、缺失值（表4）、量纲差异（表2单位各异）’；从方法端识别‘空间溢出（图9）、长期协整（表14）、动态时滞（图11）’。",
+            "usage_scenario": "数据预处理与模型假设设定",
+            "effect": "针对性设计3σ+缩尾、线性插值、标准化、协整检验等处理流程"
+          }
+        ],
+        "model_selection": [
+          {
+            "content": "如何根据问题特征选择模型？当需‘多源赋权’时选AHP-熵权-CRITIC；当需‘差异溯源’时选Dagum基尼；当需‘空间溢出’时选SDM；当需‘动态传导’时选PVAR。",
+            "usage_scenario": "方法论章节撰写",
+            "effect": "体现模型选择的逻辑必然性，而非简单罗列"
+          },
+          {
+            "content": "如何判断模型适用性？验证AHP一致性（CR<0.1）、Dagum分组合理性（苏南/苏中/苏北经济梯度）、SDM空间权重（Moran's I>0.2）、PVAR协整性（Kao p<0.05）。",
+            "usage_scenario": "稳健性检验设计",
+            "effect": "增强模型应用的可信度与说服力"
+          }
+        ],
+        "modeling_approach": [
+          {
+            "content": "如何建立数学模型？以‘绿色生产生活综合指数’为顶层目标，向下分解为GPI/GLI二级指标，再映射到7个可观测变量，形成‘目标-维度-指标’三级架构（图1）。",
+            "usage_scenario": "指标体系构建",
+            "effect": "确保模型结构清晰、层次分明、可操作性强"
+          },
+          {
+            "content": "如何推导核心公式？组合赋权公式（14）需明确各权重来源；GPLI公式（15）需注明标准化处理；SDM公式（隐含）需写出完整形式并定义W矩阵。",
+            "usage_scenario": "模型构建章节公式排版",
+            "effect": "保证公式严谨性与可复现性"
+          }
+        ],
+        "solution_method": [
+          {
+            "content": "如何选择求解算法？AHP用特征向量法；熵权用信息熵公式；SDM用ML估计；PVAR用GMM；所有算法需注明软件实现（Stata/Python）。",
+            "usage_scenario": "算法实现与结果报告",
+            "effect": "便于评审专家复现与验证"
+          },
+          {
+            "content": "如何验证求解结果？SDM需报告直接/间接/总效应（表17）；PVAR需展示方差分解（表18）与脉冲响应（图11）；所有结果需与经济直觉一致（如ind_energy系数为负）。",
+            "usage_scenario": "结果分析与讨论",
+            "effect": "将数学结果转化为政策含义"
+          }
+        ],
+        "result_analysis": [
+          {
+            "content": "如何分析模型输出？对GPLI时序结果（表10）提炼‘三阶段演进’；对Dagum结果（表11）强调‘Gb主导’；对SDM结果（表17）聚焦‘ind_energy负溢出’；对PVAR结果（表18）指出‘sewage_treat短周期带动’。",
+            "usage_scenario": "结果解读与政策启示",
+            "effect": "避免数据堆砌，突出关键发现"
+          },
+          {
+            "content": "如何进行敏感性分析？通过‘熵权法指数替代’‘随机效应模型’‘剔除连云港’‘替换GPI’四维度稳健性检验（表19），证明结论不受方法选择影响。",
+            "usage_scenario": "稳健性检验章节",
+            "effect": "大幅提升研究结论的可信度"
+          }
+        ],
+        "paper_structure": [
+          {
+            "content": "如何组织论文结构？严格遵循‘问题提出→数据清洗→指标构建→静态评价→空间分析→动态机制→政策建议’逻辑链，每章解决一个子问题。",
+            "usage_scenario": "全文框架设计",
+            "effect": "体现严密的学术思维与工程化建模流程"
+          },
+          {
+            "content": "如何撰写摘要？首句点明背景（双碳+江苏），次句说明方法（7指标+4控制+3模型），第三句概括核心发现（三阶段演进、Gb主导、sewage_treat关键），末句给出建议方向。",
+            "usage_scenario": "摘要写作",
+            "effect": "300字内精准传达全文精华"
+          }
+        ]
+      },
+      "structure": {
+        "sections": [
+          "一、引言",
+          "二、数据预处理",
+          "三、绿色发展指数的量化研究",
+          "四、江苏省绿色发展研究及实证分析",
+          "五、结论与建议"
+        ],
+        "subsection_hierarchy": "一级标题（汉字编号）→二级标题（括号编号）→三级标题（数字编号），如‘（一）研究背景与意义’→‘1.产业层面绿色生产方式’",
+        "word_count": {
+          "一、引言": 1280,
+          "二、数据预处理": 1420,
+          "三、绿色发展指数的量化研究": 1350,
+          "四、江苏省绿色发展研究及实证分析": 2860,
+          "五、结论与建议": 890
+        },
+        "total_words": 7800,
+        "formula_count": 14,
+        "figure_count": 12,
+        "table_count": 19,
+        "writing_style": "学术规范、逻辑严密、数据驱动；善用‘首先…接着…最后…’连接词构建叙事流；图表编号与正文引用严格对应（如‘见表10’‘如图5所示’）；政策建议具体到城市（南京向镇江输出技术）",
+        "abstract_writing_tips": "采用‘背景-方法-结果-建议’四段式；动词使用‘构建’‘运用’‘揭示’‘表明’等学术动词；避免‘本文’‘我们’等第一人称；关键词前置且与正文一致",
+        "keywords_selection": "选取论文中高频出现、方法论核心（SDM/PVAR）、政策热点（双碳）、研究对象（绿色生产生活）的术语，共5个，符合竞赛要求",
+        "result_analysis_depth": "达到‘现象→机制→根源→对策’四层深度：现象（GPLI三阶段）→机制（SDM溢出效应）→根源（产业结构服务化不足）→对策（苏南技术转移补偿机制）"
+      },
+      "writing_style": "",
+      "experience_summary": "该论文展现了高水平数学建模的典范：① 问题导向精准——紧扣‘双碳’国家战略与江苏地域痛点；② 方法组合创新——AHP-熵权-CRITIC赋权、Dagum+核密度差异分析、SDM+PVAR动静结合，形成‘静态评价-空间关联-动态传导’完整证据链；③ 数据处理极致规范——3σ+缩尾+线性插值+VIF检验+正向化+标准化全流程闭环；④ 政策建议可操作——细化到13市差异化路径与‘技术转移补偿机制’等制度设计；⑤ 写作逻辑严密——从技术路线图（图1）到结论层层递进，图表编号与正文无缝嵌套。其‘多模型协同验证’范式可迁移至乡村振兴、共同富裕等复杂系统评价问题。"
+    },
+    "全国大学生数学建模竞赛": {
+      "papers": [
+        {
+          "paper_title": "冬小麦区块亩产预测、规划期种植布局优化及气象灾害风险下的稳健决策",
+          "competition": "全国大学生数学建模竞赛",
+          "year": "2026",
+          "problem_type": "预测类—优化类—风险稳健决策类（递进式复合问题）",
+          "keywords": [
+            "随机森林回归",
+            "长势—气象交互",
+            "0-1整数线性规划",
+            "风险情景",
+            "稳健优化"
+          ],
+          "models": [
+            {
+              "name": "随机森林回归（Random Forest Regression）",
+              "alias": "RF回归、集成树回归",
+              "category": "机器学习/非线性回归",
+              "domain": "统计学、计算机科学、农业信息学",
+              "description": "以区块—年份为样本单元，融合长势统计特征、生育期气象因子（平均气温T、累计降水P、日照时数S）及其两两乘积交互项（共43维），构建高维非线性产量映射模型。",
+              "mathematical_principle": "基于Bagging集成思想：通过自助采样（Bootstrap）生成M=300个训练子集，每棵回归树在随机子特征空间上递归划分节点，以最小化节点内产量方差（式12）为分裂准则；最终预测值为所有树输出的算术平均（式11）。理论基础包括：弱学习器偏差-方差权衡、随机子空间降低过拟合、集成平均抑制单棵树噪声敏感性。",
+              "assumptions": [
+                "长势时序与亩产存在稳定统计依赖关系",
+                "气象因子与亩产存在显著线性/单调相关性（经Pearson/Spearman检验验证）",
+                "长势—气象交互效应可由特征乘积项有效近似",
+                "历史数据分布具有代表性，能反映未来潜在规律"
+              ],
+              "core_formula": "$$\\hat{y}_{it} = \\frac{1}{M}\\sum_{b=1}^{M} h_b(\\mathbf{x}_{it})$$",
+              "parameter_explanation": "M=300：森林规模，控制集成稳定性；max_depth=12：单棵树最大深度，防止过拟合；n_features='sqrt'（隐含）：每次分裂候选特征数≈√43≈6，增强多样性；x_it∈ℝ⁴³：输入向量，含长势统计量（均值、极值、标准差、阶段变化量等10维）、气象因子（3维）及30维交互项（10×3）。",
+              "solution_method": "Scikit-learn RandomForestRegressor（默认mse准则、无剪枝）",
+              "algorithm_flow": "1. 输入：区块i年份t的长势序列{z_itq}、气象向量w_it=(T_it,P_it,S_it)、真实亩产y_it；2. 特征工程：按式(1)-(5)提取长势统计向量g_it；按式(9)-(10)构造x_it=[g_it; w_it; g_it w_it^T]；3. 模型训练：以{(x_it,y_it)}为训练集，拟合M棵回归树；4. 预测：对新x_it，计算各树叶节点均值并取平均；5. 评估：全样本拟合+留一年度交叉验证（式13-16）。",
+              "data_preprocessing": "长势序列标准化（隐含于统计特征提取中）；气象变量无需归一化（RF对量纲不敏感）；无缺失值（论文未提及插补）；无异常值剔除（依赖树模型鲁棒性）",
+              "feature_engineering": [
+                "长势时序压缩：均值（式1）、极值/极差（式2）、标准差（式3）、末期值、前后期变化量Δz（式4）、中位数、期数等10维统计特征",
+                "气象因子：T_it, P_it, S_it（3维）",
+                "交互特征：g_it ⊗ w_it（10×3=30维乘积项，式9-10）"
+              ],
+              "applicable": "多源异构时序数据融合预测；非线性、高维、小样本（N=150）回归任务；需兼顾精度与可解释性（特征重要性）的农业产量建模",
+              "not_applicable": "实时在线学习场景（需重训练）；超长时序依赖建模（如LSTM更优）；物理机理强约束问题（需耦合过程模型）",
+              "pros": [
+                "抗噪声与异常值能力强",
+                "自动处理特征交互与非线性",
+                "提供特征重要性排序（式18）",
+                "无需特征缩放，对缺失值鲁棒"
+              ],
+              "cons": [
+                "黑箱性较强（虽有特征重要性但难获全局解析式）",
+                "超参数调优成本高（本文明确定制M=300, depth=12）",
+                "外推能力受限于训练数据覆盖范围（极端气象组合泛化弱）"
+              ],
+              "comparison_with_other_models": "相比线性回归：RF MAPE=1.96% vs 线性回归预估>5%（文中隐含）；相比SVM：RF更适合高维稀疏农业特征；相比XGBoost：本文强调可解释性而非极致精度，RF特征重要性更直观。",
+              "code_template": "import numpy as np\nimport pandas as pd\nfrom sklearn.ensemble import RandomForestRegressor\nfrom sklearn.model_selection import TimeSeriesSplit\nfrom sklearn.metrics import mean_absolute_percentage_error, r2_score\n\n# 数据加载（示例结构）\n# df: columns=['block_id', 'year', 'z_q1', 'z_q2', ..., 'T', 'P', 'S', 'yield']\n\ndef extract_growth_features(z_series):\n    \"\"\"输入长势时序数组，输出10维统计特征\"\"\"\n    z_mean = np.mean(z_series)\n    z_max, z_min = np.max(z_series), np.min(z_series)\n    z_range = z_max - z_min\n    z_std = np.std(z_series, ddof=0)\n    z_last = z_series[-1]\n    z_delta = np.mean(np.diff(z_series)) # 前后期平均变化量\n    z_med = np.median(z_series)\n    z_len = len(z_series)\n    return np.array([z_mean, z_max, z_min, z_range, z_std, z_last, z_delta, z_med, z_len, 0]) # 第10维可扩展\n\n# 构造43维特征矩阵 X\nX, y = [], []\nfor (block, year), group in df.groupby(['block_id', 'year']):\n    z_seq = group[['z_q1','z_q2',...]].values.flatten() # 假设已对齐\n    g = extract_growth_features(z_seq)\n    w = group[['T','P','S']].iloc[0].values\n    c = np.outer(g, w).flatten() # 10x3=30维交互项\n    x_it = np.concatenate([g, w, c]) # 10+3+30=43\n    X.append(x_it)\n    y.append(group['yield'].iloc[0])\nX, y = np.array(X), np.array(y)\n\n# 模型训练与交叉验证（留一年度）\ntscv = TimeSeriesSplit(n_splits=15, max_train_size=None)\nmape_scores, r2_scores = [], []\nfor train_idx, test_idx in tscv.split(X):\n    X_train, X_test = X[train_idx], X[test_idx]\n    y_train, y_test = y[train_idx], y[test_idx]\n    rf = RandomForestRegressor(n_estimators=300, max_depth=12, random_state=42)\n    rf.fit(X_train, y_train)\n    y_pred = rf.predict(X_test)\n    mape_scores.append(mean_absolute_percentage_error(y_test, y_pred))\n    r2_scores.append(r2_score(y_test, y_pred))\n\nprint(f'CV MAPE: {np.mean(mape_scores):.2f}%, R²: {np.mean(r2_scores):.3f}')\n\n# 特征重要性\nfeature_names = ['g_mean','g_max',...,'T','P','S'] + [f'g{i}_w{j}' for i in range(10) for j in range(3)]\nimportances = rf.feature_importances_\nidx = np.argsort(importances)[-5:][::-1]\nfor i in idx:\n    print(f'{feature_names[i]}: {importances[i]:.6f}')"
+            },
+            {
+              "name": "0-1整数线性规划（Binary Integer Linear Programming, BILP）",
+              "alias": "二元整数规划、组合优化模型",
+              "category": "运筹优化/确定性优化",
+              "domain": "数学、管理科学、农业工程",
+              "description": "以问题一预测亩产为基础，引入管理提升系数α_i和区块成本差异d_i，构建单位种植效益e_it；以区块—年份二元变量x_it∈{0,1}为决策变量，在年度规模约束、轮作休耕约束和产能稳定性约束下，最大化五年总效益Z。",
+              "mathematical_principle": "线性目标函数与线性约束构成凸可行域，0-1变量使问题NP-hard，但规模可控（|B|=10, |T⁺|=5 ⇒ 50变量）；采用分支定界法求解全局最优解。核心是将农业管理逻辑转化为数学约束：∑_i x_it ≤ L（年度上限）；∑_t x_it ≤ U（轮作上限）；∑_{i,t} α_i y̅_it x_it ≥ η Y_hist（产能底线）。",
+              "assumptions": [
+                "管理提升系数α_i在规划期内恒定",
+                "成本差异d_i可准确量化且不随年份变化",
+                "价格p为确定性常数（问题二）或情景变量（问题三）",
+                "约束条件严格满足（硬约束）"
+              ],
+              "core_formula": "$$\\max_{\\mathbf{x}} \\sum_{t\\in T^+} \\sum_{i\\in B} e_{it} x_{it} \\quad \\text{s.t.} \\quad \\sum_{i\\in B} x_{it} \\leq L, \\; \\sum_{t\\in T^+} x_{it} \\leq U, \\; \\frac{1}{|T^+|} \\sum_{t\\in T^+} \\sum_{i\\in B} \\alpha_i \\hat{y}_{it} x_{it} \\geq \\eta Y_{\\text{hist}}, \\; x_{it} \\in \\{0,1\\}$$",
+              "parameter_explanation": "L=6：年度最大种植区块数；U=4：单区块五年最多种植次数（即至少休耕1年）；η=0.65：产能稳定性阈值比例；Y_hist=7222.27：历史平均总产量；e_it = p·α_i·ŷ_it - (c₀+d_i)：单位效益系数（已知常数）；x_it∈{0,1}：决策变量。",
+              "solution_method": "商用求解器（如Gurobi、CPLEX）或开源工具（PuLP+CBC）",
+              "algorithm_flow": "1. 输入：效益系数矩阵E=(e_it)₁₀ₓ₅、约束参数L,U,η,Y_hist；2. 定义决策变量x_it；3. 构建目标函数max ∑∑ e_it x_it；4. 添加约束：∑_i x_it ≤ L（∀t）、∑_t x_it ≤ U（∀i）、∑∑ α_i ŷ_it x_it ≥ η|T⁺|Y_hist；5. 调用整数规划求解器；6. 输出最优x_it矩阵及Z*。",
+              "data_preprocessing": "效益系数e_it由问题一预测值ŷ_it、管理参数α_i、成本参数d_i、价格p计算得到；约束右端项L,U,η,Y_hist由题设直接给出。",
+              "feature_engineering": "无（BILP为参数化优化，输入为标量系数）",
+              "applicable": "资源有限下的多周期二元决策问题；带硬约束的收益最大化；农业、物流、排班等离散资源配置场景",
+              "not_applicable": "连续决策变量问题（需LP）；大规模变量（>1000）导致求解困难；动态不确定性需随机规划",
+              "pros": [
+                "模型结构清晰，约束物理意义明确",
+                "求解结果全局最优且可验证",
+                "天然支持‘是否种植’等二元决策"
+              ],
+              "cons": [
+                "对参数敏感（e_it误差会传导至最优解）",
+                "无法直接处理连续变量（如种植面积比例）",
+                "大规模问题需高级求解器"
+              ],
+              "comparison_with_other_models": "相比启发式算法（GA/PSO）：BILP保证最优性；相比线性规划（LP）：BILP强制整数解更符合实际；相比动态规划：BILP更易扩展多约束。",
+              "code_template": "from pulp import LpProblem, LpMaximize, LpVariable, lpSum\nimport numpy as np\n\n# 已知参数\nB = list(range(10))  # 区块索引0-9\nT_plus = list(range(5))  # 年份索引0-4（2026-2030）\nL = 6  # 年度上限\nU = 4  # 单区块上限\neta = 0.65\nY_hist = 7222.27\n# e_it: 10x5 效益系数矩阵（由问题一结果计算）\ne = np.array([[...]])  # shape=(10,5)\nalpha = np.array([...])  # 10个区块提升系数\ny_hat = np.array([[...]])  # 10x5 预测亩产\n\n# 创建问题\nprob = LpProblem(\"Wheat_Planning\", LpMaximize)\n\n# 定义决策变量\nx = [[LpVariable(f'x_{i}_{t}', cat='Binary') for t in T_plus] for i in B]\n\n# 目标函数\nprob += lpSum(e[i][t] * x[i][t] for i in B for t in T_plus)\n\n# 约束：年度规模\nfor t in T_plus:\n    prob += lpSum(x[i][t] for i in B) <= L\n\n# 约束：轮作休耕\nfor i in B:\n    prob += lpSum(x[i][t] for t in T_plus) <= U\n\n# 约束：产能稳定性\nprob += lpSum(alpha[i] * y_hat[i][t] * x[i][t] for i in B for t in T_plus) >= eta * len(T_plus) * Y_hist\n\n# 求解\nprob.solve()\n\n# 输出结果\nprint(f'Optimal Total Benefit: {prob.objective.value():.2f}')\nfor t in T_plus:\n    planted = [i for i in B if x[i][t].value() > 0.5]\n    print(f'Year {2026+t}: Plant blocks {planted}')"
+            },
+            {
+              "name": "风险情景稳健优化模型（Scenario-based Robust Optimization）",
+              "alias": "期望-最坏联合优化、多情景整数规划",
+              "category": "运筹优化/随机优化/鲁棒优化",
+              "domain": "管理科学、金融工程、农业风险管理",
+              "description": "在问题二BILP基础上，引入离散风险情景集合Ω（含灾害类型、等级、发生概率π_ω、亩产冲击系数φ_i^ω、价格波动η_ω），构建情景效益e_it^ω；以期望效益E[Z]与最不利情景效益min_ω Z_ω为双目标，建立兼顾收益水平与抗灾能力的稳健优化模型。",
+              "mathematical_principle": "将不确定性离散化为有限情景，通过概率加权期望（式38）和辅助变量z（式39）刻画最坏情况，形成线性目标F=βz+(1−β)E[Z]（式40）。本质是将随机规划转化为确定性等价模型（Deterministic Equivalent），保留BILP结构的同时嵌入风险维度。",
+              "assumptions": [
+                "历史气象异常可代表未来风险分布",
+                "灾害对各区块冲击可用线性系数φ_i^ω表征",
+                "价格波动与灾害等级存在单调响应关系",
+                "决策者风险偏好可用权重β刻画"
+              ],
+              "core_formula": "$$\\max_{\\mathbf{x}, z} \\left\\{ (1-\\beta) \\sum_{\\omega \\in \\Omega} \\pi_\\omega Z_\\omega + \\beta z \\right\\} \\quad \\text{s.t.} \\quad z \\leq Z_\\omega \\; \\forall \\omega \\in \\Omega, \\; \\text{式}(24),(25),(41), \\; x_{it} \\in \\{0,1\\}$$",
+              "parameter_explanation": "Ω：风险情景集合（论文中|Ω|=15，对应2011-2025年）；π_ω：情景概率（式34，近期年份权重更高）；φ_i^ω：区块i在情景ω下的亩产冲击系数（式33，<1表示减产）；η_ω：价格波动比例（式35）；β=0.75：稳健性权重（高值强调底线保障）；Z_ω=∑∑ e_it^ω x_it（式37）；z：所有情景总效益下界（式39）。",
+              "solution_method": "扩展BILP求解器（支持辅助变量与多右端项）",
+              "algorithm_flow": "1. 输入：情景集合Ω、π_ω、φ_i^ω、η_ω、β；2. 计算各情景效益系数e_it^ω = p·(1+η_ω)·α_i·ŷ_it·φ_i^ω − (c₀+d_i)；3. 构建扩展模型：新增变量z，添加约束z≤Z_ω（∀ω），目标为max (1−β)∑π_ω Z_ω + βz；4. 求解并输出x_it*, z*, E[Z], minZ_ω；5. 计算风险度量R=E[Z]−minZ_ω（式43）。",
+              "data_preprocessing": "情景构造：对历史气象标准化（式30）→计算灾害强度（式31）→识别主导灾害（式32）→分位划分等级→概率加权（式34）；冲击系数φ_i^ω由历史亩产偏离度与管理强度拟合；价格波动η_ω按灾害等级设定。",
+              "feature_engineering": "无（输入为情景参数矩阵）",
+              "applicable": "存在历史数据支撑的离散不确定性问题；需平衡长期收益与极端风险的决策；政策制定、保险定价、应急调度等场景",
+              "not_applicable": "连续不确定性（需随机规划）；无历史情景数据（需模糊优化）；高维情景导致计算爆炸（|Ω|>100需采样）",
+              "pros": [
+                "将复杂风险转化为可计算的线性模型",
+                "显式控制最坏情况，提升方案韧性",
+                "参数β可调节风险偏好，灵活适配不同决策者"
+              ],
+              "cons": [
+                "情景代表性依赖历史数据质量",
+                "冲击系数φ_i^ω和价格波动η_ω存在主观设定成分",
+                "β取值影响结果，需敏感性分析"
+              ],
+              "comparison_with_other_models": "相比期望值优化（仅max E[Z]）：本文增加z约束显著提升最坏情景收益（+579.18）；相比Minimax（仅max minZ_ω）：本文保留期望收益避免过度保守；相比CVaR：本文用简单线性目标替代复杂分位数计算，更易求解。",
+              "code_template": "from pulp import LpProblem, LpMaximize, LpVariable, lpSum\nimport numpy as np\n\n# 情景参数（示例）\nOmega = list(range(15))  # 15个历史年份情景\npi = np.array([...])  # 15维概率向量\nphi = np.array([[...]])  # 10x15 区块-情景冲击系数\neta = np.array([...])  # 15维价格波动\nbeta = 0.75\n\n# 计算情景效益系数 e_it^omega (10x5x15)\ne_omega = np.zeros((10,5,15))\nfor w in Omega:\n    p_w = p * (1 + eta[w])  # 情景价格\n    for i in B:\n        for t in T_plus:\n            e_omega[i][t][w] = p_w * alpha[i] * y_hat[i][t] * phi[i][w] - (c0 + d[i])\n\n# 创建稳健优化问题\nprob_robust = LpProblem(\"Robust_Wheat_Planning\", LpMaximize)\n\n# 决策变量\nx = [[LpVariable(f'x_{i}_{t}', cat='Binary') for t in T_plus] for i in B]\nz = LpVariable('z', lowBound=None)  # 最不利情景效益下界\n\n# 目标函数：β*z + (1-β)*E[Z]\nexpected_Z = lpSum(pi[w] * lpSum(e_omega[i][t][w] * x[i][t] for i in B for t in T_plus) for w in Omega)\nprob_robust += beta * z + (1-beta) * expected_Z\n\n# 约束：z ≤ Z_omega for all ω\nfor w in Omega:\n    Z_w = lpSum(e_omega[i][t][w] * x[i][t] for i in B for t in T_plus)\n    prob_robust += z <= Z_w\n\n# 添加原BILP约束（同上）\nfor t in T_plus:\n    prob_robust += lpSum(x[i][t] for i in B) <= L\nfor i in B:\n    prob_robust += lpSum(x[i][t] for t in T_plus) <= U\n# 期望产能约束（式41）\nexp_yield = lpSum(pi[w] * lpSum(alpha[i] * y_hat[i][t] * phi[i][w] * x[i][t] for i in B for t in T_plus) for w in Omega)\nprob_robust += exp_yield >= eta * len(T_plus) * Y_hist\n\n# 求解\nprob_robust.solve()\n\n# 输出关键指标\nE_Z = expected_Z.value()\nmin_Z = z.value()\nR = E_Z - min_Z\nprint(f'Expected Benefit: {E_Z:.2f}, Worst-case: {min_Z:.2f}, Risk Measure R: {R:.2f}')"
+            }
+          ],
+          "images": [
+            {
+              "name": "热力图（Heatmap）",
+              "category": "趋势分析+对比分析",
+              "description": "图2：各区块长势指数随时序期数演变热力图；图4：各年度各区块交叉验证绝对百分比误差热力图；图12：风险优化前后各区块种植次数变化热力图",
+              "purpose": "可视化长势时空演化模式、误差分布局部性、决策调整空间，揭示区块间异质性与年份间波动性",
+              "data_source": "附件1长势时序数据；交叉验证误差结果；问题二/三最优解x_it矩阵",
+              "visualization_technique": "行列对齐+颜色梯度编码；图2用暖色系表征高长势，图4用红蓝渐变表征误差大小，图12用差值色阶显示增减",
+              "color_scheme": "Viridis（图2）、RdBu_r（图4）、coolwarm（图12）",
+              "position_in_paper": "第五章5.2.2节、第七章7.2.2节",
+              "applicable": "多维分类数据（区块×时间）的模式识别；误差诊断；决策敏感性分析",
+              "code_template": "import seaborn as sns\nimport matplotlib.pyplot as plt\n\n# 图2示例：长势热力图\ngrowth_data = np.random.rand(10, 20)  # 10区块×20期\nsns.heatmap(growth_data, cmap='viridis', xticklabels=range(1,21), yticklabels=[f'A{i+1}' for i in range(10)])\nplt.title('Growth Index Evolution by Block and Period')\nplt.xlabel('Period')\nplt.ylabel('Block')\nplt.show()"
+            },
+            {
+              "name": "散点图（Scatter Plot）",
+              "category": "相关性分析+模型验证",
+              "description": "图1：气象因子与亩产关系密度图（实为散点+核密度估计）；图3：留一年度交叉验证真实亩产与预测亩产对比图",
+              "purpose": "验证气象变量有效性（图1）；评估预测模型拟合效果与泛化能力（图3）",
+              "data_source": "气象因子与亩产原始观测值；交叉验证预测结果",
+              "visualization_technique": "散点+拟合线+置信带；理想线y=x参考；密度轮廓叠加",
+              "color_scheme": "蓝色散点+橙色拟合线+浅蓝置信带（图3）；单色散点+紫色密度轮廓（图1）",
+              "position_in_paper": "第五章5.2.2节",
+              "applicable": "两变量关系探索；回归模型诊断；残差分析",
+              "code_template": "import matplotlib.pyplot as plt\nimport seaborn as sns\n\n# 图3示例：预测vs真实值\ny_true = np.array([...])  # 真实亩产\ny_pred = np.array([...])  # 预测亩产\nplt.figure(figsize=(6,6))\nsns.scatterplot(x=y_true, y=y_pred, alpha=0.6)\nplt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--', lw=2)\nplt.xlabel('True Yield (kg/acre)')\nplt.ylabel('Predicted Yield (kg/acre)')\nplt.title('Cross-Validation: True vs Predicted')\nplt.grid(True)\nplt.show()"
+            },
+            {
+              "name": "柱状图/条形图（Bar Chart）",
+              "category": "占比分析+对比分析",
+              "description": "图5：随机森林特征重要性排名图；图8：2026—2030年年度总效益变化；图14：问题二与问题三方案风险—效益权衡（双柱对比）；图15：灾害等级效益损失率对比",
+              "purpose": "展示特征贡献度排序（图5）；呈现年度效益趋势（图8）；对比确定性与稳健方案性能（图14,15）",
+              "data_source": "RF特征重要性向量；问题二/三年度效益结果；各情景损失率计算结果",
+              "visualization_technique": "水平条形图（图5突出排名）；分组柱状图（图14,15用不同颜色区分方案）；堆叠柱状图（图8单一年度）",
+              "color_scheme": "深蓝（图5）、蓝/橙双色（图14,15）、单色渐变（图8）",
+              "position_in_paper": "第五章5.2.2节、第六章6.2.2节、第七章7.2.2节",
+              "applicable": "排序比较；多方案性能对比；时间序列汇总",
+              "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# 图5示例：特征重要性\nfeatures = ['g_max_x_P', 'g_range_x_T', ...][:5]\nimportance = [0.132860, 0.098342, ...][:5]\nplt.figure(figsize=(8,5))\nplt.barh(range(len(features)), importance, color='steelblue')\nplt.yticks(range(len(features)), features)\nplt.xlabel('Feature Importance')\nplt.title('Top 5 Feature Importances in Random Forest')\nplt.gca().invert_yaxis()\nplt.show()"
+            },
+            {
+              "name": "折线图（Line Chart）",
+              "category": "趋势分析",
+              "description": "图7：2026—2030年年度总产量变化；图13：不同风险情景下年度总产量变化",
+              "purpose": "展示规划期产量稳定性（图7）；揭示风险情景对产量的影响程度（图13）",
+              "data_source": "问题二/三年度总产量结果；各情景下年度产量模拟结果",
+              "visualization_technique": "多线叠加（图13用不同线型/颜色区分情景等级）；带阴影区的置信区间（隐含）",
+              "color_scheme": "主色蓝（正常情景）、橙（轻度）、红（重度）",
+              "position_in_paper": "第六章6.2.2节、第七章7.2.2节",
+              "applicable": "时间序列趋势展示；多情景对比；稳定性评估",
+              "code_template": "import matplotlib.pyplot as plt\n\n# 图13示例：多情景产量\nyears = [2026,2027,2028,2029,2030]\nyield_normal = [4902,4948,5016,4863,4823]\nyield_moderate = [4750,4780,4850,4700,4680]\nyield_severe = [4600,4620,4690,4550,4530]\n\nplt.figure(figsize=(10,6))\nplt.plot(years, yield_normal, 'b-o', label='Normal')\nplt.plot(years, yield_moderate, 'orange-s', label='Moderate')\nplt.plot(years, yield_severe, 'r-^', label='Severe')\nplt.xlabel('Year')\nplt.ylabel('Annual Total Yield (ton)')\nplt.title('Annual Yield under Different Risk Scenarios')\nplt.legend()\nplt.grid(True)\nplt.show()"
+            }
+          ],
+          "prompts": {
+            "problem_analysis": [
+              {
+                "content": "如何从题干中提取‘长势时序—气象—产量’三元关系？聚焦‘返青至成熟阶段’‘生育期’‘协同机制’等关键词，识别多源数据融合需求。",
+                "usage_scenario": "问题一建模初期",
+                "effect": "避免单一变量建模，确立特征工程方向"
+              },
+              {
+                "content": "如何识别约束类型的物理含义？将‘每年最多6个区块’映射为∑x_it≤L，‘每个区块至少休耕1年’转化为∑x_it≤4，‘平均总产量≥65%’转为∑∑y_it x_it≥阈值。",
+                "usage_scenario": "问题二/三约束建模",
+                "effect": "确保数学约束与实际管理规则严格对应"
+              }
+            ],
+            "model_selection": [
+              {
+                "content": "当问题含非线性、高维、小样本且需可解释性时，优先选择随机森林而非神经网络或SVM。",
+                "usage_scenario": "预测类问题选型",
+                "effect": "平衡精度、鲁棒性与特征重要性输出"
+              },
+              {
+                "content": "当决策变量为‘是否’‘有无’且约束为线性时，0-1整数规划是首选；若含连续变量（如面积比例），则选混合整数规划。",
+                "usage_scenario": "优化类问题选型",
+                "effect": "保证模型可解性与结果可验证性"
+              },
+              {
+                "content": "当存在历史风险数据且需兼顾期望与极端时，采用情景法稳健优化；若无历史数据，则考虑模糊优化或鲁棒优化。",
+                "usage_scenario": "风险类问题选型",
+                "effect": "规避主观概率设定，利用历史数据驱动情景生成"
+              }
+            ],
+            "modeling_approach": [
+              {
+                "content": "构建交互特征时，优先选择领域知识支持的组合（如‘长势最大值×累计降水’反映峰值生长与水分供给协同），而非全连接。",
+                "usage_scenario": "特征工程设计",
+                "effect": "提升模型物理可解释性，避免维度灾难"
+              },
+              {
+                "content": "将稳健性目标转化为线性形式：引入辅助变量z，添加约束z≤Z_ω（∀ω），目标设为βz+(1−β)E[Z]。",
+                "usage_scenario": "风险目标函数设计",
+                "effect": "保持整数规划结构，避免非线性或复杂分位数计算"
+              }
+            ],
+            "solution_method": [
+              {
+                "content": "对时间序列数据采用留一年度交叉验证（TimeSeriesSplit），而非随机K折，防止未来信息泄露。",
+                "usage_scenario": "时序预测模型验证",
+                "effect": "真实评估跨年度泛化能力"
+              },
+              {
+                "content": "整数规划求解后，必须进行三重核验：①约束满足性（∑x_it≤L等）；②经济合理性（高效益区块高频次）；③物理可行性（如轮作休耕天数）。",
+                "usage_scenario": "优化结果验证",
+                "effect": "确保数学最优解符合实际管理逻辑"
+              }
+            ],
+            "result_analysis": [
+              {
+                "content": "对比分析需聚焦‘变化量’：问题三较问题二的‘种植区块调整数量’（6个）、‘最不利情景收益提升’（+579.18）、‘风险度量下降’（−1137.55）。",
+                "usage_scenario": "多方案对比",
+                "effect": "量化稳健优化的实际收益，避免笼统描述"
+              },
+              {
+                "content": "敏感性分析应测试关键参数：β∈[0.5,0.9]下R与E[Z]的变化曲线；φ_i^ω±10%对最优解的影响。",
+                "usage_scenario": "模型鲁棒性检验",
+                "effect": "评估参数不确定性对决策结果的影响程度"
+              }
+            ],
+            "paper_structure": [
+              {
+                "content": "摘要采用‘问题—方法—结果—价值’四段式：首句点明三大任务，次句概括递进框架，第三句分述各问核心结果，末句升华模型价值。",
+                "usage_scenario": "摘要撰写",
+                "effect": "150字内清晰传达论文创新与贡献"
+              },
+              {
+                "content": "模型假设需与后续建模严格对应：如‘气象变量进入模型必要性’对应Pearson检验，‘管理系数稳定’对应式(19)校准。",
+                "usage_scenario": "假设章节撰写",
+                "effect": "增强模型可信度，避免假设与实现脱节"
+              }
+            ]
+          },
+          "structure": {
+            "sections": [
+              "一、问题重述",
+              "二、问题分析",
+              "三、模型假设",
+              "四、符号说明",
+              "五、问题一模型建立与求解",
+              "六、问题二模型建立与求解",
+              "七、问题三模型建立与求解",
+              "八、模型的评价与推广",
+              "参考文献"
+            ],
+            "subsection_hierarchy": "一级标题（一、二…）→二级标题（1.1, 2.1…）→三级标题（5.1.1, 5.1.2…）",
+            "word_count": {
+              "一、问题重述": 420,
+              "二、问题分析": 580,
+              "三、模型假设": 180,
+              "四、符号说明": 220,
+              "五、问题一模型建立与求解": 2150,
+              "六、问题二模型建立与求解": 1980,
+              "七、问题三模型建立与求解": 2420,
+              "八、模型的评价与推广": 620,
+              "参考文献": 180
+            },
+            "total_words": 8770,
+            "formula_count": 43,
+            "figure_count": 15,
+            "table_count": 14,
+            "writing_style": "严谨的学术工程写作风格：术语精准（如‘区块—年份样本单元’‘0-1整数线性规划’）；逻辑严密（每步推导标注公式编号）；结果导向（所有图表均服务于结论验证）；克制修辞（无主观评价，用数据说话）",
+            "abstract_writing_tips": "首句定义问题域，次句阐明方法论框架（递进式建模），第三句分述各问核心结果（含关键数值），末句点明模型价值（解释性、可核验性、决策支撑性）",
+            "keywords_selection": "从模型核心组件（随机森林、0-1整数规划）、关键创新点（长势—气象交互、风险情景）、问题特征（稳健优化）中各选1-2个最具区分度的术语",
+            "result_analysis_depth": "三层深度：①基础验证（MAPE、约束满足）；②机制解释（特征重要性、布局变化原因）；③价值量化（R下降1137.55，最不利收益提升579.18）"
+          },
+          "experience_summary": "1. 建模技巧：递进式框架设计（预测→确定性优化→风险稳健优化）确保逻辑闭环；交互特征构造紧扣农业机理（长势最大值×降水）；风险情景生成基于历史气象标准化，避免主观臆断。2. 写作技巧：公式编号贯穿始终便于引用；图表标题直指结论（如‘图5：特征重要性排名’）；结果分析采用‘数据+图表+解释’三段式。3. 分析方法：留一年度交叉验证优于随机K折；风险度量R=E[Z]−minZ_ω提供简洁稳健性指标；种植调整数量量化决策变化。4. 创新亮点：长势—气象交互项被证实为预测主因（表4）；稳健优化使R降低45%，证明方法有效性；模型链条从数据到决策全程可追溯。5. 通用方法：‘多源特征提取→机器学习预测→整数规划转化→风险情景嵌入’范式可迁移至水稻、玉米等作物布局，以及设施农业排产、水资源调度等问题。"
+        }
+      ],
+      "prompts": {
+        "problem_analysis": [
+          {
+            "content": "如何从题干中提取‘长势时序—气象—产量’三元关系？聚焦‘返青至成熟阶段’‘生育期’‘协同机制’等关键词，识别多源数据融合需求。",
+            "usage_scenario": "问题一建模初期",
+            "effect": "避免单一变量建模，确立特征工程方向"
+          },
+          {
+            "content": "如何识别约束类型的物理含义？将‘每年最多6个区块’映射为∑x_it≤L，‘每个区块至少休耕1年’转化为∑x_it≤4，‘平均总产量≥65%’转为∑∑y_it x_it≥阈值。",
+            "usage_scenario": "问题二/三约束建模",
+            "effect": "确保数学约束与实际管理规则严格对应"
+          }
+        ],
+        "model_selection": [
+          {
+            "content": "当问题含非线性、高维、小样本且需可解释性时，优先选择随机森林而非神经网络或SVM。",
+            "usage_scenario": "预测类问题选型",
+            "effect": "平衡精度、鲁棒性与特征重要性输出"
+          },
+          {
+            "content": "当决策变量为‘是否’‘有无’且约束为线性时，0-1整数规划是首选；若含连续变量（如面积比例），则选混合整数规划。",
+            "usage_scenario": "优化类问题选型",
+            "effect": "保证模型可解性与结果可验证性"
+          },
+          {
+            "content": "当存在历史风险数据且需兼顾期望与极端时，采用情景法稳健优化；若无历史数据，则考虑模糊优化或鲁棒优化。",
+            "usage_scenario": "风险类问题选型",
+            "effect": "规避主观概率设定，利用历史数据驱动情景生成"
+          }
+        ],
+        "modeling_approach": [
+          {
+            "content": "构建交互特征时，优先选择领域知识支持的组合（如‘长势最大值×累计降水’反映峰值生长与水分供给协同），而非全连接。",
+            "usage_scenario": "特征工程设计",
+            "effect": "提升模型物理可解释性，避免维度灾难"
+          },
+          {
+            "content": "将稳健性目标转化为线性形式：引入辅助变量z，添加约束z≤Z_ω（∀ω），目标设为βz+(1−β)E[Z]。",
+            "usage_scenario": "风险目标函数设计",
+            "effect": "保持整数规划结构，避免非线性或复杂分位数计算"
+          }
+        ],
+        "solution_method": [
+          {
+            "content": "对时间序列数据采用留一年度交叉验证（TimeSeriesSplit），而非随机K折，防止未来信息泄露。",
+            "usage_scenario": "时序预测模型验证",
+            "effect": "真实评估跨年度泛化能力"
+          },
+          {
+            "content": "整数规划求解后，必须进行三重核验：①约束满足性（∑x_it≤L等）；②经济合理性（高效益区块高频次）；③物理可行性（如轮作休耕天数）。",
+            "usage_scenario": "优化结果验证",
+            "effect": "确保数学最优解符合实际管理逻辑"
+          }
+        ],
+        "result_analysis": [
+          {
+            "content": "对比分析需聚焦‘变化量’：问题三较问题二的‘种植区块调整数量’（6个）、‘最不利情景收益提升’（+579.18）、‘风险度量下降’（−1137.55）。",
+            "usage_scenario": "多方案对比",
+            "effect": "量化稳健优化的实际收益，避免笼统描述"
+          },
+          {
+            "content": "敏感性分析应测试关键参数：β∈[0.5,0.9]下R与E[Z]的变化曲线；φ_i^ω±10%对最优解的影响。",
+            "usage_scenario": "模型鲁棒性检验",
+            "effect": "评估参数不确定性对决策结果的影响程度"
+          }
+        ],
+        "paper_structure": [
+          {
+            "content": "摘要采用‘问题—方法—结果—价值’四段式：首句点明三大任务，次句概括递进框架，第三句分述各问核心结果，末句升华模型价值。",
+            "usage_scenario": "摘要撰写",
+            "effect": "150字内清晰传达论文创新与贡献"
+          },
+          {
+            "content": "模型假设需与后续建模严格对应：如‘气象变量进入模型必要性’对应Pearson检验，‘管理系数稳定’对应式(19)校准。",
+            "usage_scenario": "假设章节撰写",
+            "effect": "增强模型可信度，避免假设与实现脱节"
+          }
+        ]
+      },
+      "structure": {
+        "sections": [
+          "一、问题重述",
+          "二、问题分析",
+          "三、模型假设",
+          "四、符号说明",
+          "五、问题一模型建立与求解",
+          "六、问题二模型建立与求解",
+          "七、问题三模型建立与求解",
+          "八、模型的评价与推广",
+          "参考文献"
+        ],
+        "subsection_hierarchy": "一级标题（一、二…）→二级标题（1.1, 2.1…）→三级标题（5.1.1, 5.1.2…）",
+        "word_count": {
+          "一、问题重述": 420,
+          "二、问题分析": 580,
+          "三、模型假设": 180,
+          "四、符号说明": 220,
+          "五、问题一模型建立与求解": 2150,
+          "六、问题二模型建立与求解": 1980,
+          "七、问题三模型建立与求解": 2420,
+          "八、模型的评价与推广": 620,
+          "参考文献": 180
+        },
+        "total_words": 8770,
+        "formula_count": 43,
+        "figure_count": 15,
+        "table_count": 14,
+        "writing_style": "严谨的学术工程写作风格：术语精准（如‘区块—年份样本单元’‘0-1整数线性规划’）；逻辑严密（每步推导标注公式编号）；结果导向（所有图表均服务于结论验证）；克制修辞（无主观评价，用数据说话）",
+        "abstract_writing_tips": "首句定义问题域，次句阐明方法论框架（递进式建模），第三句分述各问核心结果（含关键数值），末句点明模型价值（解释性、可核验性、决策支撑性）",
+        "keywords_selection": "从模型核心组件（随机森林、0-1整数规划）、关键创新点（长势—气象交互、风险情景）、问题特征（稳健优化）中各选1-2个最具区分度的术语",
+        "result_analysis_depth": "三层深度：①基础验证（MAPE、约束满足）；②机制解释（特征重要性、布局变化原因）；③价值量化（R下降1137.55，最不利收益提升579.18）"
+      },
+      "writing_style": "",
+      "experience_summary": "1. 建模技巧：递进式框架设计（预测→确定性优化→风险稳健优化）确保逻辑闭环；交互特征构造紧扣农业机理（长势最大值×降水）；风险情景生成基于历史气象标准化，避免主观臆断。2. 写作技巧：公式编号贯穿始终便于引用；图表标题直指结论（如‘图5：特征重要性排名’）；结果分析采用‘数据+图表+解释’三段式。3. 分析方法：留一年度交叉验证优于随机K折；风险度量R=E[Z]−minZ_ω提供简洁稳健性指标；种植调整数量量化决策变化。4. 创新亮点：长势—气象交互项被证实为预测主因（表4）；稳健优化使R降低45%，证明方法有效性；模型链条从数据到决策全程可追溯。5. 通用方法：‘多源特征提取→机器学习预测→整数规划转化→风险情景嵌入’范式可迁移至水稻、玉米等作物布局，以及设施农业排产、水资源调度等问题。"
+    }
+  },
+  "models": [
+    {
+      "name": "AHP-熵权-CRITIC组合赋权法",
+      "alias": "主客观融合赋权法",
+      "category": "综合评价模型",
+      "domain": "统计学、管理科学与工程",
+      "description": "通过层次分析法（AHP）引入专家主观判断，熵权法与CRITIC法分别从信息离散度与指标冲突性角度提取客观信息，按0.4:0.3:0.3加权合成最终权重，兼顾决策合理性与数据驱动性。",
+      "mathematical_principle": "AHP基于判断矩阵特征向量求解权重；熵权法依据指标信息熵反比于权重；CRITIC法综合标准差（离散性）与皮尔逊相关系数（冲突性）构建信息承载量I_j = s_j × (1 - ∑|r_{jt}|)。",
+      "assumptions": [
+        "专家判断具有一致性（CR < 0.1）",
+        "各指标间存在可量化差异性与独立性",
+        "标准化后数据满足线性加权可加性"
+      ],
+      "core_formula": "$$w_j = 0.4 \\cdot w_j^{\\text{AHP}} + 0.3 \\cdot w_j^{\\text{Entropy}} + 0.3 \\cdot w_j^{\\text{CRITIC}}$$",
+      "parameter_explanation": "w_j^{AHP}：AHP法计算的主观权重；w_j^{Entropy}：熵权法计算的客观权重；w_j^{CRITIC}：CRITIC法计算的客观权重；0.4, 0.3, 0.3：三者权重分配比例，经稳健性检验确定。",
+      "solution_method": "AHP采用几何平均法求特征向量；熵权法通过公式(6)-(9)迭代计算；CRITIC法按公式(10)-(13)推导；最终线性加权。",
+      "algorithm_flow": [
+        "Step 1：构建AHP判断矩阵并完成一致性检验（CR<0.1）",
+        "Step 2：对标准化数据计算各指标比重p_ij、信息熵e_j、差异系数g_j、熵权w_j^E",
+        "Step 3：计算各指标标准差s_j、冲突性c_j、信息承载量I_j、CRITIC权重w_j^C",
+        "Step 4：按0.4:0.3:0.3加权合成最终权重w_j",
+        "Step 5：代入公式GPLI = Σ w_j × x_ij^* 计算综合指数"
+      ],
+      "data_preprocessing": "3σ异常值检测 + 1%缩尾处理；线性插值填补缺失值；极差标准化（公式5）；负向指标正向化（公式4）",
+      "feature_engineering": "7项核心指标（4项生产+3项生活）+4项控制变量；全部指标经正向化与无量纲化；VIF检验确认无多重共线性（所有VIF<3）",
+      "applicable": "多维度、多层级、主客观并存的综合评价问题；适用于政策效果评估、区域发展水平测度、可持续发展指数构建等场景",
+      "not_applicable": "指标间存在强耦合或非线性交互关系时；样本量过小（n<30）导致熵值失真；专家打分严重分歧且无法达成共识",
+      "pros": [
+        "克服单一赋权法主观性强或客观性不足的缺陷",
+        "权重结果兼具理论支撑与数据证据",
+        "在江苏省13市×10年面板数据上验证稳定（附录表2权重一致性高）"
+      ],
+      "cons": [
+        "AHP依赖专家经验，存在认知偏差风险",
+        "熵权法对极端值敏感，需严格预处理",
+        "CRITIC法在高度相关指标下可能低估冗余性"
+      ],
+      "comparison_with_other_models": "相比单一AHP：避免主观随意性；相比单一熵权：防止‘数据噪声主导权重’；相比PCA：保留原始指标物理意义，不损失可解释性；相比TOPSIS：提供稳定权重而非相对排序。",
+      "code_template": "import numpy as np\nimport pandas as pd\nfrom sklearn.preprocessing import MinMaxScaler\n\ndef ahp_weight(judge_matrix):\n    # 判断矩阵归一化并求特征向量\n    norm_mat = judge_matrix / judge_matrix.sum(axis=0)\n    weights = norm_mat.mean(axis=1)\n    return weights / weights.sum()\n\ndef entropy_weight(data):\n    eps = 1e-6\n    p = (data + eps) / (data.sum(axis=0) + eps * data.shape[0])\n    e = -np.sum(p * np.log(p + eps), axis=0) / np.log(data.shape[0])\n    g = 1 - e\n    w = g / g.sum()\n    return w\n\ndef critic_weight(data):\n    # 标准差\n    s = np.std(data, axis=0, ddof=1)\n    # 相关系数矩阵\n    r = np.corrcoef(data.T)\n    c = np.sum(1 - np.abs(r), axis=0)\n    I = s * c\n    w = I / I.sum()\n    return w\n\n# 主客观融合赋权\ndata = pd.read_csv('preprocessed_data.csv')  # shape: (130, 7)\njudge_mat = np.array([[1,2,2,2,3,3,5],\n                      [0.5,1,2,2,2,2,5],\n                      [0.5,0.5,1,2,2,2,5],\n                      [0.5,0.5,0.5,1,2,2,3],\n                      [1/3,0.5,0.5,0.5,1,2,3],\n                      [1/3,0.5,0.5,0.5,0.5,1,3],\n                      [0.2,0.2,0.2,1/3,1/3,1/3,1]])\nw_ahp = ahp_weight(judge_mat)\nw_entropy = entropy_weight(data.values)\nw_critic = critic_weight(data.values)\nw_final = 0.4*w_ahp + 0.3*w_entropy + 0.3*w_critic\nprint('Final weights:', np.round(w_final, 4))"
+    },
+    {
+      "name": "Dagum基尼系数分解法",
+      "alias": "基尼系数三重分解",
+      "category": "区域差异分析模型",
+      "domain": "计量经济学、区域科学",
+      "description": "将总体基尼系数G分解为区域内差异Gw、区域间差异Gb和超变密度Gt三部分，精准识别区域差距来源，适用于多区域、长时间序列的不平等测度。",
+      "mathematical_principle": "基于洛伦兹曲线与均值差定义，G = Gw + Gb + Gt，其中Gw为各子群内部基尼系数加权平均；Gb为子群间均值差贡献；Gt为子群间分布重叠导致的交叉项。",
+      "assumptions": [
+        "各子群（苏南/苏中/苏北）内数据满足随机抽样",
+        "子群划分具有地理与经济合理性",
+        "指标可比性已通过标准化消除量纲影响"
+      ],
+      "core_formula": "$$G = \\sum_{k=1}^{K} \\frac{n_k}{n} \\cdot \\frac{\\mu_k}{\\mu} \\cdot G_k + \\sum_{k=1}^{K} \\sum_{l \\neq k} \\frac{n_k n_l}{n^2} \\cdot \\frac{|\\mu_k - \\mu_l|}{2\\mu} + \\sum_{k=1}^{K} \\sum_{l \\neq k} \\frac{n_k n_l}{n^2} \\cdot \\frac{\\mu_k + \\mu_l - 2\\mu_{kl}}{2\\mu}$$",
+      "parameter_explanation": "n_k：第k子群城市数；μ_k：第k子群均值；μ：总体均值；G_k：第k子群内部基尼系数；μ_{kl}：k与l子群交叠部分均值；K=3（苏南/苏中/苏北）",
+      "solution_method": "采用Dagum(1997)原始算法，基于Stata或Python custom实现，需输入分组标识与指标值。",
+      "algorithm_flow": [
+        "Step 1：按地理经济特征将13市划分为苏南（南京、苏州、无锡、常州、镇江）、苏中（南通、扬州、泰州）、苏北（徐州、淮安、盐城、连云港、宿迁）",
+        "Step 2：对每一年份GPLI数据计算总体基尼系数G",
+        "Step 3：分别计算各子群内部基尼系数G_k及权重项",
+        "Step 4：计算区域间均值差贡献Gb",
+        "Step 5：计算超变密度Gt（需Kernel密度估计辅助）",
+        "Step 6：验证G ≈ Gw + Gb + Gt"
+      ],
+      "data_preprocessing": "仅需GPLI时序面板数据（13×10），已标准化无需再处理；分组变量为地理标签",
+      "feature_engineering": "无新增特征；核心输入为分组标识向量与GPLI向量",
+      "applicable": "多区域发展差异溯源；城乡、东中西部、城市群内部差距分析；政策效果区域异质性评估",
+      "not_applicable": "两区域比较（此时Gt=0，退化为Theil分解）；时间截面过少（<5年）导致趋势不可靠；子群内样本量过小（n_k<3）",
+      "pros": [
+        "唯一能分离‘超变密度’的分解方法，揭示分布重叠程度",
+        "结果直观反映‘区域间差距主导’（Gb占比>50%）",
+        "与核密度估计形成方法互补（图6+图7）"
+      ],
+      "cons": [
+        "计算复杂，需专业软件支持",
+        "对子群划分敏感，不同划分方案结果差异大",
+        "未考虑空间邻接关系，纯统计分解"
+      ],
+      "comparison_with_other_models": "相比Theil指数：Theil可分解但无法分离Gt；相比CV系数：仅描述离散度，无结构分解；相比Moran's I：后者测空间自相关，前者测统计不平等。",
+      "code_template": "import numpy as np\nfrom scipy.stats import gaussian_kde\n\ndef dagum_gini_decomposition(data, groups):\n    # data: (n,) array of GPLI values; groups: (n,) array of group labels (1,2,3)\n    n = len(data)\n    mu = np.mean(data)\n    \n    # Within-group Gini\n    Gw = 0\n    for g in np.unique(groups):\n        sub_data = data[groups==g]\n        if len(sub_data) > 1:\n            mu_g = np.mean(sub_data)\n            G_g = np.mean(np.abs(np.subtract.outer(sub_data, sub_data))) / (2 * len(sub_data) * mu_g)\n            Gw += (len(sub_data)/n) * (mu_g/mu) * G_g\n    \n    # Between-group component (simplified)\n    group_means = [np.mean(data[groups==g]) for g in np.unique(groups)]\n    Gb = 0\n    for i, mu_i in enumerate(group_means):\n        for j, mu_j in enumerate(group_means):\n            if i != j:\n                Gb += (np.sum(groups==i)*np.sum(groups==j))/(n**2) * abs(mu_i - mu_j)/(2*mu)\n    \n    # Total Gini (empirical)\n    G_total = np.mean(np.abs(np.subtract.outer(data, data))) / (2 * n * mu)\n    Gt = G_total - Gw - Gb\n    \n    return {'G_total': G_total, 'Gw': Gw, 'Gb': Gb, 'Gt': Gt}\n\n# Example usage\nyears = list(range(2015,2025))\nresults = {}\nfor y in years:\n    # Load GPLI for year y\n    data_y = df[df['year']==y]['GPLI'].values\n    groups_y = df[df['year']==y]['region_group'].values  # 1=Sounth, 2=Middle, 3=North\n    results[y] = dagum_gini_decomposition(data_y, groups_y)"
+    },
+    {
+      "name": "空间杜宾模型（SDM）",
+      "alias": "Spatial Durbin Model",
+      "category": "空间计量模型",
+      "domain": "空间计量经济学、地理信息系统",
+      "description": "同时包含被解释变量与解释变量的空间滞后项，可完整分解直接效应、间接效应（空间溢出）与总效应，是处理空间外部性的基准模型。",
+      "mathematical_principle": "基于空间自回归框架，引入W·y与W·X项，克服SLX/SAR模型遗漏变量偏误，满足‘空间溢出完全内生’假设。",
+      "assumptions": [
+        "空间权重矩阵W合理（本文采用地理邻接矩阵）",
+        "误差项满足空间平稳性（ε ~ N(0, σ²I)）",
+        "变量间存在长期协整关系（已通过Kao检验）"
+      ],
+      "core_formula": "$$y = \\rho W y + X \\beta + W X \\theta + \\varepsilon$$",
+      "parameter_explanation": "y：被解释变量向量（GPLI）；W：13×13地理邻接空间权重矩阵（行标准化）；ρ：空间自回归系数；X：解释变量矩阵（11列）；β：直接效应系数；θ：空间溢出效应系数；ε：随机误差项",
+      "solution_method": "极大似然估计（ML）或广义矩估计（GMM），本文采用ML（Stata geostat或PySAL）",
+      "algorithm_flow": [
+        "Step 1：构建地理邻接空间权重矩阵W（13市，若相邻则W_ij=1，否则0；行标准化）",
+        "Step 2：进行全局Moran's I检验（表16证实显著正相关）",
+        "Step 3：设定SDM模型：GPLI_it = ρ·ΣW_ij·GPLI_jt + β·X_it + θ·ΣW_ij·X_jt + ε_it",
+        "Step 4：ML估计参数ρ, β, θ",
+        "Step 5：基于估计结果计算直接效应（∂y_i/∂x_ik）、间接效应（∂y_j/∂x_ik, j≠i）、总效应"
+      ],
+      "data_preprocessing": "面板数据已通过ADF检验（除ind_energy外均平稳）；Kao协整检验确认长期均衡；W矩阵需地理坐标或行政区划邻接关系",
+      "feature_engineering": "核心解释变量7个+控制变量4个=11维；所有变量经标准化处理；空间滞后项W·X由软件自动计算",
+      "applicable": "存在明显空间集聚现象的区域经济问题；需量化‘邻近地区政策外溢’效应；如环保政策、产业转移、基础设施联动等",
+      "not_applicable": "空间权重难以定义（如虚拟网络）；样本量过小（N<30）导致估计不稳定；存在严重内生性未处理（本文未报告工具变量）",
+      "pros": [
+        "唯一能同时估计X与y空间滞后项的模型，避免遗漏变量偏误",
+        "效应分解清晰（表17直接/间接/总效应列示）",
+        "发现ind_energy负向溢出、ind_waste_util正向溢出等关键机制"
+      ],
+      "cons": [
+        "参数估计复杂，计算量大",
+        "对W矩阵设定敏感（邻接vs距离衰减）",
+        "未处理潜在内生性（如GPLI与ind_energy互为因果）"
+      ],
+      "comparison_with_other_models": "相比SAR：SAR仅含Wy，忽略WX，会低估溢出效应；相比SLX：SLX仅含WX，忽略Wy，无法捕捉反馈循环；相比SEM：SEM仅含Wy，不能识别X的溢出。",
+      "code_template": "import pysal as ps\nimport spreg\nimport numpy as np\n\n# Load data: y (GPLI), X (11 vars), coords (13 cities)\n# Build spatial weights\nw = ps.weights.Queen.from_shapefile('jiangsu_cities.shp')\nw.transform = 'r'  # row-standardized\n\n# Prepare data matrices\ny = df['GPLI'].values.reshape(-1, 1)\nX = df[['ind_energy', 'ind_waste_util', ..., 'env_exp']].values\n\n# Fit SDM model\nmodel = spreg.SDM(y, X, w=w, name_y='GPLI', name_x=['ind_energy', ...])\nprint(model.summary)\n\n# Extract effects\n# Direct effect = beta\n# Indirect effect = (I - rho*W)^(-1) @ theta\n# Total effect = direct + indirect"
+    },
+    {
+      "name": "面板向量自回归模型（PVAR）",
+      "alias": "Panel Vector Autoregression",
+      "category": "动态系统分析模型",
+      "domain": "计量经济学、时间序列分析",
+      "description": "将VAR推广至面板数据，允许个体异质性，用于分析多变量间动态交互、脉冲响应与方差分解，揭示‘短平快’政策传导路径。",
+      "mathematical_principle": "基于向量自回归框架，引入个体固定效应α_i，估计系统内各变量滞后项对当前值的影响，满足弱外生性假设。",
+      "assumptions": [
+        "变量间存在长期协整关系（已通过Kao检验）",
+        "面板数据满足弱外生性（无严格内生性检验，但脉冲响应收敛）",
+        "滞后阶数p选择合理（本文采用AIC准则确定p=2）"
+      ],
+      "core_formula": "$$y_{it} = \\alpha_i + \\sum_{k=1}^{p} \\Phi_k y_{i,t-k} + \\varepsilon_{it}, \\quad \\varepsilon_{it} \\sim i.i.d.(0, \\Sigma)$$",
+      "parameter_explanation": "y_it：11维向量（GPLI, ind_energy, ..., env_exp）；α_i：第i市个体固定效应；Φ_k：滞后k期的系数矩阵（11×11）；ε_it：白噪声误差项；p=2（根据AIC选定）",
+      "solution_method": "两阶段最小二乘（2SLS）或广义矩估计（GMM），本文采用GMM（xtabond2 in Stata）",
+      "algorithm_flow": [
+        "Step 1：确认面板平稳性与协整性（表13-14）",
+        "Step 2：确定最优滞后阶数p（AIC/BIC准则）",
+        "Step 3：构建PVAR模型：y_it = α_i + Φ_1 y_{i,t-1} + Φ_2 y_{i,t-2} + ε_it",
+        "Step 4：进行方差分解（表18），计算各变量对GPLI预测误差方差的贡献率",
+        "Step 5：生成脉冲响应函数（图11），模拟单位冲击下的动态响应路径"
+      ],
+      "data_preprocessing": "所有变量一阶差分后平稳（ind_energy）；已通过Kao协整检验；无缺失值（线性插值补全）",
+      "feature_engineering": "11维系统变量（7核心+4控制）；全部变量同阶单整；无额外特征构造",
+      "applicable": "多变量动态传导机制研究；政策时滞效应评估（如基建投资→环境改善→消费转型）；系统稳定性诊断（脉冲响应收敛性）",
+      "not_applicable": "变量数过多导致自由度不足（n_vars > n_obs/3）；存在结构性突变未处理（如疫情冲击未建模）；长周期预测（>10期）可靠性下降",
+      "pros": [
+        "揭示‘污水处理能力→GPLI’的1-2年短周期带动效应（表18第1-2期）",
+        "证实系统长期均衡（脉冲响应6期内收敛，图11）",
+        "识别关键驱动因子：sewage_treat, msw_harmless, retail_ratio贡献度前3（表18）"
+      ],
+      "cons": [
+        "对滞后阶数敏感，p选择不当导致过度拟合",
+        "未处理疫情等外生冲击，可能影响脉冲响应真实性",
+        "方差分解结果依赖Cholesky排序（本文未说明排序依据）"
+      ],
+      "comparison_with_other_models": "相比普通VAR：PVAR控制个体异质性，更适合区域面板；相比Granger因果：PVAR提供动态路径而非单向因果；相比结构方程：PVAR无需先验理论约束，数据驱动。",
+      "code_template": "import statsmodels.api as sm\nfrom linearmodels.panel import PVAR\nimport numpy as np\n\n# Prepare panel data: y (130×11 matrix), index (city, year)\n# Ensure stationarity and cointegration first\n\n# Fit PVAR with 2 lags\npvar_model = PVAR(y, lags=2, cov_type='robust')\nresults = pvar_model.fit()\n\n# Variance decomposition\nvd = results.var_decomp(10)  # 10-step forecast error variance decomposition\nprint('Variance decomposition:\\n', vd)\n\n# Impulse response\nirf = results.irf(6)  # 6-period impulse response\nirf.plot(impulse='sewage_treat', response='GPLI')\nplt.show()"
+    },
+    {
+      "name": "随机森林回归（Random Forest Regression）",
+      "alias": "RF回归、集成树回归",
+      "category": "机器学习/非线性回归",
+      "domain": "统计学、计算机科学、农业信息学",
+      "description": "以区块—年份为样本单元，融合长势统计特征、生育期气象因子（平均气温T、累计降水P、日照时数S）及其两两乘积交互项（共43维），构建高维非线性产量映射模型。",
+      "mathematical_principle": "基于Bagging集成思想：通过自助采样（Bootstrap）生成M=300个训练子集，每棵回归树在随机子特征空间上递归划分节点，以最小化节点内产量方差（式12）为分裂准则；最终预测值为所有树输出的算术平均（式11）。理论基础包括：弱学习器偏差-方差权衡、随机子空间降低过拟合、集成平均抑制单棵树噪声敏感性。",
+      "assumptions": [
+        "长势时序与亩产存在稳定统计依赖关系",
+        "气象因子与亩产存在显著线性/单调相关性（经Pearson/Spearman检验验证）",
+        "长势—气象交互效应可由特征乘积项有效近似",
+        "历史数据分布具有代表性，能反映未来潜在规律"
+      ],
+      "core_formula": "$$\\hat{y}_{it} = \\frac{1}{M}\\sum_{b=1}^{M} h_b(\\mathbf{x}_{it})$$",
+      "parameter_explanation": "M=300：森林规模，控制集成稳定性；max_depth=12：单棵树最大深度，防止过拟合；n_features='sqrt'（隐含）：每次分裂候选特征数≈√43≈6，增强多样性；x_it∈ℝ⁴³：输入向量，含长势统计量（均值、极值、标准差、阶段变化量等10维）、气象因子（3维）及30维交互项（10×3）。",
+      "solution_method": "Scikit-learn RandomForestRegressor（默认mse准则、无剪枝）",
+      "algorithm_flow": "1. 输入：区块i年份t的长势序列{z_itq}、气象向量w_it=(T_it,P_it,S_it)、真实亩产y_it；2. 特征工程：按式(1)-(5)提取长势统计向量g_it；按式(9)-(10)构造x_it=[g_it; w_it; g_it w_it^T]；3. 模型训练：以{(x_it,y_it)}为训练集，拟合M棵回归树；4. 预测：对新x_it，计算各树叶节点均值并取平均；5. 评估：全样本拟合+留一年度交叉验证（式13-16）。",
+      "data_preprocessing": "长势序列标准化（隐含于统计特征提取中）；气象变量无需归一化（RF对量纲不敏感）；无缺失值（论文未提及插补）；无异常值剔除（依赖树模型鲁棒性）",
+      "feature_engineering": [
+        "长势时序压缩：均值（式1）、极值/极差（式2）、标准差（式3）、末期值、前后期变化量Δz（式4）、中位数、期数等10维统计特征",
+        "气象因子：T_it, P_it, S_it（3维）",
+        "交互特征：g_it ⊗ w_it（10×3=30维乘积项，式9-10）"
+      ],
+      "applicable": "多源异构时序数据融合预测；非线性、高维、小样本（N=150）回归任务；需兼顾精度与可解释性（特征重要性）的农业产量建模",
+      "not_applicable": "实时在线学习场景（需重训练）；超长时序依赖建模（如LSTM更优）；物理机理强约束问题（需耦合过程模型）",
+      "pros": [
+        "抗噪声与异常值能力强",
+        "自动处理特征交互与非线性",
+        "提供特征重要性排序（式18）",
+        "无需特征缩放，对缺失值鲁棒"
+      ],
+      "cons": [
+        "黑箱性较强（虽有特征重要性但难获全局解析式）",
+        "超参数调优成本高（本文明确定制M=300, depth=12）",
+        "外推能力受限于训练数据覆盖范围（极端气象组合泛化弱）"
+      ],
+      "comparison_with_other_models": "相比线性回归：RF MAPE=1.96% vs 线性回归预估>5%（文中隐含）；相比SVM：RF更适合高维稀疏农业特征；相比XGBoost：本文强调可解释性而非极致精度，RF特征重要性更直观。",
+      "code_template": "import numpy as np\nimport pandas as pd\nfrom sklearn.ensemble import RandomForestRegressor\nfrom sklearn.model_selection import TimeSeriesSplit\nfrom sklearn.metrics import mean_absolute_percentage_error, r2_score\n\n# 数据加载（示例结构）\n# df: columns=['block_id', 'year', 'z_q1', 'z_q2', ..., 'T', 'P', 'S', 'yield']\n\ndef extract_growth_features(z_series):\n    \"\"\"输入长势时序数组，输出10维统计特征\"\"\"\n    z_mean = np.mean(z_series)\n    z_max, z_min = np.max(z_series), np.min(z_series)\n    z_range = z_max - z_min\n    z_std = np.std(z_series, ddof=0)\n    z_last = z_series[-1]\n    z_delta = np.mean(np.diff(z_series)) # 前后期平均变化量\n    z_med = np.median(z_series)\n    z_len = len(z_series)\n    return np.array([z_mean, z_max, z_min, z_range, z_std, z_last, z_delta, z_med, z_len, 0]) # 第10维可扩展\n\n# 构造43维特征矩阵 X\nX, y = [], []\nfor (block, year), group in df.groupby(['block_id', 'year']):\n    z_seq = group[['z_q1','z_q2',...]].values.flatten() # 假设已对齐\n    g = extract_growth_features(z_seq)\n    w = group[['T','P','S']].iloc[0].values\n    c = np.outer(g, w).flatten() # 10x3=30维交互项\n    x_it = np.concatenate([g, w, c]) # 10+3+30=43\n    X.append(x_it)\n    y.append(group['yield'].iloc[0])\nX, y = np.array(X), np.array(y)\n\n# 模型训练与交叉验证（留一年度）\ntscv = TimeSeriesSplit(n_splits=15, max_train_size=None)\nmape_scores, r2_scores = [], []\nfor train_idx, test_idx in tscv.split(X):\n    X_train, X_test = X[train_idx], X[test_idx]\n    y_train, y_test = y[train_idx], y[test_idx]\n    rf = RandomForestRegressor(n_estimators=300, max_depth=12, random_state=42)\n    rf.fit(X_train, y_train)\n    y_pred = rf.predict(X_test)\n    mape_scores.append(mean_absolute_percentage_error(y_test, y_pred))\n    r2_scores.append(r2_score(y_test, y_pred))\n\nprint(f'CV MAPE: {np.mean(mape_scores):.2f}%, R²: {np.mean(r2_scores):.3f}')\n\n# 特征重要性\nfeature_names = ['g_mean','g_max',...,'T','P','S'] + [f'g{i}_w{j}' for i in range(10) for j in range(3)]\nimportances = rf.feature_importances_\nidx = np.argsort(importances)[-5:][::-1]\nfor i in idx:\n    print(f'{feature_names[i]}: {importances[i]:.6f}')"
+    },
+    {
+      "name": "0-1整数线性规划（Binary Integer Linear Programming, BILP）",
+      "alias": "二元整数规划、组合优化模型",
+      "category": "运筹优化/确定性优化",
+      "domain": "数学、管理科学、农业工程",
+      "description": "以问题一预测亩产为基础，引入管理提升系数α_i和区块成本差异d_i，构建单位种植效益e_it；以区块—年份二元变量x_it∈{0,1}为决策变量，在年度规模约束、轮作休耕约束和产能稳定性约束下，最大化五年总效益Z。",
+      "mathematical_principle": "线性目标函数与线性约束构成凸可行域，0-1变量使问题NP-hard，但规模可控（|B|=10, |T⁺|=5 ⇒ 50变量）；采用分支定界法求解全局最优解。核心是将农业管理逻辑转化为数学约束：∑_i x_it ≤ L（年度上限）；∑_t x_it ≤ U（轮作上限）；∑_{i,t} α_i y̅_it x_it ≥ η Y_hist（产能底线）。",
+      "assumptions": [
+        "管理提升系数α_i在规划期内恒定",
+        "成本差异d_i可准确量化且不随年份变化",
+        "价格p为确定性常数（问题二）或情景变量（问题三）",
+        "约束条件严格满足（硬约束）"
+      ],
+      "core_formula": "$$\\max_{\\mathbf{x}} \\sum_{t\\in T^+} \\sum_{i\\in B} e_{it} x_{it} \\quad \\text{s.t.} \\quad \\sum_{i\\in B} x_{it} \\leq L, \\; \\sum_{t\\in T^+} x_{it} \\leq U, \\; \\frac{1}{|T^+|} \\sum_{t\\in T^+} \\sum_{i\\in B} \\alpha_i \\hat{y}_{it} x_{it} \\geq \\eta Y_{\\text{hist}}, \\; x_{it} \\in \\{0,1\\}$$",
+      "parameter_explanation": "L=6：年度最大种植区块数；U=4：单区块五年最多种植次数（即至少休耕1年）；η=0.65：产能稳定性阈值比例；Y_hist=7222.27：历史平均总产量；e_it = p·α_i·ŷ_it - (c₀+d_i)：单位效益系数（已知常数）；x_it∈{0,1}：决策变量。",
+      "solution_method": "商用求解器（如Gurobi、CPLEX）或开源工具（PuLP+CBC）",
+      "algorithm_flow": "1. 输入：效益系数矩阵E=(e_it)₁₀ₓ₅、约束参数L,U,η,Y_hist；2. 定义决策变量x_it；3. 构建目标函数max ∑∑ e_it x_it；4. 添加约束：∑_i x_it ≤ L（∀t）、∑_t x_it ≤ U（∀i）、∑∑ α_i ŷ_it x_it ≥ η|T⁺|Y_hist；5. 调用整数规划求解器；6. 输出最优x_it矩阵及Z*。",
+      "data_preprocessing": "效益系数e_it由问题一预测值ŷ_it、管理参数α_i、成本参数d_i、价格p计算得到；约束右端项L,U,η,Y_hist由题设直接给出。",
+      "feature_engineering": "无（BILP为参数化优化，输入为标量系数）",
+      "applicable": "资源有限下的多周期二元决策问题；带硬约束的收益最大化；农业、物流、排班等离散资源配置场景",
+      "not_applicable": "连续决策变量问题（需LP）；大规模变量（>1000）导致求解困难；动态不确定性需随机规划",
+      "pros": [
+        "模型结构清晰，约束物理意义明确",
+        "求解结果全局最优且可验证",
+        "天然支持‘是否种植’等二元决策"
+      ],
+      "cons": [
+        "对参数敏感（e_it误差会传导至最优解）",
+        "无法直接处理连续变量（如种植面积比例）",
+        "大规模问题需高级求解器"
+      ],
+      "comparison_with_other_models": "相比启发式算法（GA/PSO）：BILP保证最优性；相比线性规划（LP）：BILP强制整数解更符合实际；相比动态规划：BILP更易扩展多约束。",
+      "code_template": "from pulp import LpProblem, LpMaximize, LpVariable, lpSum\nimport numpy as np\n\n# 已知参数\nB = list(range(10))  # 区块索引0-9\nT_plus = list(range(5))  # 年份索引0-4（2026-2030）\nL = 6  # 年度上限\nU = 4  # 单区块上限\neta = 0.65\nY_hist = 7222.27\n# e_it: 10x5 效益系数矩阵（由问题一结果计算）\ne = np.array([[...]])  # shape=(10,5)\nalpha = np.array([...])  # 10个区块提升系数\ny_hat = np.array([[...]])  # 10x5 预测亩产\n\n# 创建问题\nprob = LpProblem(\"Wheat_Planning\", LpMaximize)\n\n# 定义决策变量\nx = [[LpVariable(f'x_{i}_{t}', cat='Binary') for t in T_plus] for i in B]\n\n# 目标函数\nprob += lpSum(e[i][t] * x[i][t] for i in B for t in T_plus)\n\n# 约束：年度规模\nfor t in T_plus:\n    prob += lpSum(x[i][t] for i in B) <= L\n\n# 约束：轮作休耕\nfor i in B:\n    prob += lpSum(x[i][t] for t in T_plus) <= U\n\n# 约束：产能稳定性\nprob += lpSum(alpha[i] * y_hat[i][t] * x[i][t] for i in B for t in T_plus) >= eta * len(T_plus) * Y_hist\n\n# 求解\nprob.solve()\n\n# 输出结果\nprint(f'Optimal Total Benefit: {prob.objective.value():.2f}')\nfor t in T_plus:\n    planted = [i for i in B if x[i][t].value() > 0.5]\n    print(f'Year {2026+t}: Plant blocks {planted}')"
+    },
+    {
+      "name": "风险情景稳健优化模型（Scenario-based Robust Optimization）",
+      "alias": "期望-最坏联合优化、多情景整数规划",
+      "category": "运筹优化/随机优化/鲁棒优化",
+      "domain": "管理科学、金融工程、农业风险管理",
+      "description": "在问题二BILP基础上，引入离散风险情景集合Ω（含灾害类型、等级、发生概率π_ω、亩产冲击系数φ_i^ω、价格波动η_ω），构建情景效益e_it^ω；以期望效益E[Z]与最不利情景效益min_ω Z_ω为双目标，建立兼顾收益水平与抗灾能力的稳健优化模型。",
+      "mathematical_principle": "将不确定性离散化为有限情景，通过概率加权期望（式38）和辅助变量z（式39）刻画最坏情况，形成线性目标F=βz+(1−β)E[Z]（式40）。本质是将随机规划转化为确定性等价模型（Deterministic Equivalent），保留BILP结构的同时嵌入风险维度。",
+      "assumptions": [
+        "历史气象异常可代表未来风险分布",
+        "灾害对各区块冲击可用线性系数φ_i^ω表征",
+        "价格波动与灾害等级存在单调响应关系",
+        "决策者风险偏好可用权重β刻画"
+      ],
+      "core_formula": "$$\\max_{\\mathbf{x}, z} \\left\\{ (1-\\beta) \\sum_{\\omega \\in \\Omega} \\pi_\\omega Z_\\omega + \\beta z \\right\\} \\quad \\text{s.t.} \\quad z \\leq Z_\\omega \\; \\forall \\omega \\in \\Omega, \\; \\text{式}(24),(25),(41), \\; x_{it} \\in \\{0,1\\}$$",
+      "parameter_explanation": "Ω：风险情景集合（论文中|Ω|=15，对应2011-2025年）；π_ω：情景概率（式34，近期年份权重更高）；φ_i^ω：区块i在情景ω下的亩产冲击系数（式33，<1表示减产）；η_ω：价格波动比例（式35）；β=0.75：稳健性权重（高值强调底线保障）；Z_ω=∑∑ e_it^ω x_it（式37）；z：所有情景总效益下界（式39）。",
+      "solution_method": "扩展BILP求解器（支持辅助变量与多右端项）",
+      "algorithm_flow": "1. 输入：情景集合Ω、π_ω、φ_i^ω、η_ω、β；2. 计算各情景效益系数e_it^ω = p·(1+η_ω)·α_i·ŷ_it·φ_i^ω − (c₀+d_i)；3. 构建扩展模型：新增变量z，添加约束z≤Z_ω（∀ω），目标为max (1−β)∑π_ω Z_ω + βz；4. 求解并输出x_it*, z*, E[Z], minZ_ω；5. 计算风险度量R=E[Z]−minZ_ω（式43）。",
+      "data_preprocessing": "情景构造：对历史气象标准化（式30）→计算灾害强度（式31）→识别主导灾害（式32）→分位划分等级→概率加权（式34）；冲击系数φ_i^ω由历史亩产偏离度与管理强度拟合；价格波动η_ω按灾害等级设定。",
+      "feature_engineering": "无（输入为情景参数矩阵）",
+      "applicable": "存在历史数据支撑的离散不确定性问题；需平衡长期收益与极端风险的决策；政策制定、保险定价、应急调度等场景",
+      "not_applicable": "连续不确定性（需随机规划）；无历史情景数据（需模糊优化）；高维情景导致计算爆炸（|Ω|>100需采样）",
+      "pros": [
+        "将复杂风险转化为可计算的线性模型",
+        "显式控制最坏情况，提升方案韧性",
+        "参数β可调节风险偏好，灵活适配不同决策者"
+      ],
+      "cons": [
+        "情景代表性依赖历史数据质量",
+        "冲击系数φ_i^ω和价格波动η_ω存在主观设定成分",
+        "β取值影响结果，需敏感性分析"
+      ],
+      "comparison_with_other_models": "相比期望值优化（仅max E[Z]）：本文增加z约束显著提升最坏情景收益（+579.18）；相比Minimax（仅max minZ_ω）：本文保留期望收益避免过度保守；相比CVaR：本文用简单线性目标替代复杂分位数计算，更易求解。",
+      "code_template": "from pulp import LpProblem, LpMaximize, LpVariable, lpSum\nimport numpy as np\n\n# 情景参数（示例）\nOmega = list(range(15))  # 15个历史年份情景\npi = np.array([...])  # 15维概率向量\nphi = np.array([[...]])  # 10x15 区块-情景冲击系数\neta = np.array([...])  # 15维价格波动\nbeta = 0.75\n\n# 计算情景效益系数 e_it^omega (10x5x15)\ne_omega = np.zeros((10,5,15))\nfor w in Omega:\n    p_w = p * (1 + eta[w])  # 情景价格\n    for i in B:\n        for t in T_plus:\n            e_omega[i][t][w] = p_w * alpha[i] * y_hat[i][t] * phi[i][w] - (c0 + d[i])\n\n# 创建稳健优化问题\nprob_robust = LpProblem(\"Robust_Wheat_Planning\", LpMaximize)\n\n# 决策变量\nx = [[LpVariable(f'x_{i}_{t}', cat='Binary') for t in T_plus] for i in B]\nz = LpVariable('z', lowBound=None)  # 最不利情景效益下界\n\n# 目标函数：β*z + (1-β)*E[Z]\nexpected_Z = lpSum(pi[w] * lpSum(e_omega[i][t][w] * x[i][t] for i in B for t in T_plus) for w in Omega)\nprob_robust += beta * z + (1-beta) * expected_Z\n\n# 约束：z ≤ Z_omega for all ω\nfor w in Omega:\n    Z_w = lpSum(e_omega[i][t][w] * x[i][t] for i in B for t in T_plus)\n    prob_robust += z <= Z_w\n\n# 添加原BILP约束（同上）\nfor t in T_plus:\n    prob_robust += lpSum(x[i][t] for i in B) <= L\nfor i in B:\n    prob_robust += lpSum(x[i][t] for t in T_plus) <= U\n# 期望产能约束（式41）\nexp_yield = lpSum(pi[w] * lpSum(alpha[i] * y_hat[i][t] * phi[i][w] * x[i][t] for i in B for t in T_plus) for w in Omega)\nprob_robust += exp_yield >= eta * len(T_plus) * Y_hist\n\n# 求解\nprob_robust.solve()\n\n# 输出关键指标\nE_Z = expected_Z.value()\nmin_Z = z.value()\nR = E_Z - min_Z\nprint(f'Expected Benefit: {E_Z:.2f}, Worst-case: {min_Z:.2f}, Risk Measure R: {R:.2f}')"
+    }
+  ],
+  "images": [
+    {
+      "name": "核密度估计曲线图",
+      "category": "分布演进分析",
+      "description": "图7展示2015、2018、2021、2024四个关键年份江苏省13市GPLI的核密度曲线，呈现单峰右偏分布，峰值逐年右移且带宽收窄，表明整体水平提升且离散度下降。",
+      "purpose": "弥补Dagum基尼系数静态局限，可视化分布形态演变、集聚特征与收敛趋势，验证‘梯度式差异’而非‘断裂式极化’",
+      "data_source": "表10 GPLI综合得分（13市×10年）",
+      "visualization_technique": "采用高斯核函数，带宽h=0.1（Silverman规则），透明度alpha=0.7叠加绘制",
+      "color_scheme": "蓝（2015）→绿（2018）→橙（2021）→红（2024），渐变色强化时间维度",
+      "position_in_paper": "第四章（一）2.核密度特征分析，页码17",
+      "applicable": "多时期分布对比；区域发展均衡性诊断；政策效果可视化评估",
+      "code_template": "import matplotlib.pyplot as plt\nimport seaborn as sns\nimport numpy as np\n\n# Load GPLI data for key years\nyears = [2015, 2018, 2021, 2024]\ncolors = ['blue', 'green', 'orange', 'red']\n\nplt.figure(figsize=(10,6))\nfor i, y in enumerate(years):\n    data_y = df[df['year']==y]['GPLI']\n    sns.kdeplot(data_y, shade=True, alpha=0.7, color=colors[i], label=f'{y}')\nplt.xlabel('GPLI Index')\nplt.ylabel('Density')\nplt.title('Kernel Density Estimation of GPLI Distribution')\nplt.legend()\nplt.grid(True, alpha=0.3)\nplt.show()"
+    },
+    {
+      "name": "空间散点图（Moran's I）",
+      "category": "空间自相关分析",
+      "description": "图9为2015-2024年GPLI的Moran散点图，横轴为各市GPLI均值，纵轴为邻近城市GPLI均值，所有年份点均位于第一、三象限，且Q1/Q3象限点密集，证实正向空间集聚。",
+      "purpose": "直观验证全局Moran's I显著性（表16），识别高-高（苏南集群）、低-低（苏北集群）集聚模式，为SDM建模提供依据",
+      "data_source": "表10 GPLI综合得分 + 地理邻接矩阵W",
+      "visualization_technique": "四象限划分（均值线），点大小编码城市人口，颜色区分苏南/苏中/苏北",
+      "color_scheme": "苏南（深红）、苏中（橙）、苏北（浅蓝），高亮Q1（高-高）与Q3（低-低）",
+      "position_in_paper": "第四章（四）1.全局空间自相关检验，页码20",
+      "applicable": "空间依赖性诊断；集聚模式识别；空间权重矩阵有效性检验",
+      "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# Calculate spatial lag: W @ GPLI\nspatial_lag = W @ gpli_vector  # W: 13x13, gpli_vector: 13x1\nmean_gpli = np.mean(gpli_vector)\nmean_spatial_lag = np.mean(spatial_lag)\n\nplt.figure(figsize=(8,8))\nplt.scatter(gpli_vector, spatial_lag, c=region_colors, s=population_size*10)\nplt.axhline(mean_spatial_lag, color='gray', linestyle='--')\nplt.axvline(mean_gpli, color='gray', linestyle='--')\nplt.xlabel('GPLI (Local)')\nplt.ylabel('Spatial Lag of GPLI (Neighbor Average)')\nplt.title('Moran Scatterplot')\nplt.text(mean_gpli+0.01, mean_spatial_lag+0.01, 'Q1', fontsize=12)\nplt.text(mean_gpli-0.02, mean_spatial_lag+0.01, 'Q2', fontsize=12)\nplt.text(mean_gpli-0.02, mean_spatial_lag-0.01, 'Q3', fontsize=12)\nplt.text(mean_gpli+0.01, mean_spatial_lag-0.01, 'Q4', fontsize=12)\nplt.show()"
+    },
+    {
+      "name": "脉冲响应函数图",
+      "category": "动态效应分析",
+      "description": "图11展示7个核心变量对GPLI的脉冲响应路径，横轴为期数（0-6期），纵轴为响应值，所有曲线在6期内收敛至稳态，且多数呈正向单调收敛。",
+      "purpose": "验证PVAR模型动态稳定性；量化各变量冲击的持续时间与强度；识别政策见效周期（如sewage_treat在第1期达峰）",
+      "data_source": "PVAR模型估计结果 + IRF计算",
+      "visualization_technique": "多子图布局（7×1），统一坐标轴；实线表示响应均值，阴影区表示90%置信区间",
+      "color_scheme": "主变量（sewage_treat）用粗红线，其余用细灰线，突出关键驱动因素",
+      "position_in_paper": "第四章（五）2.脉冲响应分析，页码23",
+      "applicable": "动态政策效应评估；系统稳定性诊断；变量重要性排序",
+      "code_template": "import matplotlib.pyplot as plt\n\n# Assuming irf_results is a dict with keys like 'sewage_treat', 'msw_harmless', etc.\nfig, axes = plt.subplots(7, 1, figsize=(10, 20))\nvariables = ['sewage_treat', 'msw_harmless', 'retail_ratio', 'ind_waste_util', 'poll_invest', 'pub_trans', 'ind_energy']\nfor i, var in enumerate(variables):\n    ax = axes[i]\n    irf_var = irf_results[var]\n    ax.plot(irf_var[:, 0], 'r-', linewidth=2 if var=='sewage_treat' else 1, label=var)\n    ax.fill_between(range(len(irf_var)), irf_var[:, 1], irf_var[:, 2], alpha=0.2)\n    ax.set_ylabel(f'IRF to {var}')\n    ax.grid(True, alpha=0.3)\n    if i == 0:\n        ax.set_title('Impulse Response Functions')\nplt.tight_layout()\nplt.show()"
+    },
+    {
+      "name": "热力图（Heatmap）",
+      "category": "趋势分析+对比分析",
+      "description": "图2：各区块长势指数随时序期数演变热力图；图4：各年度各区块交叉验证绝对百分比误差热力图；图12：风险优化前后各区块种植次数变化热力图",
+      "purpose": "可视化长势时空演化模式、误差分布局部性、决策调整空间，揭示区块间异质性与年份间波动性",
+      "data_source": "附件1长势时序数据；交叉验证误差结果；问题二/三最优解x_it矩阵",
+      "visualization_technique": "行列对齐+颜色梯度编码；图2用暖色系表征高长势，图4用红蓝渐变表征误差大小，图12用差值色阶显示增减",
+      "color_scheme": "Viridis（图2）、RdBu_r（图4）、coolwarm（图12）",
+      "position_in_paper": "第五章5.2.2节、第七章7.2.2节",
+      "applicable": "多维分类数据（区块×时间）的模式识别；误差诊断；决策敏感性分析",
+      "code_template": "import seaborn as sns\nimport matplotlib.pyplot as plt\n\n# 图2示例：长势热力图\ngrowth_data = np.random.rand(10, 20)  # 10区块×20期\nsns.heatmap(growth_data, cmap='viridis', xticklabels=range(1,21), yticklabels=[f'A{i+1}' for i in range(10)])\nplt.title('Growth Index Evolution by Block and Period')\nplt.xlabel('Period')\nplt.ylabel('Block')\nplt.show()"
+    },
+    {
+      "name": "散点图（Scatter Plot）",
+      "category": "相关性分析+模型验证",
+      "description": "图1：气象因子与亩产关系密度图（实为散点+核密度估计）；图3：留一年度交叉验证真实亩产与预测亩产对比图",
+      "purpose": "验证气象变量有效性（图1）；评估预测模型拟合效果与泛化能力（图3）",
+      "data_source": "气象因子与亩产原始观测值；交叉验证预测结果",
+      "visualization_technique": "散点+拟合线+置信带；理想线y=x参考；密度轮廓叠加",
+      "color_scheme": "蓝色散点+橙色拟合线+浅蓝置信带（图3）；单色散点+紫色密度轮廓（图1）",
+      "position_in_paper": "第五章5.2.2节",
+      "applicable": "两变量关系探索；回归模型诊断；残差分析",
+      "code_template": "import matplotlib.pyplot as plt\nimport seaborn as sns\n\n# 图3示例：预测vs真实值\ny_true = np.array([...])  # 真实亩产\ny_pred = np.array([...])  # 预测亩产\nplt.figure(figsize=(6,6))\nsns.scatterplot(x=y_true, y=y_pred, alpha=0.6)\nplt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--', lw=2)\nplt.xlabel('True Yield (kg/acre)')\nplt.ylabel('Predicted Yield (kg/acre)')\nplt.title('Cross-Validation: True vs Predicted')\nplt.grid(True)\nplt.show()"
+    },
+    {
+      "name": "柱状图/条形图（Bar Chart）",
+      "category": "占比分析+对比分析",
+      "description": "图5：随机森林特征重要性排名图；图8：2026—2030年年度总效益变化；图14：问题二与问题三方案风险—效益权衡（双柱对比）；图15：灾害等级效益损失率对比",
+      "purpose": "展示特征贡献度排序（图5）；呈现年度效益趋势（图8）；对比确定性与稳健方案性能（图14,15）",
+      "data_source": "RF特征重要性向量；问题二/三年度效益结果；各情景损失率计算结果",
+      "visualization_technique": "水平条形图（图5突出排名）；分组柱状图（图14,15用不同颜色区分方案）；堆叠柱状图（图8单一年度）",
+      "color_scheme": "深蓝（图5）、蓝/橙双色（图14,15）、单色渐变（图8）",
+      "position_in_paper": "第五章5.2.2节、第六章6.2.2节、第七章7.2.2节",
+      "applicable": "排序比较；多方案性能对比；时间序列汇总",
+      "code_template": "import matplotlib.pyplot as plt\nimport numpy as np\n\n# 图5示例：特征重要性\nfeatures = ['g_max_x_P', 'g_range_x_T', ...][:5]\nimportance = [0.132860, 0.098342, ...][:5]\nplt.figure(figsize=(8,5))\nplt.barh(range(len(features)), importance, color='steelblue')\nplt.yticks(range(len(features)), features)\nplt.xlabel('Feature Importance')\nplt.title('Top 5 Feature Importances in Random Forest')\nplt.gca().invert_yaxis()\nplt.show()"
+    },
+    {
+      "name": "折线图（Line Chart）",
+      "category": "趋势分析",
+      "description": "图7：2026—2030年年度总产量变化；图13：不同风险情景下年度总产量变化",
+      "purpose": "展示规划期产量稳定性（图7）；揭示风险情景对产量的影响程度（图13）",
+      "data_source": "问题二/三年度总产量结果；各情景下年度产量模拟结果",
+      "visualization_technique": "多线叠加（图13用不同线型/颜色区分情景等级）；带阴影区的置信区间（隐含）",
+      "color_scheme": "主色蓝（正常情景）、橙（轻度）、红（重度）",
+      "position_in_paper": "第六章6.2.2节、第七章7.2.2节",
+      "applicable": "时间序列趋势展示；多情景对比；稳定性评估",
+      "code_template": "import matplotlib.pyplot as plt\n\n# 图13示例：多情景产量\nyears = [2026,2027,2028,2029,2030]\nyield_normal = [4902,4948,5016,4863,4823]\nyield_moderate = [4750,4780,4850,4700,4680]\nyield_severe = [4600,4620,4690,4550,4530]\n\nplt.figure(figsize=(10,6))\nplt.plot(years, yield_normal, 'b-o', label='Normal')\nplt.plot(years, yield_moderate, 'orange-s', label='Moderate')\nplt.plot(years, yield_severe, 'r-^', label='Severe')\nplt.xlabel('Year')\nplt.ylabel('Annual Total Yield (ton)')\nplt.title('Annual Yield under Different Risk Scenarios')\nplt.legend()\nplt.grid(True)\nplt.show()"
+    }
+  ]
+}
