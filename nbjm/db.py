@@ -42,16 +42,20 @@ def get_config(key):
 def set_config(key, value):
     """设置配置值"""
     client = get_client()
-    result = client.table('system_config').update({
-        'value': str(value),
-        'updated_at': datetime.utcnow().isoformat()
-    }).eq('key', key).execute()
-    if not result.data:
-        client.table('system_config').insert({
-            'key': key,
+    try:
+        result = client.table('system_config').update({
             'value': str(value),
             'updated_at': datetime.utcnow().isoformat()
-        }).execute()
+        }).eq('key', key).execute()
+        if result.data:
+            return
+    except Exception:
+        pass
+    client.table('system_config').insert({
+        'key': key,
+        'value': str(value),
+        'updated_at': datetime.utcnow().isoformat()
+    }).execute()
 
 
 def get_current_mode():
@@ -93,17 +97,21 @@ def get_all_sessions():
 def create_session(session_id, data=None):
     """创建新会话"""
     client = get_client()
-    result = client.table('user_sessions').update({
-        'data': data or {},
-        'updated_at': datetime.utcnow().isoformat()
-    }).eq('session_id', session_id).execute()
-    if not result.data:
-        client.table('user_sessions').insert({
-            'session_id': session_id,
+    try:
+        result = client.table('user_sessions').update({
             'data': data or {},
-            'created_at': datetime.utcnow().isoformat(),
             'updated_at': datetime.utcnow().isoformat()
-        }).execute()
+        }).eq('session_id', session_id).execute()
+        if result.data:
+            return
+    except Exception:
+        pass
+    client.table('user_sessions').insert({
+        'session_id': session_id,
+        'data': data or {},
+        'created_at': datetime.utcnow().isoformat(),
+        'updated_at': datetime.utcnow().isoformat()
+    }).execute()
 
 
 def update_session_data(session_id, data):
@@ -111,17 +119,21 @@ def update_session_data(session_id, data):
     client = get_client()
     existing = get_session_data(session_id)
     existing.update(data)
-    result = client.table('user_sessions').update({
-        'data': existing,
-        'updated_at': datetime.utcnow().isoformat()
-    }).eq('session_id', session_id).execute()
-    if not result.data:
-        client.table('user_sessions').insert({
-            'session_id': session_id,
+    try:
+        result = client.table('user_sessions').update({
             'data': existing,
-            'created_at': datetime.utcnow().isoformat(),
             'updated_at': datetime.utcnow().isoformat()
-        }).execute()
+        }).eq('session_id', session_id).execute()
+        if result.data:
+            return
+    except Exception:
+        pass
+    client.table('user_sessions').insert({
+        'session_id': session_id,
+        'data': existing,
+        'created_at': datetime.utcnow().isoformat(),
+        'updated_at': datetime.utcnow().isoformat()
+    }).execute()
 
 
 def delete_session(session_id):
@@ -153,17 +165,21 @@ def get_all_card_codes():
 def create_card_code_entry(code, amount):
     """创建卡密记录，amount为卡密初始余额"""
     client = get_client()
-    result = client.table('card_codes').update({
-        'amount': amount,
-        'balance': amount,
-    }).eq('code', code).execute()
-    if not result.data:
-        client.table('card_codes').insert({
-            'code': code,
+    try:
+        result = client.table('card_codes').update({
             'amount': amount,
             'balance': amount,
-            'created_at': datetime.utcnow().isoformat()
-        }).execute()
+        }).eq('code', code).execute()
+        if result.data:
+            return
+    except Exception:
+        pass
+    client.table('card_codes').insert({
+        'code': code,
+        'amount': amount,
+        'balance': amount,
+        'created_at': datetime.utcnow().isoformat()
+    }).execute()
 
 
 def delete_card_code_entry(code):
@@ -236,19 +252,23 @@ def get_user_balance(session_id):
 def create_user_card(session_id, balance=0, card_code=None):
     """创建用户余额记录"""
     client = get_client()
-    result = client.table('user_cards').update({
-        'balance': balance,
-        'card_code': card_code,
-        'updated_at': datetime.utcnow().isoformat()
-    }).eq('session_id', session_id).execute()
-    if not result.data:
-        client.table('user_cards').insert({
-            'session_id': session_id,
+    try:
+        result = client.table('user_cards').update({
             'balance': balance,
             'card_code': card_code,
-            'created_at': datetime.utcnow().isoformat(),
             'updated_at': datetime.utcnow().isoformat()
-        }).execute()
+        }).eq('session_id', session_id).execute()
+        if result.data:
+            return
+    except Exception:
+        pass
+    client.table('user_cards').insert({
+        'session_id': session_id,
+        'balance': balance,
+        'card_code': card_code,
+        'created_at': datetime.utcnow().isoformat(),
+        'updated_at': datetime.utcnow().isoformat()
+    }).execute()
 
 
 def update_user_balance(session_id, new_balance):
@@ -287,29 +307,25 @@ def save_file(session_id, file_key, file_name, file_data):
     """
     保存文件到数据库
     file_data: bytes 类型
-    处理大文件时使用Base64编码，确保兼容性
+    使用Base64编码存储，先删后插避免 update 权限问题
     """
     client = get_client()
     import base64
     encoded_data = base64.b64encode(file_data).decode('utf-8')
-    # 先尝试更新
-    result = client.table('stored_files').update({
+    # 先删除旧记录（忽略不存在的情况）
+    try:
+        client.table('stored_files').delete().eq('session_id', session_id).eq('file_key', file_key).execute()
+    except Exception:
+        pass
+    # 插入新记录
+    client.table('stored_files').insert({
+        'session_id': session_id,
+        'file_key': file_key,
         'file_name': file_name,
         'file_data': encoded_data,
         'file_size': len(file_data),
         'created_at': datetime.utcnow().isoformat()
-    }).eq('session_id', session_id).eq('file_key', file_key).execute()
-    
-    # 如果没有更新任何行，则插入新记录
-    if not result.data:
-        client.table('stored_files').insert({
-            'session_id': session_id,
-            'file_key': file_key,
-            'file_name': file_name,
-            'file_data': encoded_data,
-            'file_size': len(file_data),
-            'created_at': datetime.utcnow().isoformat()
-        }).execute()
+    }).execute()
 
 
 def get_file(session_id, file_key):
