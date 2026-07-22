@@ -36,4 +36,3 @@ nbjm/.venv/
 nbjm/__pycache__/
 nbjm/**/__pycache__/
 nbjm/data/
-nbjm/.env
