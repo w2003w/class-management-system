@@ -717,23 +717,20 @@ def main():
     ]
     
     st.markdown("### 🚀 功能模块")
+    
+    # 使用 Streamlit 原生按钮
     cols = st.columns(3)
     for i, module in enumerate(modules):
         with cols[i % 3]:
             is_selected = tab == module['name']
-            bg_color = "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" if is_selected else "var(--card-bg)"
-            text_color = "white" if is_selected else "var(--text-color)"
-            border_color = "#6366f1" if is_selected else "var(--border-color)"
+            button_type = "primary" if is_selected else "secondary"
             
             if st.button(
-                f"""<div style="padding: 16px; border-radius: 12px; background: {bg_color}; border: 2px solid {border_color}; text-align: center; transition: all 0.3s ease;">
-                    <div style="font-size: 28px; margin-bottom: 8px;">{module['icon']}</div>
-                    <div style="font-weight: 600; font-size: 16px; color: {text_color};">{module['name']}</div>
-                    <div style="font-size: 12px; color: {'rgba(255,255,255,0.8)' if is_selected else 'var(--text-muted)'}; margin-top: 4px;">{module['desc']}</div>
-                </div>""",
+                f"{module['icon']} {module['name']}",
                 key=f"module_btn_{module['name']}",
                 help=module['desc'],
                 use_container_width=True,
+                type=button_type,
                 on_click=lambda m=module['name']: st.session_state.update({'tab_select': m})
             ):
                 st.session_state['tab_select'] = module['name']
