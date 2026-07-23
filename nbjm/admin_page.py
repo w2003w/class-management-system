@@ -11,6 +11,40 @@ st.set_page_config(page_title="管理员控制台", layout="wide", initial_sideb
 
 is_dark = theme.apply_theme()
 
+# ---- 辅助函数 ----
+
+def _has_module2_uploads(session_id):
+    """判断用户是否在模块二上传过文件（非游客）"""
+    # 检查 session data 中是否有模块二相关字段
+    session_data = db.get_session_data(session_id)
+    if not session_data:
+        return False
+    # 检查是否有上传文件记录或模型选择
+    upload_keys = [
+        'problem_file', 'image_file', 'data_file', 'analysis_file',
+        'analysis_model', 'comprehensive_model'
+    ]
+    for q in range(1, 6):
+        upload_keys.extend([
+            f'code_upload_q{q}', f'code_model_q{q}',
+            f'paper_model_q{q}', f'paper_result_q{q}', f'paper_image_q{q}'
+        ])
+    for key in upload_keys:
+        if key in session_data and session_data[key]:
+            return True
+    # 也检查 stored_files 表中是否有 upload_ 前缀的文件
+    files = db.get_session_files(session_id)
+    for f in files:
+        if f.get('file_key', '').startswith('upload_'):
+            return True
+    return False
+
+
+def _get_active_sessions():
+    """获取所有有效会话（排除游客）"""
+    sessions = db.get_all_sessions()
+    return {sid: data for sid, data in sessions.items() if _has_module2_uploads(sid)}
+
 st.markdown("""
 <style>
 .sidebar-toggle-btn {
@@ -196,7 +230,7 @@ def main():
 def manage_user_sessions():
     st.subheader("📋 用户会话管理")
     
-    sessions = db.get_all_sessions()
+    sessions = _get_active_sessions()
     session_ids = list(sessions.keys())
     
     if not session_ids:
@@ -398,7 +432,7 @@ def manage_card_codes():
 def manage_result_uploads():
     st.subheader("📤 结果上传管理")
     
-    sessions = db.get_all_sessions()
+    sessions = _get_active_sessions()
     session_ids = list(sessions.keys())
     
     if not session_ids:
@@ -681,7 +715,7 @@ def manage_user_files():
     
     st.info("查看未过期的模块一用户需下载的文件，按用户分组显示")
     
-    sessions = db.get_all_sessions()
+    sessions = _get_active_sessions()
     session_ids = list(sessions.keys())
     
     if not session_ids:
