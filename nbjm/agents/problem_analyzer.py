@@ -1,7 +1,30 @@
 class ProblemAnalyzer:
     SYSTEM_PROMPT = """你是数学建模竞赛队的首席分析师。
 
-## 🚨 最重要的警告——请先看完再工作
+## 🚨 第一优先级：输出质量红线（违反任何一条 = 输出作废）
+
+你的输出会被程序自动检测以下指标，任意一条不合格，系统将拒绝你的回复并要求你重写：
+
+### 红线 1：每问 analysis_full_text 中文字符数 ≥ 1000
+程序将用 len(re.findall(r'[\\u4e00-\\u9fff]', text)) 精确统计。不足 1000 = 直接拒绝。
+
+### 红线 2：字段不是空白/关键词/字段名
+- 禁止出现：空字符串 ""、纯字段名（如"约束"、"建模思路"、"model_risks"）、仅"无""暂无"
+- 每个字符串字段必须有 ≥10 个中文字符的完整叙述
+
+### 红线 3：C.求解思路 必须覆盖 C1-C10 全部 10 个方面
+缺少任何一项 = 拒绝。
+
+### 红线 4：每条数组 ≥ 规定数量
+- assumptions ≥ 10 条
+- key_formulas_preview ≥ 5 条 LaTeX
+- algorithm.steps ≥ 7 步
+- hidden_constraints_discovered ≥ 3 条
+- boundary_tests ≥ 3 个
+
+**记牢：以上是程序自动检测的红线，不是建议。不通过的回复会直接被丢弃。**
+
+---
 
 以下是一种典型的**不合格输出**模式（只写关键词，没有完整叙述）：
 
@@ -321,7 +344,9 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
         self.llm_client = llm_client
         self.model_name = model_name
     
-    async def analyze(self, problem_text, competition_name=None, knowledge=None, data_info=None):
+    async def analyze(self, problem_text, competition_name=None, knowledge=None, data_info=None, max_retries=3):
+        import re, json
+        
         competition_style = ""
         if competition_name and knowledge:
             if 'competitions' in knowledge:
@@ -357,7 +382,7 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
         if data_info:
             data_section = f"\n\n# 用户上传的数据文件信息\n{data_info}"
         
-        user_content = f"""# 题目
+        base_user_content = f"""# 题目
 {problem_text}
 
 {data_section}
@@ -382,13 +407,135 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
         
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content}
+            {"role": "user", "content": base_user_content}
         ]
         
-        response = self.llm_client.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-            temperature=0.3
-        )
+        for attempt in range(max_retries):
+            response = self.llm_client.chat.completions.create(
+                model=self.model_name,
+                messages=messages,
+                temperature=0.3
+            )
+            result_text = response.choices[0].message.content
+            
+            # —— 自动质量检测 ——
+            try:
+                # 尝试提取 JSON
+                json_match = re.search(r'\{[\s\S]*\}', result_text)
+                if not json_match:
+                    failures = ["未找到有效的 JSON 对象"]
+                else:
+                    data = json.loads(json_match.group())
+                    failures = self._validate_output(data)
+                
+                if not failures:
+                    return result_text
+                
+                # 构建失败描述用于重试
+                fail_desc = "\n".join(f"  ✗ {f}" for f in failures)
+                retry_hint = f"""
+
+---
+## ⛔ 上一轮输出被自动检测拒绝！原因如下：
+
+{fail_desc}
+
+## 🔄 请立即重写 —— 你必须显著加长所有字段内容。
+
+**具体修改要求：**
+- 每个 analysis_full_text 必须 ≥1000 中文字符（程序会精确统计！）
+- 每个字符串字段至少 10 个中文字符，禁止空字符串和关键词
+- assumptions ≥ 10 条，formulas ≥ 5 条，steps ≥ 7 步
+- 不要敷衍！如果再次不合格，还会被拒绝！
+
+请重新输出完整的 JSON。"""
+                
+                messages.append({"role": "assistant", "content": result_text})
+                messages.append({"role": "user", "content": retry_hint})
+                
+            except Exception as e:
+                fail_desc = f"JSON 解析失败: {str(e)[:200]}"
+                retry_hint = f"""
+
+---
+## ⛔ 上一轮输出 JSON 解析失败: {fail_desc}
+
+请确保输出是有效的 JSON 格式，不要包含任何非 JSON 文字包裹在 JSON 外部。
+
+请重新输出完整的 JSON。"""
+                messages.append({"role": "assistant", "content": result_text})
+                messages.append({"role": "user", "content": retry_hint})
         
-        return response.choices[0].message.content
+        # 所有重试已用完，返回最后一次结果
+        return result_text if 'result_text' in dir() else ""
+    
+    @staticmethod
+    def _validate_output(data):
+        """检测输出质量，返回失败原因列表（空列表 = 合格）"""
+        failures = []
+        questions = data.get('questions', [])
+        
+        if not questions:
+            failures.append("questions 数组为空")
+            return failures
+        
+        for q in questions:
+            qn = q.get('question_number', '?')
+            
+            # 红线 1: analysis_full_text 中文字符数 ≥ 1000
+            text = q.get('analysis_full_text', '')
+            cn_count = len(__import__('re').findall(r'[\u4e00-\u9fff]', text))
+            if cn_count < 1000:
+                failures.append(f"问题{qn} analysis_full_text 仅 {cn_count} 个中文字符（要求 ≥1000）")
+            
+            # 红线 2: 关键字段不能为空/关键词
+            for field in ['content', 'direct_objective', 'implicit_objective', 
+                         'problem_transformation', 'mathematical_formulation', 'model_rationale']:
+                val = q.get(field, '')
+                # 可能嵌套在子对象中
+                if field in ['problem_transformation', 'mathematical_formulation', 'model_rationale']:
+                    sa = q.get('solution_approach', {})
+                    val = sa.get(field, '') if isinstance(sa, dict) else ''
+                cn = len(__import__('re').findall(r'[\u4e00-\u9fff]', str(val)))
+                if cn < 10:
+                    failures.append(f"问题{qn} {field} 仅 {cn} 个中文字符（要求 ≥10）")
+            
+            # 红线 3: C.求解思路 10 个子维度          
+            sa = q.get('solution_approach', {})
+            if not isinstance(sa, dict):
+                failures.append(f"问题{qn} solution_approach 不是对象")
+            else:
+                required_c = [
+                    'problem_transformation', 'mathematical_formulation',
+                    'physics_or_business_breakdown', 'network_structure',
+                    'primary_model', 'algorithm', 'hidden_constraints_discovered',
+                    'key_formulas_preview', 'sensitivity_plan',
+                    'pipeline_io'
+                ]
+                for c in required_c:
+                    if c not in sa or not sa[c]:
+                        failures.append(f"问题{qn} C.{c} 缺失或为空")
+            
+            # 红线 4: 数组最低数量
+            assumptions = data.get('assumptions', [])
+            if len(assumptions) < 10:
+                failures.append(f"assumptions 仅 {len(assumptions)} 条（要求 ≥10）")
+            
+            key_formulas = sa.get('key_formulas_preview', [])
+            if len(key_formulas) < 5:
+                failures.append(f"问题{qn} key_formulas_preview 仅 {len(key_formulas)} 条（要求 ≥5）")
+            
+            algo = sa.get('algorithm', {})
+            steps = algo.get('steps', []) if isinstance(algo, dict) else []
+            if len(steps) < 7:
+                failures.append(f"问题{qn} algorithm.steps 仅 {len(steps)} 步（要求 ≥7）")
+            
+            hidden = sa.get('hidden_constraints_discovered', [])
+            if len(hidden) < 3:
+                failures.append(f"问题{qn} hidden_constraints_discovered 仅 {len(hidden)} 条（要求 ≥3）")
+            
+            boundary = q.get('risks', {}).get('boundary_tests', [])
+            if len(boundary) < 3:
+                failures.append(f"问题{qn} boundary_tests 仅 {len(boundary)} 个（要求 ≥3）")
+        
+        return failures
