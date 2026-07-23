@@ -507,13 +507,13 @@ def display_paper(paper_json):
                 table_html = "<table border='1' style='border-collapse: collapse; width: 100%;'>"
                 table_html += "<thead><tr>"
                 for header in headers:
-                    table_html += f"<th style='border: 1px solid #ddd; padding: 8px; text-align: center; background-color: #f2f2f2;'>{header}</th>"
+                    table_html += f"<th style='border: 1px solid var(--border-color, #ddd); padding: 8px; text-align: center; background-color: var(--secondary-background-color, #f2f2f2); color: var(--text-color, inherit);'>{header}</th>"
                 table_html += "</tr></thead><tbody>"
                 
                 for row in rows:
                     table_html += "<tr>"
                     for cell in row:
-                        table_html += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: center;'>{cell}</td>"
+                        table_html += f"<td style='border: 1px solid var(--border-color, #ddd); padding: 8px; text-align: center;'>{cell}</td>"
                     table_html += "</tr>"
                 
                 table_html += "</tbody></table>"
@@ -615,7 +615,7 @@ def main():
                 justify-content: center;
                 height: 100%;
                 font-size: 24px;
-                color: #667eea;
+                color: var(--primary-color, #667eea);
                 cursor: pointer;
             }
             </style>
@@ -664,13 +664,13 @@ def main():
     
     user_card = db.get_user_card(session_id)
     if user_card is None:
-        st.markdown("""
-            <div style="background-color: #fef2f2; border: 2px solid #f87171; padding: 20px; border-radius: 10px; text-align: center;">
-            <h3 style="color: #dc2626;">⚠️ 请先激活卡密</h3>
-            <p>在左侧侧边栏输入卡密并点击「激活卡密」按钮</p>
-            <p>激活后才能使用系统功能</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.warning("""
+        **⚠️ 请先激活卡密**
+        
+        在左侧侧边栏输入卡密并点击「激活卡密」按钮
+        
+        激活后才能使用系统功能
+        """)
         return
     
     providers = get_available_providers()

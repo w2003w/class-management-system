@@ -170,7 +170,7 @@ def main():
                 justify-content: center;
                 height: 100%;
                 font-size: 24px;
-                color: #667eea;
+                color: var(--primary-color, #667eea);
                 cursor: pointer;
             }
             </style>
