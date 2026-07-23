@@ -198,13 +198,13 @@ def main():
     
     user_card = db.get_user_card(session_id)
     if user_card is None:
-        st.markdown("""
-            <div style="background-color: #fef2f2; border: 2px solid #f87171; padding: 20px; border-radius: 10px; text-align: center;">
-            <h3 style="color: #dc2626;">⚠️ 请先激活卡密</h3>
-            <p>在左侧侧边栏输入卡密并点击「激活卡密」按钮</p>
-            <p>激活后才能使用系统功能</p>
-            </div>
-            """, unsafe_allow_html=True)
+        st.warning("""
+        **⚠️ 请先激活卡密**
+        
+        在左侧侧边栏输入卡密并点击「激活卡密」按钮
+        
+        激活后才能使用系统功能
+        """)
         return
     
     if 'step' not in st.session_state:
@@ -224,11 +224,7 @@ def main():
 def show_step1(session_id):
     st.header("📝 第一部分：上传题目文件读取")
     
-    st.markdown("""
-    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>特别说明</strong>：强调插图需单独上传（最大500KB），数据文件支持多表（xlsx/xls/csv）
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("**特别说明**：强调插图需单独上传（最大500KB），数据文件支持多表（xlsx/xls/csv）")
     
     col1, col2, col3 = st.columns(3)
     
@@ -389,11 +385,7 @@ def show_step1(session_id):
 def show_step2(session_id):
     st.header("🔍 第二部分：问题分析")
     
-    st.markdown("""
-    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>提示</strong>：需先读取题目（完成第一部分）
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("**提示**：需先读取题目（完成第一部分）")
     
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
@@ -513,11 +505,7 @@ def show_step2(session_id):
     
     st.markdown("---")
     
-    st.markdown("""
-    <div style="background-color: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>请选择绘图部分代码风格...</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    st.warning("**请选择绘图部分代码风格...**")
     
     col_plot1, col_plot2 = st.columns(2)
     
@@ -565,11 +553,7 @@ def show_step2(session_id):
 def show_step3(session_id):
     st.header("💻 第三部分：代码生成")
     
-    st.markdown("""
-    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>提示</strong>：针对五个问题分别生成代码。推荐Python。强调代码的连续性（后一题参考前一题）。
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("**提示**：针对五个问题分别生成代码。推荐Python。强调代码的连续性（后一题参考前一题）。")
     
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
@@ -587,11 +571,8 @@ def show_step3(session_id):
     
     for q_num in range(1, 6):
         st.markdown(f"---")
-        st.markdown(f"""
-        <div style="background-color: #374151; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-        <strong>问题{q_num}代码实现（需要先执行第{q_num}部分）</strong>
-        </div>
-        """, unsafe_allow_html=True)
+        st.subheader(f"问题{q_num}代码实现")
+        st.caption("需要先点击下方按钮执行该部分")
         
         col_params, col_upload = st.columns([2, 1])
         
@@ -730,11 +711,7 @@ def show_step3(session_id):
 def show_step4(session_id):
     st.header("📝 第四部分：论文写作")
     
-    st.markdown("""
-    <div style="background-color: #f0f2f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>提示</strong>：基于前面的代码和运行结果，自动生成论文的各个章节。
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("**提示**：基于前面的代码和运行结果，自动生成论文的各个章节。")
     
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
@@ -745,17 +722,9 @@ def show_step4(session_id):
     
     for q_num in range(1, 6):
         st.markdown(f"---")
-        st.markdown(f"""
-        <div style="background-color: #374151; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-        <strong>问题{q_num}数学模型建立与求解</strong>
-        </div>
-        """, unsafe_allow_html=True)
+        st.subheader(f"问题{q_num}数学模型建立与求解")
         
-        st.markdown("""
-        <div style="background-color: #f97316; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
-        提示：需上传代码（py文件，不支持matlab），注意主程序位置，结果需保存到txt或excel。
-        </div>
-        """, unsafe_allow_html=True)
+        st.warning("提示：需上传代码（py文件，不支持matlab），注意主程序位置，结果需保存到txt或excel。")
         
         col_upload1, col_upload2, col_upload3 = st.columns(3)
         
@@ -860,11 +829,7 @@ def show_step4(session_id):
     
     st.markdown("---")
     
-    st.markdown("""
-    <div style="background-color: #dc2626; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>摘要、问题重述、模型假设...</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    st.warning("**摘要、问题重述、模型假设...**")
     
     col_comp_left, col_comp_right = st.columns([3, 1])
     
@@ -924,11 +889,7 @@ def show_step4(session_id):
     
     st.markdown("---")
     
-    st.markdown("""
-    <div style="background-color: #374151; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-    <strong>最终排版后的论文内容展示</strong>
-    </div>
-    """, unsafe_allow_html=True)
+    st.subheader("最终排版后的论文内容展示")
     
     formatted_file_name, formatted_file_data = get_result_file_data(session_id, 'formatted')
     preview_content = get_file_preview_from_data(formatted_file_name, formatted_file_data)
