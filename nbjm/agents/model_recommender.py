@@ -309,6 +309,11 @@ final阶段的模型需要包含完整的推导逻辑，包括：
                     q_title = q.get('question_title', '')
                     questions_text += f"- 问题{q_num}「{q_title}」({q_type}/{q_subtype})：{q_content}\n"
                     
+                    # 提取完整分析文本（首要上下文！）
+                    full_text = q.get('analysis_full_text', '')
+                    if full_text:
+                        deliverables_lines.append(f"### 问题{q_num} 完整分析\n{full_text[:3000]}")
+                    
                     # 提取交付清单
                     deliverables = q.get('deliverables', {})
                     if deliverables:

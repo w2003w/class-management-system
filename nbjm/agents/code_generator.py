@@ -696,6 +696,10 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
             for q in questions:
                 q_num = q.get('question_number', q.get('number', ''))
                 q_title = q.get('question_title', '')
+                # 首要上下文：完整分析文本
+                full_text = q.get('analysis_full_text', '')
+                if full_text:
+                    deliverables_lines.append(f"### 问题{q_num}「{q_title}」完整分析\n{full_text[:3000]}")
                 deliverables = q.get('deliverables', {})
                 if deliverables:
                     figs = deliverables.get('figures', [])
