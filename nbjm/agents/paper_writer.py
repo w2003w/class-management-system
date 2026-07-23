@@ -1653,7 +1653,7 @@ class PaperWriter:
             except Exception:
                 model_versions_text = model_recommendations[:1000]
 
-        code_results_text = code_results[:1000] if code_results else ""
+        code_results_text = code_results[:8000] if code_results else ""
         
         code_summary_text = ""
         if code_results and question_number:

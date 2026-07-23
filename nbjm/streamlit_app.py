@@ -775,6 +775,7 @@ def main():
         
         if data_files is not None and len(data_files) > 0:
             uploaded_data_files = []
+            uploaded_data_file_names = []
             for data_file in data_files:
                 file_data = data_file.getvalue()
                 # 保存到数据库
@@ -785,8 +786,10 @@ def main():
                 tmp.write(file_data)
                 tmp.close()
                 uploaded_data_files.append(tmp.name)
+                uploaded_data_file_names.append(data_file.name)
             
             st.session_state['uploaded_data_files'] = uploaded_data_files
+            st.session_state['uploaded_data_file_names'] = uploaded_data_file_names
             
             st.success(f"已上传 {len(data_files)} 个数据文件")
             for data_file in data_files:
@@ -807,7 +810,11 @@ def main():
                     st.warning(f"无法读取 {data_file.name}: {str(e)}")
         
         if st.session_state.get('uploaded_data_files'):
-            st.info(f"已上传数据文件: {', '.join([os.path.basename(f) for f in st.session_state['uploaded_data_files']])}")
+            names = st.session_state.get('uploaded_data_file_names', [])
+            if names:
+                st.info(f"已上传数据文件: {', '.join(names)}")
+            else:
+                st.info(f"已上传数据文件: {', '.join([os.path.basename(f) for f in st.session_state['uploaded_data_files']])}")
         
         st.text_area(
             "输入赛题描述", 
@@ -837,7 +844,7 @@ def main():
                     coordinator = Coordinator(client, model_name=selected_model)
                     coordinator.set_knowledge(get_all_papers())
                     coordinator.set_competition(selected_competition)
-                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'))
+                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'), st.session_state.get('uploaded_data_file_names'))
                     
                     result, error = run_llm_task(coordinator.analyze_problem, st.session_state['problem_text'], timeout=600)
                     if error:
@@ -887,7 +894,7 @@ def main():
                     coordinator = Coordinator(client, model_name=selected_model)
                     coordinator.set_knowledge(get_all_papers())
                     coordinator.set_competition(selected_competition)
-                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'))
+                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'), st.session_state.get('uploaded_data_file_names'))
                     
                     result, error = run_llm_task(coordinator.recommend_models, st.session_state['analysis_result'])
                     if error:
@@ -1151,7 +1158,7 @@ def main():
                             coordinator = Coordinator(client, model_name=selected_model)
                             coordinator.set_knowledge(get_all_papers())
                             coordinator.set_competition(selected_competition)
-                            coordinator.set_data_files(st.session_state.get('uploaded_data_files'))
+                            coordinator.set_data_files(st.session_state.get('uploaded_data_files'), st.session_state.get('uploaded_data_file_names'))
                             
                             def progress_callback(msg):
                                 status_text.info(msg)
@@ -1497,7 +1504,7 @@ def main():
                     coordinator = Coordinator(client, model_name=selected_model)
                     coordinator.set_knowledge(get_all_papers())
                     coordinator.set_competition(selected_competition)
-                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'))
+                    coordinator.set_data_files(st.session_state.get('uploaded_data_files'), st.session_state.get('uploaded_data_file_names'))
                     
                     debug_info = st.expander("📋 调试信息", expanded=False)
                     debug_info.write(f"analysis_result exists: {st.session_state.get('analysis_result') is not None}")
@@ -2535,7 +2542,7 @@ def run_full_process(selected_provider):
         coordinator = Coordinator(client, model_name=selected_model)
         coordinator.set_knowledge(get_all_papers())
         coordinator.set_competition(selected_competition)
-        coordinator.set_data_files(st.session_state.get('uploaded_data_files'))
+        coordinator.set_data_files(st.session_state.get('uploaded_data_files'), st.session_state.get('uploaded_data_file_names'))
         
         progress_bar.progress(10)
         st.info("🔍 步骤1：问题分析...")

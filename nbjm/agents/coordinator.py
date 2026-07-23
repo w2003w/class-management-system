@@ -38,6 +38,7 @@ class Coordinator:
         self.knowledge = None
         self.competition_name = None
         self.data_files = None
+        self.data_file_names = []
 
     def set_knowledge(self, knowledge):
         self.knowledge = knowledge
@@ -45,8 +46,9 @@ class Coordinator:
     def set_competition(self, competition_name):
         self.competition_name = competition_name
 
-    def set_data_files(self, data_files):
+    def set_data_files(self, data_files, data_file_names=None):
         self.data_files = data_files
+        self.data_file_names = data_file_names or []
 
     def _clean_json(self, json_str):
         json_str = json_str.replace("```json", "").replace("```", "").strip()
@@ -642,13 +644,17 @@ class Coordinator:
         if not self.data_files:
             return ""
 
-        data_info = "\n\n## 可用数据文件\n"
-        data_info += "以下是用户上传的数据文件及其原始数据内容。请直接使用这些数据进行分析，不要自行生成数据：\n\n"
+        data_info = "\n\n## 可用数据文件（请综合使用以下所有数据文件进行分析）\n"
+        data_info += "**重要提示**：以下是用户上传的所有数据文件及其完整原始数据内容。请在分析时综合使用所有数据文件，不要遗漏任何一个文件中的数据：\n\n"
 
-        for data_file in self.data_files:
-            filename = os.path.basename(data_file)
+        for i, data_file in enumerate(self.data_files):
+            # 优先使用原始文件名，兜底使用 os.path.basename
+            if i < len(self.data_file_names) and self.data_file_names[i]:
+                filename = self.data_file_names[i]
+            else:
+                filename = os.path.basename(data_file)
             ext = os.path.splitext(filename)[1].lower()
-            data_info += f"### 文件: {filename} ({ext})\n"
+            data_info += f"### 文件{i+1}: {filename} ({ext})\n"
 
             try:
                 if ext == '.csv':
