@@ -357,27 +357,22 @@ def show_step1(session_id):
         with col_right:
             st.markdown("### 📝 AI提取原文")
             
-            analysis_file_name, analysis_file_data = get_result_file_data(session_id, 'analysis')
-            preview_content = get_file_preview_from_data(analysis_file_name, analysis_file_data)
-
-            if preview_content:
-                st.text_area("AI提取原文预览", preview_content, height=300, key="analysis_preview")
-
-                st.download_button(
-                    label="下载AI提取原文",
-                    data=analysis_file_data,
-                    file_name=analysis_file_name,
-                    key="download_analysis_btn"
-                )
+            problem_content = session_data.get('problem_content', '')
+            if problem_content:
+                st.text_area("AI提取原文预览", problem_content, height=300, key="analysis_preview")
             else:
                 if session_data.get('step1_status') == 'processing':
-                    st.info("⏳ 正在生成题目解析结果...")
+                    st.info("⏳ 正在提取题目内容...")
                 else:
-                    st.info("点击「点击开始解析题目内容」后，系统将自动生成题目解析结果")
+                    st.info("点击「点击开始解析题目内容」后，系统将自动提取题目原文")
 
+    # 刷新按钮：重新加载数据查看管理员是否已上传结果
+    if st.button("🔄 刷新查看结果", key="refresh_step1"):
+        st.rerun()
+    
     analysis_file_name, analysis_file_data = get_result_file_data(session_id, 'analysis')
-    if session_data.get('step1_status') == 'processing' and analysis_file_name:
-        st.success("管理员已完成题目解析！")
+    if analysis_file_name:
+        st.success("✅ 第一部分已完成，可进入下一步")
         deduct_count = session_data.get('analysis_deduct_count', 1)
         st.info(f"进入下一部分将扣除 {deduct_count} 次")
         if st.button("进入第二部分：问题分析", key="to_step2_btn"):
@@ -389,7 +384,7 @@ def show_step1(session_id):
             else:
                 st.error(msg)
     elif session_data.get('step1_status') == 'processing':
-        st.info("⏳ 正在生成题目解析，请稍候...")
+        st.info("⏳ 正在等待管理员上传结果，请点击「刷新」按钮查看...")
 
 def show_step2(session_id):
     st.header("🔍 第二部分：问题分析")
@@ -403,12 +398,16 @@ def show_step2(session_id):
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
     
-    if session_data.get('step1_status') != 'completed':
+    if session_data.get('step1_status') != 'completed' and not get_result_file_data(session_id, 'analysis')[0]:
         st.warning("请先完成第一部分：上传题目文件读取")
         if st.button("返回第一部分", key="back_to_step1_btn"):
             st.session_state['step'] = 1
             st.rerun()
         return
+    
+    # 刷新按钮
+    if st.button("🔄 刷新查看结果", key="refresh_step2"):
+        st.rerun()
     
     col1, col2, col3 = st.columns([2, 1, 1])
     
@@ -544,8 +543,8 @@ def show_step2(session_id):
     })
     
     problem_analysis_file_name, problem_analysis_file_data = get_result_file_data(session_id, 'problem_analysis')
-    if session_data.get('step2_status') == 'processing' and problem_analysis_file_name:
-        st.success("管理员已完成问题分析！")
+    if problem_analysis_file_name:
+        st.success("✅ 第二部分已完成，可进入下一步")
         deduct_count = session_data.get('problem_analysis_deduct_count', 1)
         st.info(f"进入下一部分将扣除 {deduct_count} 次")
         if st.button("进入第三部分：代码生成", key="to_step3_btn"):
@@ -557,7 +556,7 @@ def show_step2(session_id):
             else:
                 st.error(msg)
     elif session_data.get('step2_status') == 'processing':
-        st.info("⏳ 正在生成问题分析，请稍候...")
+        st.info("⏳ 正在等待管理员上传结果，请点击「刷新」按钮查看...")
     
     if st.button("返回第一部分", key="back_to_step1_from_step2_btn"):
         st.session_state['step'] = 1
@@ -575,12 +574,16 @@ def show_step3(session_id):
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
     
-    if session_data.get('step2_status') != 'completed':
+    if session_data.get('step2_status') != 'completed' and not get_result_file_data(session_id, 'problem_analysis')[0]:
         st.warning("请先完成第二部分：问题分析")
         if st.button("返回第二部分", key="back_to_step2_btn"):
             st.session_state['step'] = 2
             st.rerun()
         return
+    
+    # 刷新按钮
+    if st.button("🔄 刷新查看结果", key="refresh_step3"):
+        st.rerun()
     
     for q_num in range(1, 6):
         st.markdown(f"---")
@@ -703,8 +706,8 @@ def show_step3(session_id):
             st.warning("勿频繁点击下载，预计5-8分钟")
     
     code_file_name_q1, code_file_data_q1 = get_result_file_data(session_id, 'code_q1')
-    if session_data.get('step3_q1_status') == 'processing' and code_file_name_q1:
-        st.success("管理员已完成代码生成！")
+    if code_file_name_q1:
+        st.success("✅ 第三部分已完成，可进入下一步")
         total_deduct = 0
         for q_num in range(1, 6):
             total_deduct += session_data.get(f'code_deduct_count_q{q_num}', 1)
@@ -718,7 +721,7 @@ def show_step3(session_id):
             else:
                 st.error(msg)
     elif session_data.get('step3_q1_status') == 'processing':
-        st.info("⏳ 正在生成代码，请稍候...")
+        st.info("⏳ 正在等待管理员上传结果，请点击「刷新」按钮查看...")
     
     if st.button("返回第二部分", key="back_to_step2_from_step3_btn"):
         st.session_state['step'] = 2
@@ -735,6 +738,10 @@ def show_step4(session_id):
     
     sessions = db.get_all_sessions()
     session_data = sessions.get(session_id, {})
+    
+    # 刷新按钮
+    if st.button("🔄 刷新查看结果", key="refresh_step4"):
+        st.rerun()
     
     for q_num in range(1, 6):
         st.markdown(f"---")

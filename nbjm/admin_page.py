@@ -705,33 +705,90 @@ def manage_user_files():
             st.info("该用户暂无文件")
             return
         
+        # 按步骤分组
+        step1_files = []  # upload_problem_file, upload_image_file, upload_data_file
+        step2_files = []  # upload_analysis_file
+        step3_files = []  # upload_code_upload_q{1-5}
+        step4_files = []  # upload_paper_code_q{1-5}, upload_paper_result_q{1-5}, upload_paper_image_q{1-5}
+        other_files = []
+        
+        step1_keys = ['upload_problem_file', 'upload_image_file', 'upload_data_file']
+        step2_keys = ['upload_analysis_file']
+        step3_keys = [f'upload_code_upload_q{q}' for q in range(1, 6)]
+        step4_keys = []
+        for q in range(1, 6):
+            step4_keys.append(f'upload_paper_code_q{q}')
+            step4_keys.append(f'upload_paper_result_q{q}')
+            step4_keys.append(f'upload_paper_image_q{q}')
+        
         for file in files:
-            file_name = file.get('file_name', '未知文件')
             file_key = file.get('file_key', '')
-            file_data = file.get('file_data', b'')
-            file_type = file.get('file_type', '')
+            if file_key in step1_keys:
+                step1_files.append(file)
+            elif file_key in step2_keys:
+                step2_files.append(file)
+            elif file_key in step3_keys:
+                step3_files.append(file)
+            elif file_key in step4_keys or file_key.startswith('upload_paper_'):
+                step4_files.append(file)
+            else:
+                other_files.append(file)
+        
+        # 显示第一部分文件
+        if step1_files:
+            st.markdown("#### 📝 第一部分：题目文件")
+            _show_file_list(step1_files)
+        
+        # 显示第二部分文件
+        if step2_files:
+            st.markdown("#### 🔍 第二部分：问题分析文件")
+            _show_file_list(step2_files)
+        
+        # 显示第三部分文件
+        if step3_files:
+            st.markdown("#### 💻 第三部分：代码文件")
+            _show_file_list(step3_files)
+        
+        # 显示第四部分文件
+        if step4_files:
+            st.markdown("#### 📄 第四部分：论文文件")
+            _show_file_list(step4_files)
+        
+        # 其他文件
+        if other_files:
+            st.markdown("#### 📎 其他文件")
+            _show_file_list(other_files)
+
+
+def _show_file_list(file_list):
+    """显示文件列表（复用组件）"""
+    for file in file_list:
+        file_name = file.get('file_name', '未知文件')
+        file_key = file.get('file_key', '')
+        file_data = file.get('file_data', b'')
+        file_type = file.get('file_type', '')
+        
+        with st.expander(f"📄 {file_name}"):
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                st.markdown(f"**文件类型**: {file_type}")
+                st.markdown(f"**文件大小**: {len(file_data) // 1024} KB")
+            with col2:
+                st.download_button(
+                    label="下载文件",
+                    data=file_data,
+                    file_name=file_name,
+                    key=f"download_file_{file_key}"
+                )
             
-            with st.expander(f"📄 {file_name}"):
-                col1, col2 = st.columns([2, 1])
-                with col1:
-                    st.markdown(f"**文件类型**: {file_type}")
-                    st.markdown(f"**文件大小**: {len(file_data) // 1024} KB")
-                with col2:
-                    st.download_button(
-                        label="下载文件",
-                        data=file_data,
-                        file_name=file_name,
-                        key=f"download_file_{file_key}"
-                    )
-                
-                if file_name.endswith('.md'):
-                    try:
-                        content = file_data.decode('utf-8')
-                        st.markdown(content[:5000])
-                        if len(content) > 5000:
-                            st.info("内容过长，仅显示前5000字符")
-                    except:
-                        st.text("无法预览文件内容")
+            if file_name.endswith('.md'):
+                try:
+                    content = file_data.decode('utf-8')
+                    st.markdown(content[:5000])
+                    if len(content) > 5000:
+                        st.info("内容过长，仅显示前5000字符")
+                except:
+                    st.text("无法预览文件内容")
 
 if __name__ == "__main__":
     main()
