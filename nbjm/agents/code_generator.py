@@ -35,15 +35,57 @@ class CodeGenerator:
     SYSTEM_PROMPT_PREFIX = """你是建模队的工程师。把给定的最终模型实现为一段**独立可运行**的Python脚本。
 约束：只用numpy/scipy/matplotlib/seaborn/pandas；不联网；不读取本地未声明的文件；
 代码开头必须先导入所有必要库，然后设置中文字体：
+
+## 🚨 中文字体配置（极其重要！防止方框乱码）
+代码开头必须使用以下**运行时自动检测**字体代码（直接复制，不要修改）：
 ```python
 import numpy as np
 import matplotlib
-matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+import matplotlib.font_manager as fm
+import platform, os
+
+# 运行时检测可用中文字体（兼容Windows/Linux/Streamlit Cloud）
+_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN']
+_available = {f.name for f in fm.fontManager.ttflist}
+_selected = None
+for _f in _chinese_candidates:
+    if _f in _available:
+        _selected = _f
+        break
+
+if _selected is None and platform.system() == 'Linux':
+    # Linux环境尝试从常见路径加载
+    for _d in ['/usr/share/fonts', '/usr/local/share/fonts', '/home/adminuser/.fonts']:
+        if os.path.exists(_d):
+            for _root, _dirs, _files in os.walk(_d):
+                for _fn in _files:
+                    if _fn.lower().endswith(('.ttf', '.otf')) and ('han' in _fn.lower() or 'hei' in _fn.lower() or 'song' in _fn.lower() or 'kai' in _fn.lower() or 'ming' in _fn.lower() or 'cjk' in _fn.lower()):
+                        try:
+                            fm.fontManager.addfont(os.path.join(_root, _fn))
+                            _selected = fm.FontProperties(fname=os.path.join(_root, _fn)).get_name()
+                            break
+                        except:
+                            pass
+                if _selected:
+                    break
+        if _selected:
+            break
+
+# 重建字体缓存确保新字体被识别
+matplotlib.font_manager._load_fontmanager(try_read_cache=False)
+
+# 应用字体配置
+if _selected:
+    matplotlib.rcParams['font.sans-serif'] = [_selected] + _chinese_candidates + ['DejaVu Sans']
+else:
+    matplotlib.rcParams['font.sans-serif'] = _chinese_candidates + ['DejaVu Sans']
+    print("警告: 未检测到中文字体，图表中文可能显示为方框。可尝试: apt install fonts-wqy-microhei")
+
 matplotlib.rcParams['axes.unicode_minus'] = False
+matplotlib.rcParams['font.size'] = 12
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
-import os
 ```
 需print关键结果（含具体数字），并把图保存到当前目录的*.png。
 
@@ -342,11 +384,41 @@ print(f'SENSITIVITY_RESULT: q{N} most_sensitive=参数名 impact=影响程度')
 
     BASELINE_SYSTEM_PROMPT = """你是建模队的工程师。基于主方案代码生成对照方案代码。
 约束：只用numpy/scipy/matplotlib；不联网；不读取本地未声明的文件；
-代码开头必须先导入所有必要库，然后设置中文字体：
+代码开头必须先导入所有必要库，然后设置中文字体（与主方案完全相同）：
 ```python
 import numpy as np
 import matplotlib
-matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+import matplotlib.font_manager as fm
+import platform, os
+
+# 运行时检测可用中文字体
+_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN']
+_available = {f.name for f in fm.fontManager.ttflist}
+_selected = None
+for _f in _chinese_candidates:
+    if _f in _available:
+        _selected = _f
+        break
+
+if _selected is None and platform.system() == 'Linux':
+    for _d in ['/usr/share/fonts', '/usr/local/share/fonts', '/home/adminuser/.fonts']:
+        if os.path.exists(_d):
+            for _root, _dirs, _files in os.walk(_d):
+                for _fn in _files:
+                    if _fn.lower().endswith(('.ttf', '.otf')) and ('han' in _fn.lower() or 'hei' in _fn.lower() or 'song' in _fn.lower() or 'kai' in _fn.lower() or 'ming' in _fn.lower() or 'cjk' in _fn.lower()):
+                        try:
+                            fm.fontManager.addfont(os.path.join(_root, _fn))
+                            _selected = fm.FontProperties(fname=os.path.join(_root, _fn)).get_name()
+                            break
+                        except:
+                            pass
+                if _selected:
+                    break
+        if _selected:
+            break
+
+matplotlib.font_manager._load_fontmanager(try_read_cache=False)
+matplotlib.rcParams['font.sans-serif'] = ([_selected] if _selected else []) + _chinese_candidates + ['DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -381,6 +453,15 @@ print(f'RESULT: baseline={category} total_cost={total_cost} service_rate={servic
 
 ## 附件数据完整信息
 {{data_info}}
+
+## 🚨 问题分析交付清单（来自问题分析阶段，代码必须覆盖！）
+{{ANALYSIS_DELIVERABLES}}
+
+## 🚨 模型推荐敏感性参数（来自模型推荐阶段）
+{{SENSITIVITY_PARAMS}}
+
+## 🚨 问题间数据流依赖（来自问题分析阶段，前后问数据必须衔接！）
+{{PIPELINE_CONNECTIONS}}
 
 {{prev_failure}}
 
@@ -507,9 +588,9 @@ print(f'RESULT: baseline={category} total_cost={total_cost} service_rate={servic
     - 添加颜色条（plt.colorbar）并设置标签
     - 添加显著性标记（*、**、***）
 (8) **中文支持（极其重要！）**：确保所有中文标题、标签、图例正常显示，无乱码
-    - **字体配置**：代码开头必须设置中文字体，使用以下配置：
+    - **字体配置**：代码开头必须使用运行时自动检测中文字体（参见主模板中的完整字体配置代码），核心配置：
       ```python
-      matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+      matplotlib.rcParams['font.sans-serif'] = [selected_font] + chinese_candidates + ['DejaVu Sans']
       matplotlib.rcParams['axes.unicode_minus'] = False
       matplotlib.rcParams['font.size'] = 12
       matplotlib.rcParams['axes.labelsize'] = 13
@@ -520,7 +601,7 @@ print(f'RESULT: baseline={category} total_cost={total_cost} service_rate={servic
       # 禁用tab10默认色板，改用Set2
       matplotlib.rcParams['axes.prop_cycle'] = plt.cycler('color', plt.cm.Set2.colors)
       ```
-    - **禁止使用默认tab10色板**：禁用tab10默认色板，改用Set2或自定义低饱和度学术色系，避免AI感重的颜色
+    - **不要去覆盖已有的 rcParams 设置**——代码开头已完成字体检测，此处只需设置样式参数
     - **标注完整性**：所有图表必须包含完整的标题、坐标轴标签（含单位）、图例，禁止出现方框乱码
     - **颜色条配置**：使用colorbar时必须设置标签，确保颜色条与数据匹配
 
@@ -776,7 +857,8 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
         return baseline_results
 
     async def generate_single_figure(self, model_description, equations, variables, purpose,
-                                     prev_failure=None, prev_error_kind="", data_info=None, question_full_info=None):
+                                     prev_failure=None, prev_error_kind="", data_info=None, question_full_info=None,
+                                     analysis_deliverables=None, sensitivity_params=None, pipeline_connections=None):
         eqs = "\n".join(f"- {e}" for e in equations) if isinstance(equations, list) else equations
         vars_ = "\n".join(f"- {k}: {v}" for k, v in variables.items()) if isinstance(variables, dict) else variables
 
@@ -795,6 +877,9 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
 
         data_info_str = data_info if data_info else ""
         question_full_info_str = question_full_info if question_full_info else ""
+        analysis_deliverables_str = analysis_deliverables if analysis_deliverables else "暂无（请根据问题描述自行梳理交付清单）"
+        sensitivity_params_str = sensitivity_params if sensitivity_params else "暂无（请自行选择2-3个关键参数进行敏感性分析）"
+        pipeline_connections_str = pipeline_connections if pipeline_connections else "暂无（请根据问题内容自行判断上下游数据依赖）"
 
         prompt = self.SINGLE_FIGURE_PROMPT.replace("{{model_description}}", model_description)
         prompt = prompt.replace("{{equations}}", eqs)
@@ -803,6 +888,9 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
         prompt = prompt.replace("{{prev_failure}}", fb)
         prompt = prompt.replace("{{data_info}}", data_info_str)
         prompt = prompt.replace("{{question_full_info}}", question_full_info_str)
+        prompt = prompt.replace("{{ANALYSIS_DELIVERABLES}}", analysis_deliverables_str)
+        prompt = prompt.replace("{{SENSITIVITY_PARAMS}}", sensitivity_params_str)
+        prompt = prompt.replace("{{PIPELINE_CONNECTIONS}}", pipeline_connections_str)
 
         messages = [
             {"role": "system", "content": self.SYSTEM_PROMPT_PREFIX + "\n"},
@@ -906,6 +994,78 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
 ### 输出要求
 {', '.join(question_output) if question_output else '无特殊要求'}"""
 
+        # ===== 提取本问题的衔接上下文 =====
+        analysis_deliverables_str = None
+        sensitivity_params_str = None
+        pipeline_connections_str = None
+        
+        # 从问题分析提取本问交付清单和流程连接
+        if analysis_json and 'questions' in analysis_json:
+            # 交付清单
+            dl_lines = []
+            full_text = question_info.get('analysis_full_text', '')
+            if full_text:
+                dl_lines.append(f"完整分析:\n{full_text[:3000]}")
+            deliverables = question_info.get('deliverables', {})
+            if deliverables:
+                figs = deliverables.get('figures', [])
+                num_results = deliverables.get('numerical_results', [])
+                code_items = deliverables.get('code', [])
+                theory = deliverables.get('theory', [])
+                dl_lines.append(f"### 问题{question_number}交付清单：")
+                if theory:
+                    dl_lines.append(f"**理论交付**：{'; '.join(theory)}")
+                if code_items:
+                    dl_lines.append(f"**代码交付**：{'; '.join(code_items)}")
+                if figs:
+                    dl_lines.append(f"**图表交付**：{'; '.join(figs)}")
+                if num_results:
+                    for nr in num_results:
+                        if isinstance(nr, dict):
+                            dl_lines.append(f"**数值结果**：{nr.get('metric','')} 精度={nr.get('precision','')}")
+                        else:
+                            dl_lines.append(f"**数值结果**：{nr}")
+            # 方案思路
+            sa = question_info.get('solution_approach', {})
+            if sa:
+                pipeline = sa.get('pipeline_io', {})
+                if pipeline:
+                    dl_lines.append(f"**上下游对接**：上游={pipeline.get('upstream_from','无')}；下游={pipeline.get('downstream_to','无')}")
+            if dl_lines:
+                analysis_deliverables_str = "\n".join(dl_lines)
+            
+            # 流程连接矩阵
+            conn_lines = []
+            matrix = analysis_json.get('data_transmission_matrix', [])
+            for row in matrix:
+                frm, to = row.get('from_question', ''), row.get('to_question', '')
+                if frm == question_number or to == question_number:
+                    conn_lines.append(f"- Q{frm}→Q{to}: {row.get('data_item','')}（在{row.get('used_in_step','')}使用）")
+            if not conn_lines:
+                # 从每个问题的 pipeline_io 补充
+                for q in analysis_json.get('questions', []):
+                    qn = q.get('question_number', '')
+                    pipe = q.get('solution_approach', {}).get('pipeline_io', {})
+                    if qn == question_number:
+                        conn_lines.append(f"- 本问题：上游来源={pipe.get('upstream_from','独立起点')}；下游去向={pipe.get('downstream_to','独立终点')}")
+            if conn_lines:
+                pipeline_connections_str = "\n".join(conn_lines)
+        
+        # 从模型推荐提取敏感性参数
+        if model_json:
+            sens_lines = []
+            recs = model_json.get('recommendations', model_json.get('model_versions', []))
+            for rec in recs:
+                rqn = rec.get('question_number', '')
+                if rqn == question_number or isinstance(rqn, int) and rqn == question_number:
+                    sp = rec.get('sensitivity_params', [])
+                    if sp:
+                        sens_lines.append(f"### 问题{question_number}敏感性参数：")
+                        for p in sp:
+                            sens_lines.append(f"- {p.get('param','')}: {p.get('meaning','')}（范围={p.get('range','')}, 步长={p.get('step','')}）")
+            if sens_lines:
+                sensitivity_params_str = "\n".join(sens_lines)
+
         purpose = f"问题{question_number}完整求解代码，包含：(1)数据加载；(2)模型实现与求解；(3)结果表格输出；(4)至少5-8张高级可视化图表"
 
         if progress_callback:
@@ -917,7 +1077,10 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
                 model_description, equations, variables, purpose,
                 prev_failure=None, prev_error_kind="",
                 data_info=data_info,
-                question_full_info=question_full_info
+                question_full_info=question_full_info,
+                analysis_deliverables=analysis_deliverables_str,
+                sensitivity_params=sensitivity_params_str,
+                pipeline_connections=pipeline_connections_str
             )
         except Exception as e:
             print(f"[DEBUG] 问题{question_number}代码生成异常: {e}")
@@ -1074,6 +1237,55 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
 ### 输出要求
 {', '.join(question_output) if question_output else '无特殊要求'}"""
             
+            # ===== 提取本问题的衔接上下文 =====
+            a_deliv = None; s_params = None; p_conns = None
+            if questions_info:
+                qi = question_info
+                dl_lines = []
+                full_text = qi.get('analysis_full_text', '')
+                if full_text:
+                    dl_lines.append(f"完整分析:\n{full_text[:3000]}")
+                dl = qi.get('deliverables', {})
+                if dl:
+                    figs = dl.get('figures', [])
+                    num = dl.get('numerical_results', [])
+                    code = dl.get('code', [])
+                    theory = dl.get('theory', [])
+                    dl_lines.append(f"### 问题{q_num}交付清单：")
+                    if theory: dl_lines.append(f"理论交付：{'; '.join(theory)}")
+                    if code: dl_lines.append(f"代码交付：{'; '.join(code)}")
+                    if figs: dl_lines.append(f"图表交付：{'; '.join(figs)}")
+                    for nr in num:
+                        dl_lines.append(f"数值结果：{nr if isinstance(nr, str) else nr.get('metric','')}")
+                sa = qi.get('solution_approach', {})
+                pipe = sa.get('pipeline_io', {}) if sa else {}
+                if pipe:
+                    dl_lines.append(f"上下游：上游={pipe.get('upstream_from','无')}；下游={pipe.get('downstream_to','无')}")
+                if dl_lines: a_deliv = "\n".join(dl_lines)
+                
+                conns = []
+                matrix = analysis_json.get('data_transmission_matrix', []) if analysis_json else []
+                for row in matrix:
+                    frm, to = row.get('from_question', ''), row.get('to_question', '')
+                    if frm == q_num or to == q_num:
+                        conns.append(f"- Q{frm}→Q{to}: {row.get('data_item','')}")
+                if not conns and pipe:
+                    conns.append(f"- 上游={pipe.get('upstream_from','无')}；下游={pipe.get('downstream_to','无')}")
+                if conns: p_conns = "\n".join(conns)
+            
+            if model_json:
+                sens = []
+                recs = model_json.get('recommendations', model_json.get('model_versions', []))
+                for rec in recs:
+                    if rec.get('question_number') == q_num:
+                        sp = rec.get('sensitivity_params', [])
+                        if sp:
+                            sens.append(f"### 问题{q_num}敏感性参数：")
+                            for p in sp:
+                                sens.append(f"- {p.get('param','')}: {p.get('meaning','')}")
+                        break
+                if sens: s_params = "\n".join(sens)
+            
             purpose = f"问题{q_num}完整求解代码，包含：(1)数据加载；(2)模型实现与求解；(3)结果表格输出；(4)至少8张高级可视化图表"
             
             try:
@@ -1081,12 +1293,15 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
                     model_description, equations, variables, purpose,
                     prev_failure=None, prev_error_kind="",
                     data_info=data_info,
-                    question_full_info=question_full_info
+                    question_full_info=question_full_info,
+                    analysis_deliverables=a_deliv,
+                    sensitivity_params=s_params,
+                    pipeline_connections=p_conns
                 )
             except Exception as e:
                 print(f"[DEBUG] 问题{q_num}代码生成异常: {e}")
                 code_response = ""
-            
+
             if progress_callback:
                 progress_callback(f"⚡ 问题{q_num}代码生成完成")
             
@@ -1200,7 +1415,32 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
     def _generate_fallback_code(self, purpose, model_description, equations, variables):
         fallback_code = f"""import numpy as np
 import matplotlib
-matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']
+import matplotlib.font_manager as fm
+import platform, os
+
+# 运行时检测可用中文字体
+_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'DejaVu Sans']
+_available = {{f.name for f in fm.fontManager.ttflist}}
+_selected = None
+for _f in _chinese_candidates:
+    if _f in _available:
+        _selected = _f
+        break
+if _selected is None and platform.system() == 'Linux':
+    for _d in ['/usr/share/fonts', '/usr/local/share/fonts']:
+        if os.path.exists(_d):
+            for _root, _dirs, _files in os.walk(_d):
+                for _fn in _files:
+                    if _fn.lower().endswith(('.ttf','.otf')) and any(k in _fn.lower() for k in ['han','hei','song','kai','ming','cjk']):
+                        try:
+                            fm.fontManager.addfont(os.path.join(_root, _fn))
+                            _selected = fm.FontProperties(fname=os.path.join(_root, _fn)).get_name()
+                            break
+                        except: pass
+                if _selected: break
+        if _selected: break
+matplotlib.font_manager._load_fontmanager(try_read_cache=False)
+matplotlib.rcParams['font.sans-serif'] = ([_selected] if _selected else []) + _chinese_candidates + ['DejaVu Sans']
 matplotlib.rcParams['axes.unicode_minus'] = False
 import matplotlib.pyplot as plt
 import seaborn as sns
