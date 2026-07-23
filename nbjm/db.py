@@ -318,14 +318,18 @@ def save_file(session_id, file_key, file_name, file_data):
     except Exception:
         pass
     # 插入新记录
-    client.table('stored_files').insert({
-        'session_id': session_id,
-        'file_key': file_key,
-        'file_name': file_name,
-        'file_data': encoded_data,
-        'file_size': len(file_data),
-        'created_at': datetime.utcnow().isoformat()
-    }).execute()
+    try:
+        client.table('stored_files').insert({
+            'session_id': session_id,
+            'file_key': file_key,
+            'file_name': file_name,
+            'file_data': encoded_data,
+            'file_size': len(file_data),
+            'created_at': datetime.utcnow().isoformat()
+        }).execute()
+    except Exception as e:
+        # 如果文件太大，尝试截断保存
+        raise RuntimeError(f"文件保存失败: {file_name} ({len(file_data)} bytes) - {e}")
 
 
 def get_file(session_id, file_key):

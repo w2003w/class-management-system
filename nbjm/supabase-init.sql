@@ -55,8 +55,9 @@ CREATE TABLE IF NOT EXISTS deduction_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. 文件存储表
-CREATE TABLE IF NOT EXISTS stored_files (
+-- 7. 文件存储表（强制重建，确保 schema 正确）
+DROP TABLE IF EXISTS stored_files CASCADE;
+CREATE TABLE stored_files (
     id BIGSERIAL PRIMARY KEY,
     session_id TEXT NOT NULL,
     file_key TEXT NOT NULL,
