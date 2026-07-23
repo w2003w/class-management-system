@@ -145,6 +145,34 @@ class PaperWriter:
 9. **上下文衔接**：后续问题章节必须明确引用前序问题的核心成果（如评价函数、特征集合、预测函数等），形成逻辑闭环。
 10. **禁泄露**：正文中不得出现PaperCritic、Claim、Evidence、Reasoning、issue、回应、代码[数字]、超时、占位、李华、张三、王五。
 
+## 🔗 全流程衔接要求（必须遵守！）
+论文写作是整个建模流程的「最终收敛端」，必须承接并融合前期所有阶段的输出：
+
+1. **接入问题分析结果**：
+   - 问题重述必须基于问题分析中的「题目整体综览」和每个问题的「A.问题内容」
+   - 问题分析章节必须引用分析阶段定义的「求解思路」和「核心交付清单」
+   - 符号说明必须与问题分析中的「B.数据清单」参数初始化保持一致
+
+2. **接入模型推荐结果**：
+   - 每个问题的模型建立章节必须引用模型推荐中的final阶段模型描述、公式、变量
+   - 必须体现「basic→improved→final」的三阶段演进逻辑
+   - 模型选择理由必须引用模型推荐中的「why_this_model」和「derivation_steps」
+
+3. **接入代码生成结果**：
+   - 数值结果必须从代码运行输出(RESULT行)中提取，不得编造
+   - 图表描述必须与代码生成阶段定义的图表文件名和用途对应
+   - 求解设计步骤必须与代码中的算法流程一致
+
+4. **接入敏感性分析结果**：
+   - 敏感性分析章节必须引用各问题代码末尾的 SENSITIVITY_RESULT 输出
+   - 必须包含：参数扫描范围、影响程度排序、鲁棒性结论
+   - 敏感性图表必须与代码中生成的 q{N}_sensitivity.png 和 q{N}_sensitivity_heatmap.png 对应
+
+5. **问题间数据流体现**：
+   - 问题二/三的模型建立必须显式说明使用了问题一的什么输出
+   - 后序问题的数值结果必须与前序问题的输出一致（数据闭环验证）
+   - 在「问题分析」章节末尾添加问题间数据流向图说明
+
 ## 中文学术写作守则
 
 **禁用词替换**：深入探讨→研究；至关重要→关键；不难看出→删除；在某种意义上→删除；提供新思路→用具体改进点替代
@@ -1653,7 +1681,7 @@ class PaperWriter:
             except Exception:
                 model_versions_text = model_recommendations[:1000]
 
-        code_results_text = code_results[:8000] if code_results else ""
+        code_results_text = code_results[:100000] if code_results else ""
         
         code_summary_text = ""
         if code_results and question_number:

@@ -86,7 +86,7 @@ class Coordinator:
             results['model_critic'] = model_critic_result
             print("✅ 模型评审完成")
 
-            print("💻 步骤4：代码生成...")
+            print("💻 步骤4：代码生成（含每个问题的敏感性分析）...")
             code_result = await self.code_generator.generate(analysis_result, recommendation_result, self.competition_name, self.knowledge)
             results['code_generation'] = code_result
 
@@ -95,17 +95,49 @@ class Coordinator:
                 main_code = code_json['main_code']['code']
                 baseline_results = await self.code_generator.generate_baselines(problem_text, main_code)
                 results['baseline_codes'] = baseline_results
-                print(f"✅ 代码生成完成（含{len(baseline_results)}个对照方案）")
+                print(f"✅ 代码生成完成（含{len(baseline_results)}个对照方案，每个问题末尾已嵌入敏感性分析代码）")
             else:
-                print("✅ 代码生成完成")
+                print("✅ 代码生成完成（敏感性分析已嵌入每个问题代码末尾）")
 
-            print("📊 步骤5：敏感性分析...")
-            sensitivity_result = await self.sensitivity_analyzer.full_analysis(recommendation_result, analysis_result)
-            results['sensitivity_analysis'] = sensitivity_result
-            print("✅ 敏感性分析完成")
+            print("📊 步骤5：提取敏感性分析结果（从代码输出中自动提取）...")
+            # 敏感性分析已在代码生成阶段嵌入每个问题代码末尾
+            # 此步骤从代码运行输出中提取 SENSITIVITY_RESULT
+            sensitivity_results = {"plan": "", "results": []}
+            try:
+                if code_json:
+                    # 从模型推荐中提取敏感性参数清单作为计划
+                    rec_json_parsed = self._parse_json(recommendation_result)
+                    sens_plan_parts = []
+                    if rec_json_parsed:
+                        recs = rec_json_parsed.get('recommendations', [])
+                        for rec in recs:
+                            q_num = rec.get('question_number', '')
+                            sens_params = rec.get('sensitivity_params', [])
+                            if sens_params:
+                                sens_plan_parts.append(f"问题{q_num}敏感性参数：{json.dumps(sens_params, ensure_ascii=False)}")
+                        if rec_json_parsed.get('model_versions'):
+                            for mv in rec_json_parsed['model_versions']:
+                                if mv.get('stage') == 'final' and mv.get('sensitivity_params'):
+                                    sens_plan_parts.append(f"Final模型：{json.dumps(mv['sensitivity_params'], ensure_ascii=False)}")
+                    sensitivity_results['plan'] = "\n".join(sens_plan_parts) if sens_plan_parts else "敏感性分析已嵌入每个问题代码末尾"
+                    
+                    # 尝试从主代码中提取敏感性分析结果
+                    if 'main_code' in code_json and code_json['main_code'].get('stdout'):
+                        stdout = code_json['main_code']['stdout']
+                        import re as re_sens
+                        sens_matches = re_sens.findall(r'SENSITIVITY_RESULT: (.+)', stdout)
+                        for match in sens_matches:
+                            sensitivity_results['results'].append(match.strip())
+                    results['sensitivity_analysis'] = json.dumps(sensitivity_results, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"⚠️ 敏感性结果提取跳过: {e}")
+                results['sensitivity_analysis'] = json.dumps(sensitivity_results, ensure_ascii=False, indent=2)
+            
+            print("✅ 敏感性分析完成（结果已从各问题代码末尾提取）")
 
             print("📝 步骤6：论文写作...")
-            paper_result = await self.paper_writer.write(analysis_result, recommendation_result, code_result, sensitivity_result, self.competition_name, self.knowledge)
+            sens_result_str = results['sensitivity_analysis']
+            paper_result = await self.paper_writer.write(analysis_result, recommendation_result, code_result, sens_result_str, self.competition_name, self.knowledge)
             results['paper_writing'] = paper_result
 
             paper_json = self._parse_json(paper_result)
@@ -122,11 +154,9 @@ class Coordinator:
 
                 sensitivity_runs = []
                 try:
-                    sens_json = self._parse_json(sensitivity_result)
-                    if sens_json and 'plan' in sens_json:
-                        plan_json = self._parse_json(sens_json['plan'])
-                        if plan_json and 'runs' in plan_json:
-                            sensitivity_runs = plan_json['runs']
+                    sens_json = self._parse_json(sens_result_str)
+                    if sens_json and 'results' in sens_json:
+                        sensitivity_runs = sens_json['results']
                 except Exception:
                     pass
 

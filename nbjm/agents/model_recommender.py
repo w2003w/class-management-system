@@ -118,6 +118,15 @@ class ModelRecommender:
 以下是已学习的优秀论文知识，推荐时请参考其中的模型选择方法和经验：
 {{KNOWLEDGE}}
 
+## ⚠️ 流程衔接要求（必须遵守！）
+你的输出将被传递给「代码生成器」和「论文写作器」。因此：
+
+1. **交付物对齐**：模型推荐必须覆盖问题分析中定义的交付清单（图表、数值结果、代码模块）
+2. **上下游数据流**：如果问题分析中定义了问题间的数据依赖（如"问题1产出的评价向量V供给问题2使用"），则问题2的模型必须显式说明如何使用问题1的输出
+3. **敏感性参数预定义**：在final阶段的模型中，必须明确标注哪些参数需要进行敏感性分析（这些将直接传给代码生成器，嵌入在每个问题代码末尾）
+4. **公式编号一致**：模型中的公式编号必须在代码注释和论文中保持一致引用
+5. **验证方案具体化**：验证方案不能只说"交叉验证"，必须说明：用什么数据、用什么指标、判定标准是什么
+
 ## 模型推导要求（final阶段）
 final阶段的模型需要包含完整的推导逻辑，包括：
 1. 模型选择动机：为什么选择这个模型族？与其他模型族的对比优势
@@ -136,6 +145,16 @@ final阶段的模型需要包含完整的推导逻辑，包括：
 4. **参数说明**：所有参数的含义和估计方法
 5. **推导过程**：关键公式的推导步骤和中间结果
 6. **原理解释**：模型背后的物理/经济/数学原理说明
+
+## 敏感性分析参数清单（必须在每个问题的final模型中明确标注）
+对每个问题，必须在 model_versions[final] 中添加 "sensitivity_params" 字段：
+```json
+"sensitivity_params": [
+    {"param": "α", "meaning": "权重系数", "range": "0.1~0.9", "step": 0.1, "expected_impact": "影响方案排序"},
+    {"param": "β", "meaning": "惩罚系数", "range": "±30%", "expected_impact": "影响收敛速度"}
+]
+```
+这些参数将直接用于代码生成器中每个问题代码末尾的敏感性分析。
 
 ## 图表推荐要求
 每个问题的推荐图表必须与模型和数据高度契合，遵循以下原则：
@@ -173,6 +192,9 @@ final阶段的模型需要包含完整的推导逻辑，包括：
             "model_name": "模型名称（可以是组合模型或自创模型）",
             "model_composition": "组合模型构成说明（如：Lasso回归 + Bootstrap重采样）",
             "why_this_model": "详细说明为什么选择此模型，包括：解决的问题（小样本过拟合等）、对比其他模型的优势、理论依据",
+            "sensitivity_params": [
+                {"param": "参数名", "meaning": "含义", "range": "扫描范围", "step": "步长", "expected_impact": "预期影响"}
+            ],
             "figure_purposes": ["需求时序图", "调度路径图", "成本构成饼图", "敏感性曲线", "相关性热力图", "误差分布直方图"],
             "derivation_steps": [
                 {"title": "模型选择动机", "statement": "动机描述", "result": "结论"},
@@ -200,7 +222,12 @@ final阶段的模型需要包含完整的推导逻辑，包括：
             "recommended_images": ["图表类型名称1", "图表类型名称2", "图表类型名称3", "图表类型名称4", "图表类型名称5", "图表类型名称6"],
             "image_description": ["图表1说明：与问题和数据的契合度", "图表2说明：与问题和数据的契合度"],
             "data_requirements": ["数据需求1", "数据需求2"],
-            "implementation_steps": ["步骤1", "步骤2"]
+            "implementation_steps": ["步骤1", "步骤2"],
+            "pipeline_inputs_from_previous": "从问题分析中明确的前置问题输出，本问题如何使用",
+            "pipeline_outputs_to_next": "本问题产出的数据/结论供哪些后续问题使用",
+            "sensitivity_params": [
+                {"param": "参数名", "meaning": "含义", "range": "扫描范围", "step": "步长"}
+            ]
         }
     ],
     "overall_recommendation": "总体推荐说明",
@@ -260,18 +287,87 @@ final阶段的模型需要包含完整的推导逻辑，包括：
         
         questions_text = ""
         questions = []
+        deliverables_text = ""
+        pipeline_text = ""
+        sensitivity_text = ""
+        data_checklist_text = ""
         try:
             clean_analysis = problem_analysis.replace("```json", "").replace("```", "").strip()
             analysis_data = json.loads(clean_analysis)
             questions = analysis_data.get('questions', [])
             if questions:
-                questions_text = "# 问题列表\n"
+                questions_text = "# 问题列表（含前置分析的关键交付物要求）\n"
+                deliverables_lines = []
+                pipeline_lines = []
+                sensitivity_lines = []
+                data_lines = []
                 for q in questions:
-                    q_num = q.get('number', '')
+                    q_num = q.get('question_number', q.get('number', ''))
                     q_content = q.get('content', '')[:200]
                     q_type = q.get('type', '')
                     q_subtype = q.get('subtype', '')
-                    questions_text += f"- 问题{q_num}（{q_type}/{q_subtype}）：{q_content}\n"
+                    q_title = q.get('question_title', '')
+                    questions_text += f"- 问题{q_num}「{q_title}」({q_type}/{q_subtype})：{q_content}\n"
+                    
+                    # 提取交付清单
+                    deliverables = q.get('deliverables', {})
+                    if deliverables:
+                        figs = deliverables.get('figures', [])
+                        num_results = deliverables.get('numerical_results', [])
+                        code_items = deliverables.get('code', [])
+                        deliverables_lines.append(f"### 问题{q_num} 交付清单要求")
+                        if figs:
+                            deliverables_lines.append(f"**必须生成的图表**：{'; '.join(figs)}")
+                        if num_results:
+                            deliverables_lines.append(f"**必须输出的数值结果**：{'; '.join(num_results)}")
+                        if code_items:
+                            deliverables_lines.append(f"**必须实现的代码模块**：{'; '.join(code_items)}")
+                    
+                    # 提取流程衔接
+                    pipeline_conn = q.get('pipeline_connection', {})
+                    if pipeline_conn:
+                        upstream = pipeline_conn.get('upstream', '')
+                        downstream = pipeline_conn.get('downstream', '')
+                        cross_val = pipeline_conn.get('cross_validation_with', '')
+                        if upstream:
+                            pipeline_lines.append(f"- **问题{q_num}上游依赖**：{upstream}")
+                        if downstream:
+                            pipeline_lines.append(f"- **问题{q_num}下游输出**：{downstream}")
+                        if cross_val:
+                            pipeline_lines.append(f"- **问题{q_num}交叉验证**：{cross_val}")
+                    
+                    # 提取敏感性分析预案
+                    sol = q.get('solution_approach', {})
+                    sens_plan = sol.get('sensitivity_plan', {})
+                    if sens_plan:
+                        params = sens_plan.get('sensitive_params', [])
+                        method = sens_plan.get('method', '')
+                        sensitivity_lines.append(f"- 问题{q_num}：敏感参数={params}，方法={method}")
+                    
+                    # 提取数据清单
+                    dc = q.get('data_checklist', {})
+                    if dc:
+                        existing = dc.get('existing_data', [])
+                        init_params = dc.get('init_parameters', [])
+                        generated = dc.get('generated_for_downstream', '')
+                        if existing:
+                            data_lines.append(f"### 问题{q_num} 数据清单")
+                            for ed in existing:
+                                data_lines.append(f"- {ed.get('file_name', '')}：{ed.get('used_by_this_question', '')}")
+                        if init_params:
+                            data_lines.append(f"  初始化参数：{', '.join(p.get('symbol','')+'='+str(p.get('suggested_value','')) for p in init_params)}")
+                        if generated:
+                            data_lines.append(f"  产出：{generated}")
+                
+                if deliverables_lines:
+                    deliverables_text = "## ⚠️ 问题分析阶段已定义的交付物（模型推荐必须覆盖！）\n" + "\n".join(deliverables_lines)
+                if pipeline_lines:
+                    pipeline_text = "## 🔗 问题间流程对接要求\n" + "\n".join(pipeline_lines)
+                if sensitivity_lines:
+                    sensitivity_text = "## 📊 敏感性分析预案（需在模型推荐的final阶段包含敏感性分析参数）\n" + "\n".join(sensitivity_lines)
+                if data_lines:
+                    data_checklist_text = "\n".join(data_lines)
+                
                 questions_text += f"\n**强制要求**：必须为上述所有 {len(questions)} 个问题分别生成模型推荐，缺少任何一个问题的推荐都将视为失败！"
         except Exception as e:
             print(f"⚠️ 解析问题分析数据失败: {e}")
@@ -345,6 +441,14 @@ final
 {problem_analysis}
 
 {questions_text}
+
+{deliverables_text}
+
+{pipeline_text}
+
+{sensitivity_text}
+
+{data_checklist_text}
 
 # 当前阶段
 final

@@ -210,9 +210,105 @@ with open('results.txt', 'w', encoding='utf-8') as f:
 ## 参考知识库（如果有）
 {{KNOWLEDGE}}
 
+## 🚨 前置分析交付物（必须覆盖！）
+### 问题分析交付清单
+以下是从问题分析阶段提取的关键交付物要求，代码生成必须逐一覆盖：
+{{ANALYSIS_DELIVERABLES}}
+
+### 模型推荐敏感性参数
+以下是从模型推荐阶段提取的敏感性参数，必须在每个问题代码末尾实现敏感性分析：
+{{SENSITIVITY_PARAMS}}
+
+### 问题间数据流
+以下是从问题分析中提取的问题间数据依赖关系，代码必须正确处理：
+{{PIPELINE_CONNECTIONS}}
+
 ## 模型推荐图表信息（必须使用！）
 根据模型推荐，本问题应生成以下类型图表：
 {{RECOMMENDED_IMAGES}}
+
+## ⚠️ 敏感性分析强制要求（每个问题代码末尾必须包含！）
+每个问题的代码在输出所有主方案结果后，必须在末尾添加一段**独立的敏感性分析代码**：
+
+### 敏感性分析内容
+1. **参数选择**：从上方「敏感性参数」中选择该问题对应的2-3个关键参数（如已提供，直接使用；如未提供，自行选择）
+2. **扫描方法**：
+   - 连续参数（如系数、阈值）：默认值±30%，步长5%
+   - 比率类参数（如[0,1]区间内的权重）：从0到1采样，步长0.1
+   - 离散参数：列举所有可能取值
+3. **输出要求**：
+   - 生成敏感性曲线图：q{N}_sensitivity.png（参数变化→指标变化曲线，多参数叠加在同一图或分面图）
+   - 生成敏感性热力图：q{N}_sensitivity_heatmap.png（多参数交叉影响矩阵）
+   - 输出敏感性结论表：print(f'SENSITIVITY: 参数1影响程度={impact1}, 参数2影响程度={impact2}, 最敏感参数={most_sensitive}')
+4. **结论格式**：
+   ```
+   print(f'SENSITIVITY_RESULT: q{N} most_sensitive={参数名} impact={影响量} robust_params={鲁棒参数列表}')
+   ```
+
+### 敏感性分析代码模板
+```python
+# ========== 敏感性分析 ==========
+print("\\n" + "="*60)
+print("问题{N} 敏感性分析")
+
+# 定义敏感参数扫描范围
+param_ranges = {
+    "alpha": {"base": 0.5, "range": np.linspace(0.2, 0.8, 13)},  # ±30%
+    "threshold": {"base": T0, "range": np.linspace(0.7*T0, 1.3*T0, 13)}
+}
+
+sensitivity_results = {}
+for param_name, param_config in param_ranges.items():
+    results = []
+    for value in param_config["range"]:
+        # 修改参数值，重新计算模型
+        # ...模型计算代码...
+        results.append(metric_value)
+    sensitivity_results[param_name] = results
+    
+    # 绘制敏感性曲线
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(param_config["range"], results, 'o-', linewidth=2, markersize=6)
+    ax.axvline(x=param_config["base"], color='red', linestyle='--', label=f'基准值={param_config["base"]}')
+    ax.set_xlabel(param_name, fontsize=13)
+    ax.set_ylabel('指标值', fontsize=13)
+    ax.set_title(f'参数{param_name}的敏感性分析', fontsize=15, fontweight='bold')
+    ax.legend(fontsize=11)
+    ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(f'q{N}_sens_{param_name}.png', dpi=300)
+    plt.close()
+
+# 热力图
+if len(param_ranges) >= 2:
+    params_list = list(param_ranges.keys())
+    impact_matrix = np.zeros((len(param_ranges[params_list[0]]["range"]), 
+                               len(param_ranges[params_list[1]]["range"])))
+    for i, v1 in enumerate(param_ranges[params_list[0]]["range"]):
+        for j, v2 in enumerate(param_ranges[params_list[1]]["range"]):
+            # 计算双参数组合下的指标值
+            impact_matrix[i, j] = compute_metric(v1, v2)
+    
+    fig, ax = plt.subplots(figsize=(12, 10))
+    im = ax.imshow(impact_matrix, cmap='coolwarm', aspect='auto', origin='lower')
+    plt.colorbar(im, ax=ax, label='指标值')
+    ax.set_xticks(range(len(param_ranges[params_list[1]]["range"])))
+    ax.set_xticklabels([f'{x:.2f}' for x in param_ranges[params_list[1]]["range"]], rotation=45)
+    ax.set_yticks(range(len(param_ranges[params_list[0]]["range"])))
+    ax.set_yticklabels([f'{x:.2f}' for x in param_ranges[params_list[0]]["range"]])
+    ax.set_xlabel(params_list[1], fontsize=13)
+    ax.set_ylabel(params_list[0], fontsize=13)
+    ax.set_title(f'双参数敏感性分析热力图', fontsize=15, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig(f'q{N}_sensitivity_heatmap.png', dpi=300)
+    plt.close()
+
+# 输出敏感性结论
+print(f'SENSITIVITY_RESULT: q{N} most_sensitive={most_sensitive} impact={max_impact:.4f}')
+# ==============================
+```
+
+**注意**：每个问题的敏感性分析代码必须独立嵌入该问题代码的末尾。即使主代码中已有部分敏感性分析，也必须在此处添加完整的参数扫描分析。
 
 ## 图表选择原则
 1. **与模型契合**：图表必须与推荐的模型高度匹配，体现模型的核心特点
@@ -225,8 +321,8 @@ with open('results.txt', 'w', encoding='utf-8') as f:
 {
     "main_code": {
         "purpose": "主方案代码目的",
-        "code": "完整Python代码（满足发表级图表质量要求）",
-        "output_images": ["生成的图片文件名1.png", "生成的图片文件名2.png"]
+        "code": "完整Python代码（包含末尾的敏感性分析段，满足发表级图表质量要求）",
+        "output_images": ["生成的图片文件名1.png", "生成的图片文件名2.png", "q{N}_sensitivity.png", "q{N}_sensitivity_heatmap.png"]
     },
     "baseline_codes": [
         {
@@ -240,7 +336,9 @@ with open('results.txt', 'w', encoding='utf-8') as f:
 
 注意：脚本末尾必须用print输出关键指标，格式如下：
 print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate}')
-指标名按题目调整，但必须以RESULT: baseline=ours开头。"""
+print(f'SENSITIVITY_RESULT: q{N} most_sensitive=参数名 impact=影响程度')
+
+指标名按题目调整，但必须以RESULT: baseline=ours开头。敏感性分析结果以SENSITIVITY_RESULT开头。"""
 
     BASELINE_SYSTEM_PROMPT = """你是建模队的工程师。基于主方案代码生成对照方案代码。
 约束：只用numpy/scipy/matplotlib；不联网；不读取本地未声明的文件；
@@ -547,6 +645,11 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
         competition_style, knowledge_text = await self._build_context(competition_name, knowledge)
 
         recommended_images = "暂无"
+        analysis_deliverables_text = "暂无"
+        sensitivity_params_text = "暂无"
+        pipeline_connections_text = "暂无"
+        
+        # 解析模型推荐获取推荐图表
         try:
             rec_json = json.loads(model_recommendations)
             if 'recommendations' in rec_json:
@@ -566,9 +669,66 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
         except Exception:
             pass
 
-        prompt = self.SYSTEM_PROMPT_PREFIX + self.model_templates_text + self.SYSTEM_PROMPT_MIDDLE + self.image_templates_text + self.SYSTEM_PROMPT_SUFFIX.replace("{{COMPETITION_STYLE}}", competition_style if competition_style else "暂无").replace("{{KNOWLEDGE}}", knowledge_text if knowledge_text else "暂无").replace("{{RECOMMENDED_IMAGES}}", recommended_images)
+        # 提取敏感性参数
+        try:
+            rec_json = json.loads(model_recommendations)
+            sensitivity_lines = []
+            if 'recommendations' in rec_json:
+                for rec in rec_json['recommendations']:
+                    q_num = rec.get('question_number', '')
+                    sens_params = rec.get('sensitivity_params', [])
+                    if sens_params:
+                        sensitivity_lines.append(f"### 问题{q_num} 敏感性参数：")
+                        for sp in sens_params:
+                            sensitivity_lines.append(f"- {sp.get('param','')}: {sp.get('meaning','')}（范围={sp.get('range','')}, 步长={sp.get('step','')}）")
+            if sensitivity_lines:
+                sensitivity_params_text = "\n".join(sensitivity_lines)
+        except Exception:
+            pass
 
-        user_content = f"问题分析：\n{problem_analysis}\n\n模型推荐：\n{model_recommendations}"
+        # 提取问题分析交付清单和流程连接
+        try:
+            clean_analysis = problem_analysis.replace("```json", "").replace("```", "").strip()
+            analysis_data = json.loads(clean_analysis)
+            questions = analysis_data.get('questions', [])
+            deliverables_lines = []
+            pipeline_lines = []
+            for q in questions:
+                q_num = q.get('question_number', q.get('number', ''))
+                q_title = q.get('question_title', '')
+                deliverables = q.get('deliverables', {})
+                if deliverables:
+                    figs = deliverables.get('figures', [])
+                    num_results = deliverables.get('numerical_results', [])
+                    code_items = deliverables.get('code', [])
+                    theory = deliverables.get('theory', [])
+                    deliverables_lines.append(f"### 问题{q_num}「{q_title}」交付清单")
+                    if theory:
+                        deliverables_lines.append(f"**理论交付**：{'; '.join(theory)}")
+                    if code_items:
+                        deliverables_lines.append(f"**代码交付**：{'; '.join(code_items)}")
+                    if figs:
+                        deliverables_lines.append(f"**图表交付**：{'; '.join(figs)}")
+                    if num_results:
+                        deliverables_lines.append(f"**数值结果**：{'; '.join(num_results)}")
+                pipeline_conn = q.get('pipeline_connection', {})
+                if pipeline_conn:
+                    upstream = pipeline_conn.get('upstream', '')
+                    downstream = pipeline_conn.get('downstream', '')
+                    if upstream:
+                        pipeline_lines.append(f"- 问题{q_num}上游：{upstream}")
+                    if downstream:
+                        pipeline_lines.append(f"- 问题{q_num}下游：{downstream}")
+            if deliverables_lines:
+                analysis_deliverables_text = "\n".join(deliverables_lines)
+            if pipeline_lines:
+                pipeline_connections_text = "\n".join(pipeline_lines)
+        except Exception:
+            pass
+
+        prompt = self.SYSTEM_PROMPT_PREFIX + self.model_templates_text + self.SYSTEM_PROMPT_MIDDLE + self.image_templates_text + self.SYSTEM_PROMPT_SUFFIX.replace("{{COMPETITION_STYLE}}", competition_style if competition_style else "暂无").replace("{{KNOWLEDGE}}", knowledge_text if knowledge_text else "暂无").replace("{{RECOMMENDED_IMAGES}}", recommended_images).replace("{{ANALYSIS_DELIVERABLES}}", analysis_deliverables_text).replace("{{SENSITIVITY_PARAMS}}", sensitivity_params_text).replace("{{PIPELINE_CONNECTIONS}}", pipeline_connections_text)
+
+        user_content = f"问题分析：\n{problem_analysis}\n\n模型推荐：\n{model_recommendations}\n\n⚠️ 代码末尾必须包含独立的敏感性分析代码段！"
         if data_info:
             user_content += data_info
 
