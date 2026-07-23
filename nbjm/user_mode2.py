@@ -94,7 +94,7 @@ def get_or_create_session_id():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = generate_session_id()
         db.create_session(st.session_state['session_id'], {
-            'created_at': time.strftime("%Y-%m-%d %H:%M:%S")
+            'created_at': db.beijing_now().strftime("%Y-%m-%d %H:%M:%S")
         })
     return st.session_state['session_id']
 

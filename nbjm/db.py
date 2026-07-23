@@ -5,8 +5,15 @@ Supabase 数据库客户端模块
 import os
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
+
+# 北京时间时区 (UTC+8)
+BEIJING_TZ = timezone(timedelta(hours=8))
+
+def beijing_now():
+    """获取北京时间"""
+    return datetime.now(BEIJING_TZ)
 
 load_dotenv()
 
@@ -45,7 +52,7 @@ def set_config(key, value):
     try:
         result = client.table('system_config').update({
             'value': str(value),
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).eq('key', key).execute()
         if result.data:
             return
@@ -54,7 +61,7 @@ def set_config(key, value):
     client.table('system_config').insert({
         'key': key,
         'value': str(value),
-        'updated_at': datetime.utcnow().isoformat()
+        'updated_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -100,7 +107,7 @@ def create_session(session_id, data=None):
     try:
         result = client.table('user_sessions').update({
             'data': data or {},
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).eq('session_id', session_id).execute()
         if result.data:
             return
@@ -109,8 +116,8 @@ def create_session(session_id, data=None):
     client.table('user_sessions').insert({
         'session_id': session_id,
         'data': data or {},
-        'created_at': datetime.utcnow().isoformat(),
-        'updated_at': datetime.utcnow().isoformat()
+        'created_at': beijing_now().isoformat(),
+        'updated_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -122,7 +129,7 @@ def update_session_data(session_id, data):
     try:
         result = client.table('user_sessions').update({
             'data': existing,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).eq('session_id', session_id).execute()
         if result.data:
             return
@@ -131,8 +138,8 @@ def update_session_data(session_id, data):
     client.table('user_sessions').insert({
         'session_id': session_id,
         'data': existing,
-        'created_at': datetime.utcnow().isoformat(),
-        'updated_at': datetime.utcnow().isoformat()
+        'created_at': beijing_now().isoformat(),
+        'updated_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -178,7 +185,7 @@ def create_card_code_entry(code, amount):
         'code': code,
         'amount': amount,
         'balance': amount,
-        'created_at': datetime.utcnow().isoformat()
+        'created_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -202,7 +209,7 @@ def add_card_usage_log(code, session_id, amount):
         'code': code,
         'session_id': session_id,
         'amount': amount,
-        'used_at': datetime.utcnow().isoformat()
+        'used_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -242,7 +249,7 @@ def get_user_balance(session_id):
                 client = get_client()
                 client.table('card_codes').update({
                     'balance': card_balance,
-                    'updated_at': datetime.utcnow().isoformat()
+                    'updated_at': beijing_now().isoformat()
                 }).eq('code', card_code).execute()
             return card_balance
     
@@ -256,7 +263,7 @@ def create_user_card(session_id, balance=0, card_code=None):
         result = client.table('user_cards').update({
             'balance': balance,
             'card_code': card_code,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).eq('session_id', session_id).execute()
         if result.data:
             return
@@ -266,8 +273,8 @@ def create_user_card(session_id, balance=0, card_code=None):
         'session_id': session_id,
         'balance': balance,
         'card_code': card_code,
-        'created_at': datetime.utcnow().isoformat(),
-        'updated_at': datetime.utcnow().isoformat()
+        'created_at': beijing_now().isoformat(),
+        'updated_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -276,7 +283,7 @@ def update_user_balance(session_id, new_balance):
     client = get_client()
     client.table('user_cards').update({
         'balance': new_balance,
-        'updated_at': datetime.utcnow().isoformat()
+        'updated_at': beijing_now().isoformat()
     }).eq('session_id', session_id).execute()
 
 
@@ -287,7 +294,7 @@ def add_deduction_history(session_id, amount, step=''):
         'session_id': session_id,
         'amount': amount,
         'step': step,
-        'created_at': datetime.utcnow().isoformat()
+        'created_at': beijing_now().isoformat()
     }).execute()
 
 
@@ -325,7 +332,7 @@ def save_file(session_id, file_key, file_name, file_data):
             'file_name': file_name,
             'file_data': encoded_data,
             'file_size': len(file_data),
-            'created_at': datetime.utcnow().isoformat()
+            'created_at': beijing_now().isoformat()
         }).execute()
     except Exception as e:
         # 如果文件太大，尝试截断保存
@@ -444,7 +451,7 @@ def activate_card(session_id, card_code_str):
         client = get_client()
         client.table('user_cards').update({
             'card_code': card_code_str,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).eq('session_id', session_id).execute()
 
     add_card_usage_log(card_code_str, session_id, 0)
@@ -467,7 +474,7 @@ def add_card_balance(card_code_str, amount):
     client = get_client()
     client.table('card_codes').update({
         'balance': new_balance,
-        'updated_at': datetime.utcnow().isoformat()
+        'updated_at': beijing_now().isoformat()
     }).eq('code', card_code_str).execute()
 
     return True, f"充值成功！卡密余额: {new_balance} 次"
@@ -491,7 +498,7 @@ def deduct_from_card(card_code_str, amount):
     client = get_client()
     client.table('card_codes').update({
         'balance': new_balance,
-        'updated_at': datetime.utcnow().isoformat()
+        'updated_at': beijing_now().isoformat()
     }).eq('code', card_code_str).execute()
 
     return True, f"扣除成功，卡密余额: {new_balance} 次", new_balance
@@ -546,7 +553,7 @@ def update_model_deduct_rule(model_name, module_name, deduct_count):
     # 先尝试更新
     result = client.table('model_deduct_rules').update({
         'deduct_count': deduct_count,
-        'updated_at': datetime.utcnow().isoformat()
+        'updated_at': beijing_now().isoformat()
     }).eq('model_name', model_name).eq('module_name', module_name).execute()
     
     # 如果没有更新任何行，则插入新记录
@@ -555,7 +562,7 @@ def update_model_deduct_rule(model_name, module_name, deduct_count):
             'model_name': model_name,
             'module_name': module_name,
             'deduct_count': deduct_count,
-            'updated_at': datetime.utcnow().isoformat()
+            'updated_at': beijing_now().isoformat()
         }).execute()
 
 
@@ -580,7 +587,7 @@ def cleanup_expired_files(hours=1):
     """清理指定小时数之前创建的文件"""
     client = get_client()
     import datetime
-    cutoff_time = (datetime.datetime.utcnow() - datetime.timedelta(hours=hours)).isoformat()
+    cutoff_time = (beijing_now() - timedelta(hours=hours)).isoformat()
     client.table('stored_files').delete().lt('created_at', cutoff_time).execute()
 
 
@@ -588,5 +595,5 @@ def cleanup_expired_sessions(hours=24):
     """清理指定小时数之前创建的会话（保留余额记录）"""
     client = get_client()
     import datetime
-    cutoff_time = (datetime.datetime.utcnow() - datetime.timedelta(hours=hours)).isoformat()
+    cutoff_time = (beijing_now() - timedelta(hours=hours)).isoformat()
     client.table('user_sessions').delete().lt('created_at', cutoff_time).execute()
