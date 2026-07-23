@@ -91,6 +91,23 @@ let timer = setInterval(function() {
 
 # ---- 数据层：全部使用 Supabase (db.py) ----
 
+def _to_beijing(ts_str):
+    """将 Supabase 返回的 UTC 时间字符串转为北京时间字符串"""
+    if not ts_str:
+        return '未知'
+    try:
+        from datetime import datetime, timezone, timedelta
+        # 处理各种格式 "2026-07-22T10:30:00+00:00" 或 "2026-07-22T10:30:00"
+        ts_str_clean = ts_str.replace('Z', '+00:00')
+        if '+' in ts_str_clean or ts_str_clean.endswith('Z'):
+            dt = datetime.fromisoformat(ts_str_clean)
+        else:
+            dt = datetime.fromisoformat(ts_str_clean).replace(tzinfo=timezone.utc)
+        bj_dt = dt.astimezone(timezone(timedelta(hours=8)))
+        return bj_dt.strftime('%Y-%m-%d %H:%M:%S')
+    except Exception:
+        return ts_str
+
 def save_result_file(file, session_id, file_key):
     """保存管理员上传的结果文件到 Supabase"""
     db.save_file(session_id, f"result_{file_key}", file.name, file.getvalue())
@@ -242,7 +259,7 @@ def manage_user_sessions():
     if selected_session:
         session_data = sessions[selected_session]
         st.markdown(f"**会话ID**: {selected_session}")
-        st.markdown(f"**创建时间**: {session_data.get('created_at', '未知')}")
+        st.markdown(f"**创建时间**: {_to_beijing(session_data.get('created_at', ''))}")
         
         st.markdown("---")
         st.markdown("### 📤 用户上传信息")
@@ -375,7 +392,7 @@ def manage_card_codes():
                     '初始余额': card['amount'],
                     '当前余额': card.get('balance', 0),
                     '使用次数': len(usage_log),
-                    '创建时间': card.get('created_at', '')
+                    '创建时间': _to_beijing(card.get('created_at', '')),
                 })
             df = pd.DataFrame(data)
             st.dataframe(df, use_container_width=True)
@@ -405,7 +422,7 @@ def manage_card_codes():
                     for log in usage_log:
                         log_data.append({
                             '用户会话ID': log.get('session_id', ''),
-                            '使用时间': log.get('used_at', '')
+                            '使用时间': _to_beijing(log.get('used_at', ''))
                         })
                     st.dataframe(pd.DataFrame(log_data), use_container_width=True)
                 else:
@@ -727,8 +744,8 @@ def manage_user_files():
     if selected_session:
         session_info = sessions.get(selected_session, {})
         st.markdown(f"**会话ID**: `{selected_session}`")
-        st.markdown(f"**创建时间**: {session_info.get('created_at', '未知')}")
-        st.markdown(f"**最后活跃**: {session_info.get('updated_at', '未知')}")
+        st.markdown(f"**创建时间**: {_to_beijing(session_info.get('created_at', ''))}")
+        st.markdown(f"**最后活跃**: {_to_beijing(session_info.get('updated_at', ''))}")
         
         st.markdown("---")
         st.markdown("### 用户文件列表")
