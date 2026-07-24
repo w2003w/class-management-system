@@ -764,7 +764,7 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
             print(f"[DEBUG] 原始内容前500字符: {json_str[:500]}")
             return None
 
-    async def generate(self, problem_analysis, model_recommendations, competition_name=None, knowledge=None, data_info=None):
+    async def generate(self, problem_analysis, model_recommendations, competition_name=None, knowledge=None, data_info=None, code_retrieval_context=None):
         competition_style, knowledge_text = await self._build_context(competition_name, knowledge)
 
         recommended_images = "暂无"
@@ -858,6 +858,8 @@ print(f'RESULT: baseline=ours total_cost={total_cost} service_rate={service_rate
         user_content = f"问题分析：\n{problem_analysis}\n\n模型推荐：\n{model_recommendations}\n\n⚠️ 代码末尾必须包含独立的敏感性分析代码段！"
         if data_info:
             user_content += data_info
+        if code_retrieval_context:
+            user_content += f"\n\n## 📚 代码检索参考（来自CodeRetriever）\n以下是与当前问题相关的代码模式，可作为实现参考：\n{code_retrieval_context}"
 
         messages = [
             {"role": "system", "content": prompt},

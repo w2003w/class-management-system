@@ -11,3 +11,5 @@ PyPDF2
 Pillow
 httpx
 openai
+jcodemunch-mcp
+uv

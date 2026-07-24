@@ -18,6 +18,7 @@ from knowledge.model_library import MODEL_LIBRARY
 from knowledge.image_library import IMAGE_LIBRARY
 from tools.table_assembler import assemble_tables, extract_numeric_results
 from tools.latex_converter import markdown_to_latex
+from tools.code_retriever import CodeRetriever
 from tools.paper_generator import generate_paper, generate_paper_markdown, convert_markdown_to_docx
 
 
@@ -39,6 +40,8 @@ class Coordinator:
         self.competition_name = None
         self.data_files = None
         self.data_file_names = []
+        self.code_retriever = CodeRetriever()
+        self.code_retriever_available = False
 
     def set_knowledge(self, knowledge):
         self.knowledge = knowledge
@@ -66,6 +69,12 @@ class Coordinator:
         results = {}
         revision_round = 0
 
+        self.code_retriever_available = await self.code_retriever.health_check()
+        if self.code_retriever_available:
+            print("🔗 CodeRetriever 已连接，将使用代码检索减少tokens消耗")
+        else:
+            print("⚠️ CodeRetriever 未连接，继续使用传统方式")
+
         while revision_round <= max_revision_rounds:
             print(f"\n{'='*60}")
             print(f"🎯 第 {revision_round + 1} 轮：完整工作流程")
@@ -87,7 +96,30 @@ class Coordinator:
             print("✅ 模型评审完成")
 
             print("💻 步骤4：代码生成（含每个问题的敏感性分析）...")
-            code_result = await self.code_generator.generate(analysis_result, recommendation_result, self.competition_name, self.knowledge)
+            
+            code_retrieval_context = ""
+            if self.code_retriever_available:
+                try:
+                    analysis_json = self._parse_json(analysis_result)
+                    if analysis_json and 'questions' in analysis_json:
+                        for q in analysis_json['questions']:
+                            question_content = q.get('content', '')[:500]
+                            sa = q.get('solution_approach', {})
+                            model_type = sa.get('primary_model', '')
+                            
+                            print(f"🔍 正在检索与问题相关的代码模式: {model_type}")
+                            patterns = await self.code_retriever.search_similar_patterns(question_content, limit=5)
+                            
+                            if patterns:
+                                code_retrieval_context += f"\n## 问题{q.get('question_number', '')}相关代码模式\n"
+                                for i, pattern in enumerate(patterns[:3], 1):
+                                    code_snippet = pattern.get('code', '')[:300]
+                                    if code_snippet:
+                                        code_retrieval_context += f"### 模式{i}\n```python\n{code_snippet}\n```\n"
+                except Exception as e:
+                    print(f"⚠️ 代码检索失败: {e}")
+
+            code_result = await self.code_generator.generate(analysis_result, recommendation_result, self.competition_name, self.knowledge, code_retrieval_context=code_retrieval_context)
             results['code_generation'] = code_result
 
             code_json = self._parse_json(code_result)
