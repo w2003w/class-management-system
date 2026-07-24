@@ -492,7 +492,6 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
             for field in ['content', 'direct_objective', 'implicit_objective', 
                          'problem_transformation', 'mathematical_formulation', 'model_rationale']:
                 val = q.get(field, '')
-                # 可能嵌套在子对象中
                 if field in ['problem_transformation', 'mathematical_formulation', 'model_rationale']:
                     sa = q.get('solution_approach', {})
                     val = sa.get(field, '') if isinstance(sa, dict) else ''
@@ -500,7 +499,26 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
                 if cn < 10:
                     failures.append(f"问题{qn} {field} 仅 {cn} 个中文字符（要求 ≥10）")
             
-            # 红线 3: C.求解思路 10 个子维度          
+            # 红线 2.5: 约束条件必须有内容
+            constraints_hard = q.get('constraints_hard', [])
+            if not constraints_hard or len(constraints_hard) == 0:
+                failures.append(f"问题{qn} constraints_hard 为空（要求 ≥1 条）")
+            else:
+                for i, ch in enumerate(constraints_hard):
+                    cn_ch = len(__import__('re').findall(r'[\u4e00-\u9fff]', str(ch)))
+                    if cn_ch < 10:
+                        failures.append(f"问题{qn} constraints_hard[{i}] 仅 {cn_ch} 个中文字符（要求 ≥10）")
+            
+            constraints_soft = q.get('constraints_soft', [])
+            if not constraints_soft or len(constraints_soft) == 0:
+                failures.append(f"问题{qn} constraints_soft 为空（要求 ≥1 条）")
+            else:
+                for i, cs in enumerate(constraints_soft):
+                    cn_cs = len(__import__('re').findall(r'[\u4e00-\u9fff]', str(cs)))
+                    if cn_cs < 10:
+                        failures.append(f"问题{qn} constraints_soft[{i}] 仅 {cn_cs} 个中文字符（要求 ≥10）")
+            
+            # 红线 3: C.求解思路 10 个子维度及其字数要求
             sa = q.get('solution_approach', {})
             if not isinstance(sa, dict):
                 failures.append(f"问题{qn} solution_approach 不是对象")
@@ -515,6 +533,11 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
                 for c in required_c:
                     if c not in sa or not sa[c]:
                         failures.append(f"问题{qn} C.{c} 缺失或为空")
+                    else:
+                        val_c = sa[c]
+                        cn_c = len(__import__('re').findall(r'[\u4e00-\u9fff]', str(val_c)))
+                        if cn_c < 30:
+                            failures.append(f"问题{qn} C.{c} 仅 {cn_c} 个中文字符（要求 ≥30）")
             
             # 红线 4: 数组最低数量
             assumptions = data.get('assumptions', [])
@@ -529,6 +552,11 @@ E4. 边界测试计划（≥3个极端用例+预期行为+判定标准）
             steps = algo.get('steps', []) if isinstance(algo, dict) else []
             if len(steps) < 7:
                 failures.append(f"问题{qn} algorithm.steps 仅 {len(steps)} 步（要求 ≥7）")
+            else:
+                for i, step in enumerate(steps):
+                    cn_step = len(__import__('re').findall(r'[\u4e00-\u9fff]', str(step)))
+                    if cn_step < 15:
+                        failures.append(f"问题{qn} algorithm.steps[{i}] 仅 {cn_step} 个中文字符（要求 ≥15）")
             
             hidden = sa.get('hidden_constraints_discovered', [])
             if len(hidden) < 3:

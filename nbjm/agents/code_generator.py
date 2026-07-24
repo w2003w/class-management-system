@@ -45,16 +45,18 @@ import matplotlib.font_manager as fm
 import platform, os
 
 # 运行时检测可用中文字体（兼容Windows/Linux/Streamlit Cloud）
-_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN']
-_available = {f.name for f in fm.fontManager.ttflist}
+_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN', 'DejaVu Sans']
 _selected = None
+
+# 第一阶段：检测已加载的字体
+_available = {f.name for f in fm.fontManager.ttflist}
 for _f in _chinese_candidates:
     if _f in _available:
         _selected = _f
         break
 
+# 第二阶段：Linux环境扫描常见字体目录
 if _selected is None and platform.system() == 'Linux':
-    # Linux环境尝试从常见路径加载
     for _d in ['/usr/share/fonts', '/usr/local/share/fonts', '/home/adminuser/.fonts']:
         if os.path.exists(_d):
             for _root, _dirs, _files in os.walk(_d):
@@ -71,19 +73,24 @@ if _selected is None and platform.system() == 'Linux':
         if _selected:
             break
 
-# 重建字体缓存确保新字体被识别
-matplotlib.font_manager._load_fontmanager(try_read_cache=False)
-
-# 应用字体配置
-if _selected:
-    matplotlib.rcParams['font.sans-serif'] = [_selected] + _chinese_candidates + ['DejaVu Sans']
-else:
-    matplotlib.rcParams['font.sans-serif'] = _chinese_candidates + ['DejaVu Sans']
-    print("警告: 未检测到中文字体，图表中文可能显示为方框。可尝试: apt install fonts-wqy-microhei")
-
-matplotlib.rcParams['axes.unicode_minus'] = False
-matplotlib.rcParams['font.size'] = 12
+# 第三阶段：直接设置字体，不再依赖私有API重建缓存
+# addfont后字体已在fontManager中，直接使用即可
 import matplotlib.pyplot as plt
+if _selected:
+    plt.rcParams['font.sans-serif'] = [_selected] + _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+else:
+    plt.rcParams['font.sans-serif'] = _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+    print("警告: 未检测到中文字体，图表中文可能显示为方框。")
+
+plt.rcParams['axes.unicode_minus'] = False
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.labelsize'] = 13
+plt.rcParams['axes.titlesize'] = 14
+plt.rcParams['xtick.labelsize'] = 10
+plt.rcParams['ytick.labelsize'] = 10
+plt.rcParams['legend.fontsize'] = 9
 import seaborn as sns
 import pandas as pd
 ```
@@ -392,7 +399,7 @@ import matplotlib.font_manager as fm
 import platform, os
 
 # 运行时检测可用中文字体
-_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN']
+_chinese_candidates = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'WenQuanYi Zen Hei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'AR PL UMing CN', 'AR PL UKai CN', 'DejaVu Sans']
 _available = {f.name for f in fm.fontManager.ttflist}
 _selected = None
 for _f in _chinese_candidates:
@@ -417,10 +424,14 @@ if _selected is None and platform.system() == 'Linux':
         if _selected:
             break
 
-matplotlib.font_manager._load_fontmanager(try_read_cache=False)
-matplotlib.rcParams['font.sans-serif'] = ([_selected] if _selected else []) + _chinese_candidates + ['DejaVu Sans']
-matplotlib.rcParams['axes.unicode_minus'] = False
 import matplotlib.pyplot as plt
+if _selected:
+    plt.rcParams['font.sans-serif'] = [_selected] + _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+else:
+    plt.rcParams['font.sans-serif'] = _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['axes.unicode_minus'] = False
 import pandas as pd
 ```
 
@@ -453,6 +464,37 @@ print(f'RESULT: baseline={category} total_cost={total_cost} service_rate={servic
 
 ## 附件数据完整信息
 {{data_info}}
+
+## ⚠️ 数据读取强制要求（违反此要求 = 代码无效！）
+**严禁编造数据！** 你必须使用上述 data_info 中提供的实际文件路径进行数据读取。
+
+### 必须执行的步骤：
+1. **检查文件路径**：从上方 data_info 中找到所有文件的绝对路径（格式为 `r'path'`）
+2. **使用 pandas 读取**：必须使用 `pd.read_excel()` 或 `pd.read_csv()` 读取所有附件文件
+3. **验证读取成功**：读取后必须输出 `print(f'文件{filename}读取成功: {df.shape[0]}行 × {df.shape[1]}列')`
+4. **使用实际数据**：模型计算必须基于读取的真实数据，禁止用 `np.random.rand()` 或其他方式生成模拟数据
+5. **缺失值处理**：如果数据中有缺失值，必须明确处理（填充、删除或标记），并在代码中注释说明
+
+### 代码示例（必须按照此模式编写）：
+```python
+# ===== 数据加载（必须使用实际文件路径，禁止编造！）=====
+print("="*60)
+print("数据加载阶段")
+print("="*60)
+
+# 从 data_info 中获取的实际文件路径
+df1 = pd.read_excel(r'/path/to/附件1.xlsx')
+print(f"附件1.xlsx 读取成功: {df1.shape[0]}行 × {df1.shape[1]}列")
+print(f"列名: {list(df1.columns)}")
+print(f"前5行:\n{df1.head().to_string(index=False)}\n")
+
+df2 = pd.read_excel(r'/path/to/附件2.xlsx')
+print(f"附件2.xlsx 读取成功: {df2.shape[0]}行 × {df2.shape[1]}列")
+print(f"列名: {list(df2.columns)}")
+print(f"前5行:\n{df2.head().to_string(index=False)}\n")
+```
+
+**如果 data_info 中没有提供文件路径，或者文件读取失败，请输出清晰的错误信息，不要编造数据。**
 
 ## 🚨 问题分析交付清单（来自问题分析阶段，代码必须覆盖！）
 {{ANALYSIS_DELIVERABLES}}
@@ -1439,10 +1481,14 @@ if _selected is None and platform.system() == 'Linux':
                         except: pass
                 if _selected: break
         if _selected: break
-matplotlib.font_manager._load_fontmanager(try_read_cache=False)
-matplotlib.rcParams['font.sans-serif'] = ([_selected] if _selected else []) + _chinese_candidates + ['DejaVu Sans']
-matplotlib.rcParams['axes.unicode_minus'] = False
 import matplotlib.pyplot as plt
+if _selected:
+    plt.rcParams['font.sans-serif'] = [_selected] + _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+else:
+    plt.rcParams['font.sans-serif'] = _chinese_candidates
+    plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['axes.unicode_minus'] = False
 import seaborn as sns
 import pandas as pd
 
