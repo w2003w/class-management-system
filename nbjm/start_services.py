@@ -66,7 +66,7 @@ def start_streamlit():
     print(f"🚀 正在启动 Streamlit 应用 (端口: {port})")
     
     result = subprocess.run(
-        [python_exe, "-m", "streamlit", "run", "streamlit_app.py", "--server.port", port, "--server.headless", "true"],
+        [python_exe, "-m", "streamlit", "run", "app.py", "--server.port", port, "--server.headless", "true"],
         check=True
     )
     return result
