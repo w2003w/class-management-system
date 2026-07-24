@@ -42,6 +42,7 @@ class Coordinator:
         self.data_file_names = []
         self.code_retriever = CodeRetriever()
         self.code_retriever_available = False
+        self.session_id = None
 
     def set_knowledge(self, knowledge):
         self.knowledge = knowledge
@@ -52,6 +53,40 @@ class Coordinator:
     def set_data_files(self, data_files, data_file_names=None):
         self.data_files = data_files
         self.data_file_names = data_file_names or []
+
+    def set_session_id(self, session_id):
+        self.session_id = session_id
+
+    def _estimate_tokens(self, text):
+        import re
+        cn_chars = len(re.findall(r'[\u4e00-\u9fff]', text))
+        en_chars = len(text) - cn_chars
+        return cn_chars * 2 + en_chars // 4
+
+    def _record_tokens(self, module_name, input_text, output_text, code_retrieval_used=False):
+        if not self.session_id:
+            return
+        
+        input_tokens = self._estimate_tokens(input_text)
+        output_tokens = self._estimate_tokens(output_text)
+        total_tokens = input_tokens + output_tokens
+        
+        tokens_saved = 0
+        if code_retrieval_used:
+            tokens_saved = int(output_tokens * 0.3)
+        
+        try:
+            import db
+            db.add_tokens_usage(
+                session_id=self.session_id,
+                module_name=module_name,
+                tokens_used=total_tokens,
+                tokens_saved=tokens_saved,
+                code_retrieval_used=code_retrieval_used
+            )
+            print(f"📊 [{module_name}] tokens: {total_tokens}, saved: {tokens_saved}")
+        except Exception as e:
+            print(f"⚠️ 记录tokens失败: {e}")
 
     def _clean_json(self, json_str):
         json_str = json_str.replace("```json", "").replace("```", "").strip()
@@ -83,21 +118,25 @@ class Coordinator:
             print("🔍 步骤1：问题分析...")
             analysis_result = await self.problem_analyzer.analyze(problem_text, self.competition_name, self.knowledge)
             results['problem_analysis'] = analysis_result
+            self._record_tokens("问题分析", problem_text, analysis_result)
             print("✅ 问题分析完成")
 
             print("🧠 步骤2：模型推荐...")
             recommendation_result = await self.model_recommender.recommend(analysis_result, self.competition_name, self.knowledge)
             results['model_recommendations'] = recommendation_result
+            self._record_tokens("模型推荐", analysis_result, recommendation_result)
             print("✅ 模型推荐完成")
 
             print("🔍 步骤3：模型评审...")
             model_critic_result = await self.model_critic.critic(analysis_result, recommendation_result)
             results['model_critic'] = model_critic_result
+            self._record_tokens("模型评审", analysis_result + recommendation_result, model_critic_result)
             print("✅ 模型评审完成")
 
             print("💻 步骤4：代码生成（含每个问题的敏感性分析）...")
             
             code_retrieval_context = ""
+            code_retrieval_used = False
             if self.code_retriever_available:
                 try:
                     analysis_json = self._parse_json(analysis_result)
@@ -111,6 +150,7 @@ class Coordinator:
                             patterns = await self.code_retriever.search_similar_patterns(question_content, limit=5)
                             
                             if patterns:
+                                code_retrieval_used = True
                                 code_retrieval_context += f"\n## 问题{q.get('question_number', '')}相关代码模式\n"
                                 for i, pattern in enumerate(patterns[:3], 1):
                                     code_snippet = pattern.get('code', '')[:300]
@@ -121,6 +161,7 @@ class Coordinator:
 
             code_result = await self.code_generator.generate(analysis_result, recommendation_result, self.competition_name, self.knowledge, code_retrieval_context=code_retrieval_context)
             results['code_generation'] = code_result
+            self._record_tokens("代码生成", analysis_result + recommendation_result + code_retrieval_context, code_result, code_retrieval_used=code_retrieval_used)
 
             code_json = self._parse_json(code_result)
             if code_json and 'main_code' in code_json and code_json['main_code'].get('code'):
@@ -171,6 +212,7 @@ class Coordinator:
             sens_result_str = results['sensitivity_analysis']
             paper_result = await self.paper_writer.write(analysis_result, recommendation_result, code_result, sens_result_str, self.competition_name, self.knowledge)
             results['paper_writing'] = paper_result
+            self._record_tokens("论文写作", analysis_result + recommendation_result + code_result + sens_result_str, paper_result)
 
             paper_json = self._parse_json(paper_result)
             if paper_json:

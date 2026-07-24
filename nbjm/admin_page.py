@@ -231,7 +231,7 @@ def main():
     
     st.sidebar.markdown("---")
     
-    tab = st.sidebar.radio("管理功能", ["用户会话管理", "结果上传管理", "卡密管理", "模型费用管理", "用户文件管理"], key="admin_tab")
+    tab = st.sidebar.radio("管理功能", ["用户会话管理", "结果上传管理", "卡密管理", "模型费用管理", "费用节省统计", "用户文件管理"], key="admin_tab")
     
     if tab == "用户会话管理":
         manage_user_sessions()
@@ -241,6 +241,8 @@ def main():
         manage_card_codes()
     elif tab == "模型费用管理":
         manage_model_deduct_rules()
+    elif tab == "费用节省统计":
+        manage_cost_savings()
     else:
         manage_user_files()
 
@@ -840,6 +842,87 @@ def _show_file_list(file_list):
                         st.info("内容过长，仅显示前5000字符")
                 except:
                     st.text("无法预览文件内容")
+
+
+def manage_cost_savings():
+    st.subheader("💰 费用节省统计")
+    
+    TOKEN_PRICE_PER_1K = 0.01
+    
+    total_used, total_saved = db.get_total_tokens_usage()
+    total_calls, retrieval_used = db.get_tokens_usage_count()
+    module_stats = db.get_tokens_usage_by_module()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("总 Tokens 使用量", f"{total_used:,}", delta=f"{total_saved:,} 已节省")
+    with col2:
+        st.metric("节省费用", f"¥{(total_saved / 1000 * TOKEN_PRICE_PER_1K):.2f}", delta=f"减少 {total_saved / 1000 * TOKEN_PRICE_PER_1K:.2f} 元")
+    with col3:
+        st.metric("LLM 调用次数", f"{total_calls}", delta=f"{retrieval_used} 次使用检索")
+    
+    st.markdown("---")
+    
+    st.markdown("### 📊 按模块统计")
+    if module_stats:
+        module_data = []
+        for module, stats in module_stats.items():
+            saved_percent = (stats['saved'] / (stats['used'] + stats['saved'])) * 100 if (stats['used'] + stats['saved']) > 0 else 0
+            module_data.append({
+                '模块': module,
+                '使用 Tokens': stats['used'],
+                '节省 Tokens': stats['saved'],
+                '节省比例': f"{saved_percent:.1f}%",
+                '节省费用': f"¥{(stats['saved'] / 1000 * TOKEN_PRICE_PER_1K):.2f}"
+            })
+        df = pd.DataFrame(module_data)
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("暂无 tokens 使用记录")
+    
+    st.markdown("---")
+    
+    st.markdown("### 📈 节省效果分析")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### 节省比例")
+        if total_used + total_saved > 0:
+            saved_percent = (total_saved / (total_used + total_saved)) * 100
+            st.progress(saved_percent / 100)
+            st.markdown(f"**总节省比例**: {saved_percent:.1f}%")
+        else:
+            st.info("暂无数据")
+    
+    with col2:
+        st.markdown("#### 代码检索使用率")
+        if total_calls > 0:
+            retrieval_percent = (retrieval_used / total_calls) * 100
+            st.progress(retrieval_percent / 100)
+            st.markdown(f"**检索使用次数**: {retrieval_used} / {total_calls}")
+        else:
+            st.info("暂无数据")
+    
+    st.markdown("---")
+    
+    st.markdown("### 💡 节省原理")
+    st.info("""
+    **CodeRetriever 代码检索节省机制**：
+    
+    1. **代码复用**：通过 AST 解析检索已有的相似代码模式
+    2. **提示词优化**：提供精确的代码片段参考，减少 LLM 猜测
+    3. **减少生成量**：LLM 只需参考而非从头生成，降低输出 tokens
+    
+    **当前估算模型**：使用代码检索时，输出 tokens 减少约 30%
+    """)
+    
+    st.markdown("---")
+    
+    st.markdown("### ⚙️ Token 单价设置")
+    new_price = st.number_input("Token 单价 (元/千 tokens)", min_value=0.001, max_value=1.0, value=TOKEN_PRICE_PER_1K, step=0.001)
+    if st.button("更新单价"):
+        db.set_config('token_price_per_1k', new_price)
+        st.success(f"已更新 Token 单价为 ¥{new_price}/千 tokens")
+
 
 if __name__ == "__main__":
     main()

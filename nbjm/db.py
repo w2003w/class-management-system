@@ -597,3 +597,69 @@ def cleanup_expired_sessions(hours=24):
     import datetime
     cutoff_time = (beijing_now() - timedelta(hours=hours)).isoformat()
     client.table('user_sessions').delete().lt('created_at', cutoff_time).execute()
+
+
+# ============================================================
+# Tokens 使用记录（用于统计节省的费用）
+# ============================================================
+
+def add_tokens_usage(session_id, module_name, tokens_used, tokens_saved=0, code_retrieval_used=False):
+    """
+    添加 tokens 使用记录
+    session_id: 用户会话ID
+    module_name: 模块名称（问题分析、代码生成等）
+    tokens_used: 实际使用的 tokens 数量
+    tokens_saved: 通过 CodeRetriever 节省的 tokens 数量
+    code_retrieval_used: 是否使用了代码检索
+    """
+    client = get_client()
+    client.table('tokens_usage').insert({
+        'session_id': session_id,
+        'module_name': module_name,
+        'tokens_used': tokens_used,
+        'tokens_saved': tokens_saved,
+        'code_retrieval_used': code_retrieval_used,
+        'created_at': beijing_now().isoformat()
+    }).execute()
+
+
+def get_tokens_usage_by_session(session_id):
+    """获取指定会话的 tokens 使用记录"""
+    client = get_client()
+    result = client.table('tokens_usage').select('*').eq('session_id', session_id).order('created_at', desc=True).execute()
+    return result.data or []
+
+
+def get_total_tokens_usage():
+    """获取所有 tokens 使用统计"""
+    client = get_client()
+    result = client.table('tokens_usage').select('tokens_used', 'tokens_saved').execute()
+    total_used = 0
+    total_saved = 0
+    for row in result.data or []:
+        total_used += row.get('tokens_used', 0)
+        total_saved += row.get('tokens_saved', 0)
+    return total_used, total_saved
+
+
+def get_tokens_usage_by_module():
+    """按模块统计 tokens 使用情况"""
+    client = get_client()
+    result = client.table('tokens_usage').select('module_name', 'tokens_used', 'tokens_saved').execute()
+    module_stats = {}
+    for row in result.data or []:
+        module = row.get('module_name', '未知')
+        if module not in module_stats:
+            module_stats[module] = {'used': 0, 'saved': 0}
+        module_stats[module]['used'] += row.get('tokens_used', 0)
+        module_stats[module]['saved'] += row.get('tokens_saved', 0)
+    return module_stats
+
+
+def get_tokens_usage_count():
+    """获取使用次数统计"""
+    client = get_client()
+    result = client.table('tokens_usage').select('*').execute()
+    total_calls = len(result.data or [])
+    retrieval_used = sum(1 for row in result.data or [] if row.get('code_retrieval_used', False))
+    return total_calls, retrieval_used
