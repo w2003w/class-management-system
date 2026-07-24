@@ -36,3 +36,9 @@ nbjm/.venv/
 nbjm/__pycache__/
 nbjm/**/__pycache__/
 nbjm/data/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
