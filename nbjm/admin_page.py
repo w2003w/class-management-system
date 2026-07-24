@@ -849,9 +849,26 @@ def manage_cost_savings():
     
     TOKEN_PRICE_PER_1K = 0.01
     
-    total_used, total_saved = db.get_total_tokens_usage()
-    total_calls, retrieval_used = db.get_tokens_usage_count()
-    module_stats = db.get_tokens_usage_by_module()
+    try:
+        total_used, total_saved = db.get_total_tokens_usage()
+        total_calls, retrieval_used = db.get_tokens_usage_count()
+        module_stats = db.get_tokens_usage_by_module()
+    except Exception as e:
+        st.error(f"数据库查询失败: {e}")
+        st.info("请在 Supabase 中创建 `tokens_usage` 表")
+        st.code("""
+-- 在 Supabase SQL 编辑器中执行以下命令创建表
+CREATE TABLE IF NOT EXISTS tokens_usage (
+  id BIGSERIAL PRIMARY KEY,
+  session_id VARCHAR(255) NOT NULL,
+  module_name VARCHAR(100) NOT NULL,
+  tokens_used INTEGER DEFAULT 0,
+  tokens_saved INTEGER DEFAULT 0,
+  code_retrieval_used BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+        """, language="sql")
+        return
     
     col1, col2, col3 = st.columns(3)
     with col1:
