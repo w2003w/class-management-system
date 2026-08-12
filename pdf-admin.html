@@ -4,246 +4,233 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF阅读管理 - 班级管理系统</title>
+    <script src="js/route-fix.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/premium-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: var(--bg-primary, #0f172a);
-            color: var(--text-primary, #f1f5f9);
-        }
+        body { margin: 0; padding: 0; min-height: 100vh; }
         
         .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 260px;
-            z-index: 100;
-            overflow-y: auto;
-            background: var(--bg-secondary, #1e293b);
-            border-right: 1px solid rgba(71, 85, 105, 0.3);
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: 260px; z-index: 100; overflow-y: auto; padding-bottom: 20px;
         }
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(71, 85, 105, 0.3); margin-bottom: 16px; }
+        .sidebar-logo { display: flex; align-items: center; gap: 12px; }
+        .sidebar-logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+        }
+        .sidebar-logo-text h2 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .sidebar-logo-text p { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+        .sidebar-nav { padding: 0 12px; }
+        .sidebar-item { margin-bottom: 4px; }
+        .sidebar-item.active .sidebar-link {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary); border-left: 3px solid var(--primary);
+        }
+        .sidebar-link {
+            display: flex; align-items: center; padding: 12px 16px;
+            color: var(--text-secondary); text-decoration: none; border-radius: 10px;
+            transition: all 0.2s; font-weight: 500; font-size: 14px;
+        }
+        .sidebar-link:hover { background: rgba(99, 102, 241, 0.1); color: var(--text-primary); }
+        .sidebar-link i { width: 24px; font-size: 18px; margin-right: 12px; }
+        .sidebar-link span { flex: 1; }
         
-        .main-content {
-            margin-left: 260px;
-            min-height: 100vh;
-            padding: 24px;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 60px;
-                transition: width 0.3s;
-            }
-            .sidebar .sidebar-label,
-            .sidebar .sidebar-header-text {
-                display: none;
-            }
-            .main-content {
-                margin-left: 60px;
-            }
-        }
-        
-        .tab-active {
-            background: linear-gradient(135deg, var(--primary, #3b82f6), var(--secondary, #8b5cf6));
-            color: white;
-        }
+        .main-content { margin-left: 260px; min-height: 100vh; padding: 24px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .header-title h1 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .header-title p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0; }
         
         .stat-card {
-            background: var(--bg-secondary, #1e293b);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            border-radius: 12px;
-            padding: 20px;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 16px; padding: 24px;
+            transition: all 0.3s; position: relative; overflow: hidden;
         }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+        }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--text-primary); }
+        .stat-label { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary, #3b82f6), var(--secondary, #8b5cf6));
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; padding: 10px 20px; border-radius: 10px; cursor: pointer;
+            border: none; transition: all 0.3s; font-weight: 600;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .btn-secondary {
-            background: var(--bg-tertiary, #334155);
-            color: var(--text-primary, #f1f5f9);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            transition: all 0.3s;
+            background: rgba(51, 65, 85, 0.8); color: var(--text-primary);
+            padding: 8px 16px; border-radius: 10px; cursor: pointer;
+            border: 1px solid rgba(99, 102, 241, 0.1); transition: all 0.3s; font-weight: 500;
         }
-        
-        .btn-secondary:hover {
-            background: var(--bg-hover, #475569);
-        }
-        
+        .btn-secondary:hover { background: rgba(71, 85, 105, 0.8); }
         .btn-danger {
-            background: #ef4444;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s;
+            background: rgba(239, 68, 68, 0.15); color: var(--danger);
+            padding: 6px 12px; border-radius: 8px; cursor: pointer;
+            border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.3s; font-size: 13px;
         }
-        
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-        
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        
-        .modal-overlay.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: var(--bg-secondary, #1e293b);
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
-        }
-        
-        th {
-            background: var(--bg-tertiary, #334155);
-            font-weight: 600;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary, #94a3b8);
-        }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
         
         input, select {
-            background: var(--bg-tertiary, #334155);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            color: var(--text-primary, #f1f5f9);
-            padding: 10px 14px;
-            border-radius: 8px;
-            width: 100%;
+            background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(99, 102, 241, 0.1);
+            color: var(--text-primary); padding: 10px 14px; border-radius: 10px; width: 100%;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(71, 85, 105, 0.2); }
+        th { background: rgba(51, 65, 85, 0.5); font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+        
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7); display: none;
+            align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-secondary); border-radius: 16px; padding: 24px;
+            max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;
+            border: 1px solid rgba(99, 102, 241, 0.1);
         }
         
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary, #3b82f6);
+        .upload-zone {
+            border: 2px dashed rgba(99, 102, 241, 0.2); border-radius: 12px;
+            padding: 32px; text-align: center; cursor: pointer; transition: all 0.3s;
+        }
+        .upload-zone:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+        
+        .tab-active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary) !important; border-left: 3px solid var(--primary);
+        }
+        
+        @media (max-width: 640px) {
+            .sidebar { width: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
         }
     </style>
 </head>
 <body>
     <!-- 侧边栏 -->
-    <nav class="sidebar">
+    <div class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
-                    <i class="fas fa-book-open"></i>
+                <div class="sidebar-logo-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
                 </div>
-                <div class="sidebar-header-text">
-                    <h1 class="text-lg font-bold">PDF阅读管理</h1>
-                    <p class="text-sm" style="color: var(--text-secondary);">管理员控制台</p>
+                <div class="sidebar-logo-text">
+                    <h2>班级管理系统</h2>
+                    <p>综合管理平台</p>
                 </div>
             </div>
         </div>
         
-        <div class="p-4">
-            <button onclick="location.href='dashboard.html'" class="w-full btn-secondary mb-4">
-                <i class="fas fa-home sidebar-label"></i>
-                <span class="sidebar-label">返回仪表盘</span>
-            </button>
-            
-            <div class="space-y-2">
-                <button onclick="switchTab('upload')" id="tab-upload" class="w-full p-3 rounded-lg text-left tab-active" style="transition: all 0.3s;">
-                    <i class="fas fa-upload mr-3 sidebar-label"></i>
-                    <span class="sidebar-label">📤 PDF上传与管理</span>
-                </button>
-                
-                <button onclick="switchTab('permissions')" id="tab-permissions" class="w-full p-3 rounded-lg text-left" style="transition: all 0.3s;">
-                    <i class="fas fa-user-shield mr-3 sidebar-label"></i>
-                    <span class="sidebar-label">👥 权限管理</span>
-                </button>
-                
-                <button onclick="switchTab('stats')" id="tab-stats" class="w-full p-3 rounded-lg text-left" style="transition: all 0.3s;">
-                    <i class="fas fa-chart-bar mr-3 sidebar-label"></i>
-                    <span class="sidebar-label">📊 阅读统计</span>
-                </button>
+        <nav class="sidebar-nav">
+            <div class="sidebar-item">
+                <a href="dashboard.html" class="sidebar-link">
+                    <i class="fa-solid fa-chart-pie"></i><span>仪表盘</span>
+                </a>
             </div>
-        </div>
-    </nav>
-    
+            <div class="sidebar-item">
+                <a href="attendance-new.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-circle"></i><span>签到管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="exam.html" class="sidebar-link">
+                    <i class="fa-solid fa-file-text"></i><span>考试系统</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="vote.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-square"></i><span>投票抽奖</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="pdf-reader.html" class="sidebar-link">
+                    <i class="fa-solid fa-book-reader"></i><span>PDF阅读中心</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="chat.html" class="sidebar-link">
+                    <i class="fa-solid fa-comments"></i><span>班级群聊</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="users.html" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i><span>用户管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item active">
+                <a href="pdf-admin.html" class="sidebar-link">
+                    <i class="fa-solid fa-file-pdf"></i><span>PDF阅读管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="settings.html" class="sidebar-link">
+                    <i class="fa-solid fa-cog"></i><span>系统设置</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
     <!-- 主内容区 -->
-    <main class="main-content">
-        <!-- 管理员信息 -->
-        <div class="mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold">PDF阅读管理系统</h1>
-                <p class="text-sm" style="color: var(--text-secondary);">上传PDF文件、指定阅读权限、查看阅读统计</p>
+    <div class="main-content">
+        <div class="page-header">
+            <div class="header-title">
+                <h1>PDF阅读管理</h1>
+                <p>上传PDF文件、指定阅读权限、查看阅读统计</p>
             </div>
             <div class="stat-card" style="padding: 10px 20px;">
-                <span class="text-sm" style="color: var(--text-secondary);">管理员ID:</span>
+                <span style="color: var(--text-muted); font-size: 14px;">管理员ID:</span>
                 <span id="admin-id" class="font-mono text-sm ml-2">-</span>
             </div>
         </div>
-        
+
+        <!-- Tab导航 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+            <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link tab-active" style="border-radius: 10px; padding: 10px 20px;">
+                <i class="fa-solid fa-upload mr-2"></i><span>PDF上传与管理</span>
+            </button>
+            <button onclick="switchTab('permissions')" id="tab-permissions" class="sidebar-link" style="border-radius: 10px; padding: 10px 20px;">
+                <i class="fa-solid fa-user-shield mr-2"></i><span>权限管理</span>
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="sidebar-link" style="border-radius: 10px; padding: 10px 20px;">
+                <i class="fa-solid fa-chart-bar mr-2"></i><span>阅读统计</span>
+            </button>
+        </div>
+
         <!-- Tab 1: PDF上传与管理 -->
         <div id="content-upload" class="tab-content">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;" class="md:grid-cols-2">
                 <!-- 上传区 -->
                 <div class="stat-card">
-                    <h2 class="text-xl font-bold mb-4"><i class="fas fa-upload mr-2"></i>上传PDF文件</h2>
-                    <div id="upload-zone" class="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer" style="border-color: rgba(71, 85, 105, 0.5); transition: all 0.3s;">
-                        <i class="fas fa-file-pdf text-4xl mb-4" style="color: #ef4444;"></i>
-                        <p class="mb-2">点击选择或拖拽PDF文件到此处</p>
-                        <p class="text-sm" style="color: var(--text-secondary);">支持PDF格式，单个文件不超过10MB</p>
-                        <input type="file" id="pdf-input" accept=".pdf" class="hidden" onchange="handleFileUpload(event)">
+                    <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-upload mr-2"></i>上传PDF文件</h2>
+                    <div id="upload-zone" class="upload-zone" onclick="document.getElementById('pdf-input').click()">
+                        <i class="fa-solid fa-file-pdf" style="font-size: 48px; color: #EF4444; margin-bottom: 16px;"></i>
+                        <p style="margin-bottom: 8px;">点击选择或拖拽PDF文件到此处</p>
+                        <p style="font-size: 14px; color: var(--text-muted);">支持PDF格式，单个文件不超过10MB</p>
+                        <input type="file" id="pdf-input" accept=".pdf" style="display:none" onchange="handleFileUpload(event)">
                     </div>
-                    <div id="file-preview" class="mt-4 hidden">
-                        <div class="flex items-center justify-between p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                            <div class="flex items-center">
-                                <i class="fas fa-file-pdf text-2xl mr-3" style="color: #ef4444;"></i>
+                    <div id="file-preview" style="margin-top: 16px; display:none">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 10px; background: rgba(51, 65, 85, 0.5);">
+                            <div style="display: flex; align-items: center;">
+                                <i class="fa-solid fa-file-pdf" style="font-size: 28px; margin-right: 12px; color: #EF4444;"></i>
                                 <div>
-                                    <p id="preview-name" class="font-medium"></p>
-                                    <p id="preview-size" class="text-sm" style="color: var(--text-secondary);"></p>
+                                    <p id="preview-name" style="font-weight: 600;"></p>
+                                    <p id="preview-size" style="font-size: 14px; color: var(--text-muted);"></p>
                                 </div>
                             </div>
                             <button onclick="confirmUpload()" class="btn-primary">确认上传</button>
@@ -252,43 +239,37 @@
                 </div>
                 
                 <!-- 统计卡片 -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="stat-card text-center">
-                        <i class="fas fa-file-pdf text-3xl mb-2" style="color: var(--primary);"></i>
-                        <div class="text-2xl font-bold" id="total-pdfs">0</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">PDF文件总数</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="stat-card" style="text-align: center; padding: 20px;">
+                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; margin: 0 auto 8px;"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div class="stat-value" id="total-pdfs">0</div>
+                        <div class="stat-label">PDF文件总数</div>
                     </div>
-                    <div class="stat-card text-center">
-                        <i class="fas fa-users text-3xl mb-2" style="color: #10b981;"></i>
-                        <div class="text-2xl font-bold" id="total-users">0</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">阅读人数</div>
+                    <div class="stat-card" style="text-align: center; padding: 20px;">
+                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #34D399; margin: 0 auto 8px;"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-value" id="total-users">0</div>
+                        <div class="stat-label">阅读人数</div>
                     </div>
-                    <div class="stat-card text-center">
-                        <i class="fas fa-clock text-3xl mb-2" style="color: #f59e0b;"></i>
-                        <div class="text-2xl font-bold" id="total-reading-time">0</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">总阅读时长</div>
+                    <div class="stat-card" style="text-align: center; padding: 20px;">
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: #FBBF24; margin: 0 auto 8px;"><i class="fa-solid fa-clock"></i></div>
+                        <div class="stat-value" id="total-reading-time" style="font-size: 18px;">0</div>
+                        <div class="stat-label">总阅读时长</div>
                     </div>
-                    <div class="stat-card text-center">
-                        <i class="fas fa-book text-3xl mb-2" style="color: #8b5cf6;"></i>
-                        <div class="text-2xl font-bold" id="total-reads">0</div>
-                        <div class="text-sm" style="color: var(--text-secondary);">阅读次数</div>
+                    <div class="stat-card" style="text-align: center; padding: 20px;">
+                        <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #A78BFA; margin: 0 auto 8px;"><i class="fa-solid fa-book"></i></div>
+                        <div class="stat-value" id="total-reads">0</div>
+                        <div class="stat-label">阅读次数</div>
                     </div>
                 </div>
             </div>
             
             <!-- PDF列表 -->
-            <div class="mt-6 stat-card">
-                <h2 class="text-xl font-bold mb-4"><i class="fas fa-list mr-2"></i>已上传的PDF文件</h2>
-                <div class="table-responsive">
-                    <table id="pdf-list-table">
+            <div class="stat-card">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list mr-2"></i>已上传的PDF文件</h2>
+                <div style="overflow-x: auto;">
+                    <table>
                         <thead>
-                            <tr>
-                                <th>文件名</th>
-                                <th>大小</th>
-                                <th>上传时间</th>
-                                <th>授权人数</th>
-                                <th>操作</th>
-                            </tr>
+                            <tr><th>文件名</th><th>大小</th><th>上传时间</th><th>授权人数</th><th>操作</th></tr>
                         </thead>
                         <tbody id="pdf-list-body">
                             <tr><td colspan="5" class="empty-state">加载中...</td></tr>
@@ -297,225 +278,164 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Tab 2: 权限管理 -->
-        <div id="content-permissions" class="tab-content hidden">
-            <div class="stat-card mb-6">
-                <h2 class="text-xl font-bold mb-4"><i class="fas fa-user-shield mr-2"></i>权限管理</h2>
-                <div class="mb-4">
-                    <label class="block text-sm mb-2">选择PDF文件</label>
+        <div id="content-permissions" class="tab-content" style="display:none">
+            <div class="stat-card" style="margin-bottom: 24px;">
+                <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-user-shield mr-2"></i>权限管理</h2>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">选择PDF文件</label>
                     <select id="perm-pdf-select" onchange="loadPermissions()"></select>
                 </div>
-                
-                <div id="permission-detail" class="hidden">
-                    <div class="mb-6 p-4 rounded-lg" style="background: var(--bg-tertiary);">
-                        <h3 id="current-pdf-name" class="font-bold"></h3>
-                        <p id="current-pdf-info" class="text-sm" style="color: var(--text-secondary);"></p>
+                <div id="permission-detail" style="display:none">
+                    <div style="margin-bottom: 24px; padding: 16px; border-radius: 10px; background: rgba(51, 65, 85, 0.3);">
+                        <h3 id="current-pdf-name" style="font-weight: 700;"></h3>
+                        <p id="current-pdf-info" style="font-size: 14px; color: var(--text-muted);"></p>
                     </div>
-                    
-                    <h3 class="font-bold mb-3">授权新用户</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <h3 style="font-weight: 700; margin-bottom: 12px;">授权新用户</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                         <div>
-                            <label class="block text-sm mb-2">用户Session ID</label>
+                            <label style="display: block; font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">用户Session ID</label>
                             <input type="text" id="new-user-id" placeholder="用户的session_id" />
                         </div>
                         <div>
-                            <label class="block text-sm mb-2">用户名（可选）</label>
+                            <label style="display: block; font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">用户名（可选）</label>
                             <input type="text" id="new-user-name" placeholder="用户昵称" />
                         </div>
                     </div>
                     <button onclick="grantPermission()" class="btn-primary">授权用户</button>
                 </div>
             </div>
-            
-            <div id="permissions-list-container" class="stat-card hidden">
-                <h3 class="font-bold mb-4">当前授权用户列表</h3>
-                <div class="table-responsive">
-                    <table id="permissions-table">
-                        <thead>
-                            <tr>
-                                <th>用户名</th>
-                                <th>用户ID</th>
-                                <th>授权时间</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
+            <div id="permissions-list-container" class="stat-card" style="display:none">
+                <h3 style="font-weight: 700; margin-bottom: 16px;">当前授权用户列表</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead><tr><th>用户名</th><th>用户ID</th><th>授权时间</th><th>操作</th></tr></thead>
                         <tbody id="permissions-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
+
         <!-- Tab 3: 阅读统计 -->
-        <div id="content-stats" class="tab-content hidden">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div id="content-stats" class="tab-content" style="display:none">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
                 <div class="stat-card">
-                    <div class="text-sm" style="color: var(--text-secondary);">总阅读时长</div>
-                    <div class="text-2xl font-bold mt-1" id="stat-total-time">-</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">总阅读时长</div>
+                    <div class="stat-value" id="stat-total-time" style="margin-top: 8px;">-</div>
                 </div>
                 <div class="stat-card">
-                    <div class="text-sm" style="color: var(--text-secondary);">总阅读次数</div>
-                    <div class="text-2xl font-bold mt-1" id="stat-total-reads">-</div>
+                    <div style="font-size: 14px; color: var(--text-muted);">总阅读次数</div>
+                    <div class="stat-value" id="stat-total-reads" style="margin-top: 8px;">-</div>
                 </div>
                 <div class="stat-card">
-                    <div class="text-sm" style="color: var(--text-secondary);">阅读人数</div>
-                    <div class="text-2xl font-bold mt-1" id="stat-total-users">-</div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 按PDF查看 -->
-                <div class="stat-card">
-                    <h3 class="font-bold mb-4"><i class="fas fa-file-pdf mr-2"></i>按PDF查看</h3>
-                    <div id="pdf-stats-list" class="space-y-3"></div>
-                </div>
-                
-                <!-- 按用户查看 -->
-                <div class="stat-card">
-                    <h3 class="font-bold mb-4"><i class="fas fa-users mr-2"></i>按用户查看</h3>
-                    <div id="user-stats-list" class="space-y-3"></div>
+                    <div style="font-size: 14px; color: var(--text-muted);">阅读人数</div>
+                    <div class="stat-value" id="stat-total-users" style="margin-top: 8px;">-</div>
                 </div>
             </div>
-            
-            <!-- 详细表格 -->
-            <div class="stat-card mt-6">
-                <h3 class="font-bold mb-4">详细统计</h3>
-                <div class="table-responsive">
-                    <table id="stats-table">
-                        <thead>
-                            <tr>
-                                <th>PDF文件</th>
-                                <th>用户ID</th>
-                                <th>阅读时长</th>
-                                <th>阅读次数</th>
-                                <th>最后阅读</th>
-                            </tr>
-                        </thead>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="stat-card">
+                    <h3 style="font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-file-pdf mr-2"></i>按PDF查看</h3>
+                    <div id="pdf-stats-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+                <div class="stat-card">
+                    <h3 style="font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-users mr-2"></i>按用户查看</h3>
+                    <div id="user-stats-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                </div>
+            </div>
+            <div class="stat-card" style="margin-top: 24px;">
+                <h3 style="font-weight: 700; margin-bottom: 16px;">详细统计</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead><tr><th>PDF文件</th><th>用户ID</th><th>阅读时长</th><th>阅读次数</th><th>最后阅读</th></tr></thead>
                         <tbody id="stats-body"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </main>
-    
+    </div>
+
     <!-- 确认弹窗 -->
     <div id="modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 id="modal-title" class="text-lg font-bold mb-4"></h3>
-            <p id="modal-message" class="mb-6"></p>
-            <div class="flex gap-3 justify-end">
+            <h3 id="modal-title" style="font-size: 18px; font-weight: 700; margin-bottom: 16px;"></h3>
+            <p id="modal-message" style="margin-bottom: 24px; color: var(--text-secondary);"></p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button onclick="closeModal()" class="btn-secondary">取消</button>
                 <button id="modal-confirm" class="btn-primary">确认</button>
             </div>
         </div>
     </div>
-    
-    <!-- Toast通知 -->
-    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
-        <div id="toast-content" class="px-6 py-3 rounded-lg shadow-lg flex items-center gap-2"></div>
+
+    <!-- Toast -->
+    <div id="toast" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display:none">
+        <div id="toast-content" style="padding: 12px 24px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;"></div>
     </div>
-    
+
     <!-- 脚本 -->
-    <script src="js/supabase-config.js"></script>
-    <script src="js/supabase-service.js"></script>
-    <script src="js/pdf-reading-service.js"></script>
-    <script src="js/auth-service.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js?v=8"></script>
+    <script src="js/supabase-service.js?v=8"></script>
+    <script src="js/pdf-reading-service.js?v=1"></script>
     <script>
         let adminSessionId = null;
         let pendingFile = null;
         let currentTab = 'upload';
-        
-        // 初始化
+
         async function init() {
             await SupabaseService.init();
-            
-            // 获取或创建管理员session_id
             adminSessionId = localStorage.getItem('admin_session_id');
             if (!adminSessionId) {
                 adminSessionId = 'admin_' + Math.random().toString(36).substring(2, 15);
                 localStorage.setItem('admin_session_id', adminSessionId);
             }
             document.getElementById('admin-id').textContent = adminSessionId.substring(0, 12) + '...';
-            
-            // 加载数据
             await loadPdfList();
             await loadStats();
             await populatePdfSelect();
         }
-        
-        // Tab切换
+
         function switchTab(tab) {
             currentTab = tab;
-            
-            // 更新按钮状态
             ['upload', 'permissions', 'stats'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const content = document.getElementById('content-' + t);
-                if (t === tab) {
-                    btn.classList.add('tab-active');
-                    content.classList.remove('hidden');
-                } else {
-                    btn.classList.remove('tab-active');
-                    content.classList.add('hidden');
-                }
+                if (t === tab) { btn.classList.add('tab-active'); content.style.display = 'block'; }
+                else { btn.classList.remove('tab-active'); content.style.display = 'none'; }
             });
-            
-            if (tab === 'permissions') {
-                populatePdfSelect();
-            }
+            if (tab === 'stats') loadStats();
         }
-        
-        // 文件上传处理
+
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-            
-            if (file.type !== 'application/pdf') {
-                showToast('请上传PDF文件', 'error');
-                return;
-            }
-            
-            if (file.size > 10 * 1024 * 1024) {
-                showToast('文件大小不能超过10MB', 'error');
-                return;
-            }
-            
+            if (file.type !== 'application/pdf') { showToast('请上传PDF文件', 'error'); return; }
+            if (file.size > 10 * 1024 * 1024) { showToast('文件大小不能超过10MB', 'error'); return; }
             pendingFile = file;
-            document.getElementById('upload-zone').classList.add('hidden');
-            document.getElementById('file-preview').classList.remove('hidden');
+            document.getElementById('upload-zone').style.display = 'none';
+            document.getElementById('file-preview').style.display = 'block';
             document.getElementById('preview-name').textContent = file.name;
             document.getElementById('preview-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
         }
-        
+
         async function confirmUpload() {
             if (!pendingFile) return;
-            
             try {
                 showToast('正在上传...', 'info');
                 const result = await PDFReadingService.uploadPdf(pendingFile, adminSessionId);
-                
-                showToast('✅ 上传成功！ID: ' + result.id, 'success');
-                
-                // 重置上传区
+                showToast('上传成功！ID: ' + result.id, 'success');
                 pendingFile = null;
                 document.getElementById('pdf-input').value = '';
-                document.getElementById('upload-zone').classList.remove('hidden');
-                document.getElementById('file-preview').classList.add('hidden');
-                
-                await loadPdfList();
-                await loadStats();
-                await populatePdfSelect();
-            } catch (error) {
-                console.error(error);
-                showToast('❌ 上传失败: ' + error.message, 'error');
-            }
+                document.getElementById('upload-zone').style.display = 'block';
+                document.getElementById('file-preview').style.display = 'none';
+                await loadPdfList(); await loadStats(); await populatePdfSelect();
+            } catch (error) { showToast('上传失败: ' + error.message, 'error'); }
         }
-        
+
         async function loadPdfList() {
             try {
                 const pdfs = await PDFReadingService.getAllPdfs();
                 const tbody = document.getElementById('pdf-list-body');
-                
                 if (pdfs.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无PDF文件，请上传</td></tr>';
                 } else {
@@ -523,348 +443,114 @@
                     for (const pdf of pdfs) {
                         const permissions = await PDFReadingService.getPdfPermissions(pdf.id);
                         const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>
-                                <div class="flex items-center">
-                                    <i class="fas fa-file-pdf mr-2" style="color: #ef4444;"></i>
-                                    ${escapeHtml(pdf.file_name)}
-                                </div>
-                            </td>
-                            <td>${(pdf.file_size / 1024).toFixed(1)} KB</td>
-                            <td>${formatDate(pdf.created_at)}</td>
-                            <td>${permissions.length} 人</td>
-                            <td>
-                                <button onclick="deletePdf(${pdf.id})" class="btn-danger">删除</button>
-                            </td>
-                        `;
+                        row.innerHTML = `<td><div style="display:flex;align-items:center;"><i class="fa-solid fa-file-pdf" style="margin-right:8px;color:#EF4444;"></i>${escapeHtml(pdf.file_name)}</div></td><td>${(pdf.file_size/1024).toFixed(1)} KB</td><td>${formatDate(pdf.created_at)}</td><td>${permissions.length} 人</td><td><button onclick="deletePdf(${pdf.id})" class="btn-danger">删除</button></td>`;
                         tbody.appendChild(row);
                     }
                 }
-                
                 document.getElementById('total-pdfs').textContent = pdfs.length;
-            } catch (error) {
-                console.error(error);
-                showToast('加载PDF列表失败', 'error');
-            }
+            } catch (error) { showToast('加载PDF列表失败', 'error'); }
         }
-        
+
         async function deletePdf(id) {
             showModal('确认删除', '确定要删除这个PDF文件吗？此操作不可恢复。', async () => {
-                try {
-                    await PDFReadingService.deletePdf(id);
-                    showToast('已删除', 'success');
-                    await loadPdfList();
-                    await loadStats();
-                    await populatePdfSelect();
-                } catch (error) {
-                    showToast('删除失败', 'error');
-                }
+                try { await PDFReadingService.deletePdf(id); showToast('已删除', 'success'); await loadPdfList(); await loadStats(); await populatePdfSelect(); } catch (e) { showToast('删除失败', 'error'); }
                 closeModal();
             });
         }
-        
+
         async function populatePdfSelect() {
             try {
                 const pdfs = await PDFReadingService.getAllPdfs();
                 const select = document.getElementById('perm-pdf-select');
-                
-                if (pdfs.length === 0) {
-                    select.innerHTML = '<option value="">请先上传PDF文件</option>';
-                    select.disabled = true;
-                } else {
-                    select.innerHTML = '<option value="">-- 选择PDF文件 --</option>';
-                    for (const pdf of pdfs) {
-                        const option = document.createElement('option');
-                        option.value = pdf.id;
-                        option.textContent = `${pdf.file_name} (ID: ${pdf.id})`;
-                        select.appendChild(option);
-                    }
-                    select.disabled = false;
-                }
-            } catch (error) {
-                console.error(error);
-            }
+                if (pdfs.length === 0) { select.innerHTML = '<option value="">请先上传PDF文件</option>'; select.disabled = true; }
+                else { select.innerHTML = '<option value="">-- 选择PDF文件 --</option>'; pdfs.forEach(pdf => { const opt = document.createElement('option'); opt.value = pdf.id; opt.textContent = pdf.file_name; select.appendChild(opt); }); select.disabled = false; }
+            } catch (e) {}
         }
-        
+
         async function loadPermissions() {
             const pdfId = document.getElementById('perm-pdf-select').value;
-            if (!pdfId) {
-                document.getElementById('permission-detail').classList.add('hidden');
-                document.getElementById('permissions-list-container').classList.add('hidden');
-                return;
-            }
-            
+            if (!pdfId) { document.getElementById('permission-detail').style.display = 'none'; document.getElementById('permissions-list-container').style.display = 'none'; return; }
             try {
                 const pdf = await PDFReadingService.getPdfById(pdfId);
                 if (pdf) {
-                    document.getElementById('permission-detail').classList.remove('hidden');
+                    document.getElementById('permission-detail').style.display = 'block';
                     document.getElementById('current-pdf-name').textContent = pdf.file_name;
-                    document.getElementById('current-pdf-info').textContent = 
-                        `大小: ${(pdf.file_size / 1024).toFixed(1)} KB | 上传时间: ${formatDate(pdf.created_at)}`;
-                    
+                    document.getElementById('current-pdf-info').textContent = `大小: ${(pdf.file_size/1024).toFixed(1)} KB | 上传时间: ${formatDate(pdf.created_at)}`;
                     const permissions = await PDFReadingService.getPdfPermissions(pdfId);
                     const tbody = document.getElementById('permissions-body');
-                    
-                    if (permissions.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无授权用户</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        for (const perm of permissions) {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${escapeHtml(perm.user_name || perm.user_session_id.substring(0, 8))}</td>
-                                <td><code>${perm.user_session_id.substring(0, 16)}...</code></td>
-                                <td>${formatDate(perm.granted_at)}</td>
-                                <td>
-                                    <button onclick="revokePermission(${pdfId}, '${perm.user_session_id}')" class="btn-danger">撤销</button>
-                                </td>
-                            `;
-                            tbody.appendChild(row);
-                        }
-                    }
-                    
-                    document.getElementById('permissions-list-container').classList.remove('hidden');
+                    if (permissions.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无授权用户</td></tr>'; }
+                    else { tbody.innerHTML = ''; permissions.forEach(perm => { const row = document.createElement('tr'); row.innerHTML = `<td>${escapeHtml(perm.user_name || perm.user_session_id.substring(0,8))}</td><td><code>${perm.user_session_id.substring(0,16)}...</code></td><td>${formatDate(perm.granted_at)}</td><td><button onclick="revokePermission(${pdfId}, '${perm.user_session_id}')" class="btn-danger">撤销</button></td>`; tbody.appendChild(row); }); }
+                    document.getElementById('permissions-list-container').style.display = 'block';
                 }
-            } catch (error) {
-                console.error(error);
-                showToast('加载权限失败', 'error');
-            }
+            } catch (e) { showToast('加载权限失败', 'error'); }
         }
-        
+
         async function grantPermission() {
             const pdfId = document.getElementById('perm-pdf-select').value;
             const userId = document.getElementById('new-user-id').value.trim();
             const userName = document.getElementById('new-user-name').value.trim();
-            
-            if (!pdfId) {
-                showToast('请选择PDF文件', 'error');
-                return;
-            }
-            if (!userId) {
-                showToast('请输入用户Session ID', 'error');
-                return;
-            }
-            
-            try {
-                await PDFReadingService.grantPermission(pdfId, userId, userName || null);
-                showToast('✅ 授权成功', 'success');
-                document.getElementById('new-user-id').value = '';
-                document.getElementById('new-user-name').value = '';
-                await loadPermissions();
-            } catch (error) {
-                showToast('授权失败', 'error');
-            }
+            if (!pdfId) { showToast('请选择PDF文件', 'error'); return; }
+            if (!userId) { showToast('请输入用户Session ID', 'error'); return; }
+            try { await PDFReadingService.grantPermission(pdfId, userId, userName || null); showToast('授权成功', 'success'); document.getElementById('new-user-id').value = ''; document.getElementById('new-user-name').value = ''; await loadPermissions(); } catch (e) { showToast('授权失败', 'error'); }
         }
-        
+
         async function revokePermission(pdfId, userId) {
             showModal('确认撤销', '确定要撤销该用户的阅读权限吗？', async () => {
-                try {
-                    await PDFReadingService.revokePermission(pdfId, userId);
-                    showToast('已撤销', 'success');
-                    await loadPermissions();
-                } catch (error) {
-                    showToast('撤销失败', 'error');
-                }
+                try { await PDFReadingService.revokePermission(pdfId, userId); showToast('已撤销', 'success'); await loadPermissions(); } catch (e) { showToast('撤销失败', 'error'); }
                 closeModal();
             });
         }
-        
+
         async function loadStats() {
             try {
                 const stats = await PDFReadingService.getAllReadingStats();
-                
-                // 统计卡片
-                const totalTime = stats.reduce((sum, s) => sum + (s.total_reading_seconds || 0), 0);
-                const totalReads = stats.reduce((sum, s) => sum + (s.read_count || 0), 0);
+                const totalTime = stats.reduce((s, x) => s + (x.total_reading_seconds || 0), 0);
+                const totalReads = stats.reduce((s, x) => s + (x.read_count || 0), 0);
                 const uniqueUsers = new Set(stats.map(s => s.user_session_id));
-                
-                document.getElementById('total-reading-time').textContent = 
-                    PDFReadingService.formatDuration(totalTime);
+                document.getElementById('total-reading-time').textContent = PDFReadingService.formatDuration(totalTime);
                 document.getElementById('total-reads').textContent = totalReads;
                 document.getElementById('total-users').textContent = uniqueUsers.size;
-                
                 if (currentTab === 'stats') {
-                    document.getElementById('stat-total-time').textContent = 
-                        PDFReadingService.formatDuration(totalTime);
+                    document.getElementById('stat-total-time').textContent = PDFReadingService.formatDuration(totalTime);
                     document.getElementById('stat-total-reads').textContent = totalReads;
                     document.getElementById('stat-total-users').textContent = uniqueUsers.size;
-                    
-                    // 按PDF统计
                     const pdfStats = {};
-                    for (const stat of stats) {
-                        const pdfName = stat.pdf_files?.file_name || '未知PDF';
-                        if (!pdfStats[pdfName]) {
-                            pdfStats[pdfName] = { totalSeconds: 0, reads: 0, users: new Set() };
-                        }
-                        pdfStats[pdfName].totalSeconds += stat.total_reading_seconds || 0;
-                        pdfStats[pdfName].reads += stat.read_count || 0;
-                        pdfStats[pdfName].users.add(stat.user_session_id);
-                    }
-                    
-                    const pdfStatsList = document.getElementById('pdf-stats-list');
-                    pdfStatsList.innerHTML = '';
-                    for (const [pdfName, data] of Object.entries(pdfStats)) {
-                        const div = document.createElement('div');
-                        div.className = 'p-3 rounded-lg';
-                        div.style.background = 'var(--bg-tertiary)';
-                        div.innerHTML = `
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="font-medium">${escapeHtml(pdfName)}</div>
-                                    <div class="text-sm" style="color: var(--text-secondary);">
-                                        ${PDFReadingService.formatDuration(data.totalSeconds)} | 
-                                        ${data.reads}次阅读 | 
-                                        ${data.users.size}人阅读
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        pdfStatsList.appendChild(div);
-                    }
-                    
-                    // 按用户统计
+                    stats.forEach(stat => { const name = stat.pdf_files?.file_name || '未知PDF'; if (!pdfStats[name]) pdfStats[name] = {sec:0, reads:0, users:new Set()}; pdfStats[name].sec += stat.total_reading_seconds||0; pdfStats[name].reads += stat.read_count||0; pdfStats[name].users.add(stat.user_session_id); });
+                    const pdfList = document.getElementById('pdf-stats-list');
+                    pdfList.innerHTML = '';
+                    Object.entries(pdfStats).forEach(([name, d]) => { const div = document.createElement('div'); div.style.cssText = 'padding:12px;border-radius:10px;background:rgba(51,65,85,0.3);'; div.innerHTML = `<div style="font-weight:600;">${escapeHtml(name)}</div><div style="font-size:14px;color:var(--text-muted);margin-top:4px;">${PDFReadingService.formatDuration(d.sec)} | ${d.reads}次 | ${d.users.size}人</div>`; pdfList.appendChild(div); });
                     const userStats = {};
-                    for (const stat of stats) {
-                        const uid = stat.user_session_id;
-                        if (!userStats[uid]) {
-                            userStats[uid] = { totalSeconds: 0, reads: 0, pdfs: new Set() };
-                        }
-                        userStats[uid].totalSeconds += stat.total_reading_seconds || 0;
-                        userStats[uid].reads += stat.read_count || 0;
-                        const pdfName = stat.pdf_files?.file_name || '未知';
-                        userStats[uid].pdfs.add(pdfName);
-                    }
-                    
-                    const sortedUsers = Object.entries(userStats)
-                        .sort((a, b) => b[1].totalSeconds - a[1].totalSeconds);
-                    
-                    const userStatsList = document.getElementById('user-stats-list');
-                    userStatsList.innerHTML = '';
-                    for (const [uid, data] of sortedUsers) {
-                        const div = document.createElement('div');
-                        div.className = 'p-3 rounded-lg';
-                        div.style.background = 'var(--bg-tertiary)';
-                        div.innerHTML = `
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="font-medium"><code>${uid.substring(0, 16)}...</code></div>
-                                    <div class="text-sm" style="color: var(--text-secondary);">
-                                        ${PDFReadingService.formatDuration(data.totalSeconds)} | 
-                                        ${data.reads}次阅读 | 
-                                        ${data.pdfs.size}本PDF
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        userStatsList.appendChild(div);
-                    }
-                    
-                    // 详细表格
+                    stats.forEach(stat => { const uid = stat.user_session_id; if (!userStats[uid]) userStats[uid] = {sec:0, reads:0, pdfs:new Set()}; userStats[uid].sec += stat.total_reading_seconds||0; userStats[uid].reads += stat.read_count||0; const name = stat.pdf_files?.file_name || '未知'; userStats[uid].pdfs.add(name); });
+                    const userList = document.getElementById('user-stats-list');
+                    userList.innerHTML = '';
+                    Object.entries(userStats).sort((a,b) => b[1].sec - a[1].sec).forEach(([uid, d]) => { const div = document.createElement('div'); div.style.cssText = 'padding:12px;border-radius:10px;background:rgba(51,65,85,0.3);'; div.innerHTML = `<div style="font-weight:600;"><code>${uid.substring(0,16)}...</code></div><div style="font-size:14px;color:var(--text-muted);margin-top:4px;">${PDFReadingService.formatDuration(d.sec)} | ${d.reads}次 | ${d.pdfs.size}本PDF</div>`; userList.appendChild(div); });
                     const tbody = document.getElementById('stats-body');
-                    if (stats.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无阅读记录</td></tr>';
-                    } else {
-                        tbody.innerHTML = '';
-                        for (const stat of stats) {
-                            const pdfName = stat.pdf_files?.file_name || '未知';
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${escapeHtml(pdfName)}</td>
-                                <td><code>${stat.user_session_id.substring(0, 12)}...</code></td>
-                                <td>${PDFReadingService.formatDuration(stat.total_reading_seconds || 0)}</td>
-                                <td>${stat.read_count || 0}</td>
-                                <td>${formatDate(stat.last_read_at)}</td>
-                            `;
-                            tbody.appendChild(row);
-                        }
-                    }
+                    if (stats.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">暂无阅读记录</td></tr>'; }
+                    else { tbody.innerHTML = ''; stats.forEach(stat => { const name = stat.pdf_files?.file_name || '未知'; const row = document.createElement('tr'); row.innerHTML = `<td>${escapeHtml(name)}</td><td><code>${stat.user_session_id.substring(0,12)}...</code></td><td>${PDFReadingService.formatDuration(stat.total_reading_seconds||0)}</td><td>${stat.read_count||0}</td><td>${formatDate(stat.last_read_at)}</td>`; tbody.appendChild(row); }); }
                 }
-            } catch (error) {
-                console.error(error);
-                showToast('加载统计失败', 'error');
-            }
+            } catch (e) { showToast('加载统计失败', 'error'); }
         }
-        
-        // 工具函数
-        function showModal(title, message, onConfirm) {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            document.getElementById('modal').classList.add('active');
-            document.getElementById('modal-confirm').onclick = onConfirm;
-        }
-        
-        function closeModal() {
-            document.getElementById('modal').classList.remove('active');
-        }
-        
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
+
+        function showModal(title, msg, onConfirm) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-message').textContent = msg; document.getElementById('modal').classList.add('active'); document.getElementById('modal-confirm').onclick = onConfirm; }
+        function closeModal() { document.getElementById('modal').classList.remove('active'); }
+        function showToast(msg, type = 'info') {
+            const colors = { success: '#10B981', error: '#EF4444', info: '#3B82F6' };
+            const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
             const content = document.getElementById('toast-content');
-            
-            const colors = {
-                success: '#10b981',
-                error: '#ef4444',
-                info: '#3b82f6'
-            };
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle'
-            };
-            
             content.style.background = colors[type] || colors.info;
-            content.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
-            toast.classList.remove('hidden');
-            
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
+            content.innerHTML = `<i class="fa-solid ${icons[type]}"></i> ${msg}`;
+            document.getElementById('toast').style.display = 'block';
+            setTimeout(() => { document.getElementById('toast').style.display = 'none'; }, 3000);
         }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-        }
-        
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleString('zh-CN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        // 点击上传区域
-        document.getElementById('upload-zone').addEventListener('click', () => {
-            document.getElementById('pdf-input').click();
-        });
-        
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text || ''; return div.innerHTML; }
+        function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); }
+
         // 拖拽上传
         const uploadZone = document.getElementById('upload-zone');
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.style.borderColor = 'var(--primary)';
-        });
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.style.borderColor = 'rgba(71, 85, 105, 0.5)';
-        });
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.style.borderColor = 'rgba(71, 85, 105, 0.5)';
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                document.getElementById('pdf-input').files = e.dataTransfer.files;
-                handleFileUpload({ target: { files: [file] } });
-            }
-        });
-        
-        // 启动
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--primary)'; });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+        uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.style.borderColor = ''; if (e.dataTransfer.files[0]) { document.getElementById('pdf-input').files = e.dataTransfer.files; handleFileUpload({ target: { files: [e.dataTransfer.files[0]] } }); } });
+
         init();
     </script>
 </body>

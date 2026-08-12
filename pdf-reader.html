@@ -4,315 +4,240 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF阅读中心 - 班级管理系统</title>
+    <script src="js/route-fix.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/premium-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            background: var(--bg-primary, #0f172a);
-            color: var(--text-primary, #f1f5f9);
-        }
+        body { margin: 0; padding: 0; min-height: 100vh; }
         
         .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 260px;
-            z-index: 100;
-            overflow-y: auto;
-            background: var(--bg-secondary, #1e293b);
-            border-right: 1px solid rgba(71, 85, 105, 0.3);
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: 260px; z-index: 100; overflow-y: auto; padding-bottom: 20px;
         }
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(71, 85, 105, 0.3); margin-bottom: 16px; }
+        .sidebar-logo { display: flex; align-items: center; gap: 12px; }
+        .sidebar-logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px;
+        }
+        .sidebar-logo-text h2 { font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .sidebar-logo-text p { font-size: 12px; color: var(--text-muted); margin: 2px 0 0; }
+        .sidebar-nav { padding: 0 12px; }
+        .sidebar-item { margin-bottom: 4px; }
+        .sidebar-item.active .sidebar-link {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary); border-left: 3px solid var(--primary);
+        }
+        .sidebar-link {
+            display: flex; align-items: center; padding: 12px 16px;
+            color: var(--text-secondary); text-decoration: none; border-radius: 10px;
+            transition: all 0.2s; font-weight: 500; font-size: 14px;
+        }
+        .sidebar-link:hover { background: rgba(99, 102, 241, 0.1); color: var(--text-primary); }
+        .sidebar-link i { width: 24px; font-size: 18px; margin-right: 12px; }
+        .sidebar-link span { flex: 1; }
         
-        .main-content {
-            margin-left: 260px;
-            min-height: 100vh;
-            padding: 24px;
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 60px;
-                transition: width 0.3s;
-            }
-            .sidebar .sidebar-label,
-            .sidebar .sidebar-header-text {
-                display: none;
-            }
-            .main-content {
-                margin-left: 60px;
-                padding: 16px;
-            }
-            .reading-layout {
-                flex-direction: column;
-            }
-            .pdf-preview {
-                min-height: 400px;
-            }
-        }
-        
-        .tab-active {
-            background: linear-gradient(135deg, var(--primary, #3b82f6), var(--secondary, #8b5cf6));
-            color: white;
-        }
+        .main-content { margin-left: 260px; min-height: 100vh; padding: 24px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .header-title h1 { font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0; }
+        .header-title p { font-size: 14px; color: var(--text-muted); margin: 4px 0 0; }
         
         .stat-card {
-            background: var(--bg-secondary, #1e293b);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            border-radius: 12px;
-            padding: 20px;
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 16px; padding: 24px;
+            transition: all 0.3s; position: relative; overflow: hidden;
         }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3); }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px;
+        }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--text-primary); }
+        .stat-label { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary, #3b82f6), var(--secondary, #8b5cf6));
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s;
-            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; padding: 12px 24px; border-radius: 10px; cursor: pointer;
+            border: none; transition: all 0.3s; font-weight: 600;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-        }
-        
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .btn-secondary {
-            background: var(--bg-tertiary, #334155);
-            color: var(--text-primary, #f1f5f9);
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            transition: all 0.3s;
+            background: rgba(51, 65, 85, 0.8); color: var(--text-primary);
+            padding: 10px 20px; border-radius: 10px; cursor: pointer;
+            border: 1px solid rgba(99, 102, 241, 0.1); transition: all 0.3s; font-weight: 500;
         }
-        
-        .btn-secondary:hover {
-            background: var(--bg-hover, #475569);
-        }
-        
+        .btn-secondary:hover { background: rgba(71, 85, 105, 0.8); }
         .btn-warning {
-            background: #f59e0b;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s;
+            background: rgba(245, 158, 11, 0.15); color: var(--warning);
+            padding: 10px 20px; border-radius: 10px; cursor: pointer;
+            border: 1px solid rgba(245, 158, 11, 0.2); transition: all 0.3s; font-weight: 600;
         }
-        
-        .btn-warning:hover {
-            background: #d97706;
-        }
-        
+        .btn-warning:hover { background: rgba(245, 158, 11, 0.25); }
         .btn-danger {
-            background: #ef4444;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s;
+            background: rgba(239, 68, 68, 0.15); color: var(--danger);
+            padding: 10px 20px; border-radius: 10px; cursor: pointer;
+            border: 1px solid rgba(239, 68, 68, 0.2); transition: all 0.3s; font-weight: 600;
         }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
         
-        .btn-danger:hover {
-            background: #dc2626;
-        }
+        .timer-display { font-size: 2.5rem; font-weight: 800; font-family: 'Courier New', monospace; text-align: center; }
+        .timer-active { color: var(--success); }
+        .timer-paused { color: var(--warning); }
+        .timer-idle { color: var(--text-muted); }
         
-        .timer-display {
-            font-size: 3rem;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-        
-        .timer-active {
-            color: #10b981;
-        }
-        
-        .timer-paused {
-            color: #f59e0b;
-        }
-        
-        .timer-idle {
-            color: var(--text-secondary, #64748b);
-        }
-        
-        .reading-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        .status-active {
-            background: #10b981;
-            box-shadow: 0 0 10px #10b981;
-        }
-        
-        .status-paused {
-            background: #f59e0b;
-        }
-        
-        .status-idle {
-            background: #64748b;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        .reading-status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.1rem; font-weight: 600; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; animation: pulse 2s infinite; }
+        .status-active { background: var(--success); box-shadow: 0 0 10px var(--success); }
+        .status-paused { background: var(--warning); }
+        .status-idle { background: var(--text-muted); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         
         .pdf-preview {
-            background: var(--bg-tertiary, #334155);
-            border-radius: 12px;
-            min-height: 600px;
-            max-height: 80vh;
-            overflow: auto;
-            display: flex;
-            flex-direction: column;
+            background: rgba(30, 41, 59, 0.4); border-radius: 12px;
+            min-height: 500px; overflow: hidden;
+            border: 1px solid rgba(99, 102, 241, 0.1);
         }
+        .pdf-preview iframe { width: 100%; height: 100%; min-height: 500px; border: none; }
         
-        .pdf-preview iframe,
-        .pdf-preview object {
-            width: 100%;
-            height: 100%;
-            min-height: 600px;
-            border: none;
-        }
-        
-        .control-panel {
-            background: var(--bg-secondary, #1e293b);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-        }
-        
-        input, select {
-            background: var(--bg-tertiary, #334155);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            color: var(--text-primary, #f1f5f9);
-            padding: 10px 14px;
-            border-radius: 8px;
-            width: 100%;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary, #3b82f6);
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary, #94a3b8);
-        }
+        .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
         
         .reading-tip {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 16px;
-            font-size: 0.875rem;
+            background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.15);
+            border-radius: 10px; padding: 12px; margin-top: 16px; font-size: 14px;
         }
-        
         .idle-warning {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 16px;
-            font-size: 0.875rem;
+            background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 10px; padding: 12px; margin-top: 16px; font-size: 14px;
         }
         
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        select {
+            background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(99, 102, 241, 0.1);
+            color: var(--text-primary); padding: 10px 14px; border-radius: 10px; width: 100%;
+        }
+        select:focus { outline: none; border-color: var(--primary); }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid rgba(71, 85, 105, 0.2); }
+        th { background: rgba(51, 65, 85, 0.5); font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+        
+        .tab-active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+            color: var(--primary) !important; border-left: 3px solid var(--primary);
         }
         
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+        .pdf-card {
+            background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.3s;
         }
+        .pdf-card:hover { transform: translateY(-2px); border-color: rgba(99, 102, 241, 0.3); background: rgba(51, 65, 85, 0.4); }
         
-        th {
-            background: var(--bg-tertiary, #334155);
-            font-weight: 600;
+        @media (max-width: 640px) {
+            .sidebar { width: 100%; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 16px; }
+            .reading-layout { flex-direction: column; }
+            .timer-display { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
     <!-- 侧边栏 -->
-    <nav class="sidebar">
+    <div class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">
-                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white" style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
-                    <i class="fas fa-book-reader"></i>
+                <div class="sidebar-logo-icon">
+                    <i class="fa-solid fa-graduation-cap"></i>
                 </div>
-                <div class="sidebar-header-text">
-                    <h1 class="text-lg font-bold">PDF阅读中心</h1>
-                    <p class="text-sm" style="color: var(--text-secondary);">班级管理系统</p>
+                <div class="sidebar-logo-text">
+                    <h2>班级管理系统</h2>
+                    <p>综合管理平台</p>
                 </div>
             </div>
         </div>
         
-        <div class="p-4">
-            <div class="mb-4 p-3 rounded-lg" style="background: var(--bg-tertiary);">
-                <div class="text-sm mb-1" style="color: var(--text-secondary);">您的ID</div>
-                <div id="user-id" class="font-mono text-xs break-all">-</div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-item">
+                <a href="dashboard.html" class="sidebar-link">
+                    <i class="fa-solid fa-chart-pie"></i><span>仪表盘</span>
+                </a>
             </div>
-            
-            <button onclick="location.href='dashboard.html'" class="w-full btn-secondary mb-4">
-                <i class="fas fa-home sidebar-label"></i>
-                <span class="sidebar-label">返回仪表盘</span>
-            </button>
-            
-            <div class="space-y-2">
-                <button onclick="switchTab('read')" id="tab-read" class="w-full p-3 rounded-lg text-left tab-active">
-                    <i class="fas fa-book sidebar-label"></i>
-                    <span class="sidebar-label">📚 我的PDF</span>
-                </button>
-                
-                <button onclick="switchTab('stats')" id="tab-stats" class="w-full p-3 rounded-lg text-left">
-                    <i class="fas fa-chart-pie sidebar-label"></i>
-                    <span class="sidebar-label">📊 阅读统计</span>
-                </button>
+            <div class="sidebar-item">
+                <a href="attendance-new.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-circle"></i><span>签到管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="exam.html" class="sidebar-link">
+                    <i class="fa-solid fa-file-text"></i><span>考试系统</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="vote.html" class="sidebar-link">
+                    <i class="fa-solid fa-check-square"></i><span>投票抽奖</span>
+                </a>
+            </div>
+            <div class="sidebar-item active">
+                <a href="pdf-reader.html" class="sidebar-link">
+                    <i class="fa-solid fa-book-reader"></i><span>PDF阅读中心</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="chat.html" class="sidebar-link">
+                    <i class="fa-solid fa-comments"></i><span>班级群聊</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="users.html" class="sidebar-link">
+                    <i class="fa-solid fa-users"></i><span>用户管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="pdf-admin.html" class="sidebar-link">
+                    <i class="fa-solid fa-file-pdf"></i><span>PDF阅读管理</span>
+                </a>
+            </div>
+            <div class="sidebar-item">
+                <a href="settings.html" class="sidebar-link">
+                    <i class="fa-solid fa-cog"></i><span>系统设置</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="page-header">
+            <div class="header-title">
+                <h1>PDF阅读中心</h1>
+                <p>阅读授权的PDF文件，系统自动记录阅读时长</p>
+            </div>
+            <div class="stat-card" style="padding: 10px 20px;">
+                <span style="color: var(--text-muted); font-size: 14px;">您的ID:</span>
+                <span id="user-id" style="font-family: monospace; font-size: 14px; margin-left: 8px;">-</span>
             </div>
         </div>
-    </nav>
-    
-    <!-- 主内容区 -->
-    <main class="main-content">
+
+        <!-- Tab导航 -->
+        <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+            <button onclick="switchTab('read')" id="tab-read" class="sidebar-link tab-active" style="border-radius: 10px; padding: 10px 20px;">
+                <i class="fa-solid fa-book mr-2"></i><span>我的PDF</span>
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="sidebar-link" style="border-radius: 10px; padding: 10px 20px;">
+                <i class="fa-solid fa-chart-pie mr-2"></i><span>阅读统计</span>
+            </button>
+        </div>
+
         <!-- Tab 1: 阅读PDF -->
         <div id="content-read" class="tab-content">
             <!-- PDF选择区 -->
-            <div id="pdf-select-section" class="mb-6">
+            <div id="pdf-select-section" style="margin-bottom: 24px;">
                 <div class="stat-card">
-                    <h2 class="text-xl font-bold mb-4"><i class="fas fa-file-pdf mr-2"></i>我可以阅读的PDF</h2>
+                    <h2 style="font-size: 18px; font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-file-pdf mr-2"></i>我可以阅读的PDF</h2>
                     <div id="pdf-list-container">
                         <p class="empty-state">加载中...</p>
                     </div>
@@ -320,94 +245,87 @@
             </div>
             
             <!-- 阅读区 -->
-            <div id="reading-section" class="hidden">
+            <div id="reading-section" style="display:none">
                 <!-- 计时器状态栏 -->
-                <div class="stat-card mb-4">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="text-center">
-                            <div class="text-sm mb-1" style="color: var(--text-secondary);">阅读状态</div>
+                <div class="stat-card" style="margin-bottom: 16px;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">
+                        <div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">阅读状态</div>
                             <div class="reading-status">
                                 <div id="status-dot" class="status-dot status-idle"></div>
                                 <span id="status-text">未开始</span>
                             </div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm mb-1" style="color: var(--text-secondary);">本次时长</div>
+                        <div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">本次时长</div>
                             <div id="current-time" class="timer-display timer-idle">00:00</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm mb-1" style="color: var(--text-secondary);">闲置时间</div>
+                        <div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">闲置时间</div>
                             <div id="idle-time" class="timer-display timer-idle">0s</div>
                         </div>
-                        <div class="text-center">
-                            <div class="text-sm mb-1" style="color: var(--text-secondary);">今日累计</div>
+                        <div>
+                            <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">今日累计</div>
                             <div id="total-time" class="timer-display timer-idle">00:00</div>
                         </div>
                     </div>
-                    
-                    <!-- 闲置警告 -->
-                    <div id="idle-warning" class="idle-warning hidden">
-                        <i class="fas fa-exclamation-triangle mr-2" style="color: #f59e0b;"></i>
+                    <div id="idle-warning" class="idle-warning" style="display:none">
+                        <i class="fa-solid fa-exclamation-triangle mr-2" style="color: var(--warning);"></i>
                         您已闲置超过1分钟，计时已自动暂停。点击「继续阅读」恢复计时。
                     </div>
                 </div>
                 
-                <div class="reading-layout grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div class="reading-layout" style="display: grid; grid-template-columns: 3fr 1fr; gap: 16px;">
                     <!-- PDF预览区 -->
-                    <div class="lg:col-span-3">
+                    <div>
                         <div class="pdf-preview">
-                            <div class="p-4 flex justify-between items-center" style="background: var(--bg-secondary);">
+                            <div style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.8); border-bottom: 1px solid rgba(99, 102, 241, 0.1);">
                                 <div>
-                                    <h3 id="pdf-title" class="font-bold"></h3>
-                                    <p id="pdf-info" class="text-sm" style="color: var(--text-secondary);"></p>
+                                    <h3 id="pdf-title" style="font-weight: 700;"></h3>
+                                    <p id="pdf-info" style="font-size: 14px; color: var(--text-muted);"></p>
                                 </div>
                                 <button onclick="downloadPdf()" class="btn-secondary">
-                                    <i class="fas fa-download mr-2"></i>下载PDF
+                                    <i class="fa-solid fa-download mr-2"></i>下载PDF
                                 </button>
                             </div>
-                            <div id="pdf-content" style="flex: 1; padding: 20px;">
+                            <div id="pdf-content" style="padding: 16px;">
                                 <p class="empty-state">加载PDF中...</p>
                             </div>
                         </div>
                     </div>
                     
                     <!-- 控制面板 -->
-                    <div class="control-panel lg:col-span-1">
-                        <h3 class="font-bold mb-4"><i class="fas fa-timer mr-2"></i>阅读控制</h3>
+                    <div class="stat-card">
+                        <h3 style="font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-timer mr-2"></i>阅读控制</h3>
                         
-                        <div id="timer-controls" class="space-y-3">
-                            <!-- 未开始状态 -->
+                        <div id="timer-controls" style="display: flex; flex-direction: column; gap: 12px;">
                             <div id="state-idle">
-                                <button onclick="startReading()" class="btn-primary w-full">
-                                    <i class="fas fa-play mr-2"></i>开始阅读
+                                <button onclick="startReading()" class="btn-primary" style="width: 100%;">
+                                    <i class="fa-solid fa-play mr-2"></i>开始阅读
                                 </button>
                             </div>
-                            
-                            <!-- 阅读中状态 -->
-                            <div id="state-reading" class="hidden space-y-3">
-                                <button onclick="pauseReading()" class="btn-warning w-full">
-                                    <i class="fas fa-pause mr-2"></i>暂停阅读
+                            <div id="state-reading" style="display:none; flex-direction: column; gap: 12px;">
+                                <button onclick="pauseReading()" class="btn-warning" style="width: 100%;">
+                                    <i class="fa-solid fa-pause mr-2"></i>暂停阅读
                                 </button>
-                                <button onclick="stopReading()" class="btn-danger w-full">
-                                    <i class="fas fa-stop mr-2"></i>结束阅读
+                                <button onclick="stopReading()" class="btn-danger" style="width: 100%;">
+                                    <i class="fa-solid fa-stop mr-2"></i>结束阅读
                                 </button>
                             </div>
-                            
-                            <!-- 暂停状态 -->
-                            <div id="state-paused" class="hidden space-y-3">
-                                <button onclick="resumeReading()" class="btn-primary w-full">
-                                    <i class="fas fa-play mr-2"></i>继续阅读
+                            <div id="state-paused" style="display:none; flex-direction: column; gap: 12px;">
+                                <button onclick="resumeReading()" class="btn-primary" style="width: 100%;">
+                                    <i class="fa-solid fa-play mr-2"></i>继续阅读
                                 </button>
-                                <button onclick="stopReading()" class="btn-danger w-full">
-                                    <i class="fas fa-stop mr-2"></i>结束阅读
+                                <button onclick="stopReading()" class="btn-danger" style="width: 100%;">
+                                    <i class="fa-solid fa-stop mr-2"></i>结束阅读
                                 </button>
                             </div>
                         </div>
                         
                         <div class="reading-tip">
-                            <i class="fas fa-info-circle mr-2" style="color: #f59e0b;"></i>
+                            <i class="fa-solid fa-info-circle mr-2" style="color: var(--warning);"></i>
                             <strong>计时规则：</strong>
-                            <ul class="mt-2 ml-4 list-disc">
+                            <ul style="margin-top: 8px; margin-left: 20px; list-style: disc; font-size: 14px;">
                                 <li>点击「开始阅读」启动计时</li>
                                 <li>1分钟无操作自动暂停</li>
                                 <li>滑动/点击页面重置计时器</li>
@@ -415,47 +333,40 @@
                             </ul>
                         </div>
                         
-                        <div class="mt-4">
-                            <label class="text-sm block mb-2">选择其他PDF</label>
+                        <div style="margin-top: 16px;">
+                            <label style="display: block; font-size: 14px; margin-bottom: 8px; color: var(--text-secondary);">选择其他PDF</label>
                             <select id="pdf-select" onchange="switchPdf()"></select>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Tab 2: 阅读统计 -->
-        <div id="content-stats" class="tab-content hidden">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div class="stat-card text-center">
-                    <i class="fas fa-clock text-3xl mb-2" style="color: var(--primary);"></i>
-                    <div class="text-2xl font-bold" id="stat-total-time">00:00</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">总阅读时长</div>
+        <div id="content-stats" class="tab-content" style="display:none">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
+                <div class="stat-card" style="text-align: center;">
+                    <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--primary-light); margin: 0 auto 8px;"><i class="fa-solid fa-clock"></i></div>
+                    <div class="stat-value" id="stat-total-time">00:00</div>
+                    <div class="stat-label">总阅读时长</div>
                 </div>
-                <div class="stat-card text-center">
-                    <i class="fas fa-book text-3xl mb-2" style="color: #10b981;"></i>
-                    <div class="text-2xl font-bold" id="stat-total-reads">0</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">总阅读次数</div>
+                <div class="stat-card" style="text-align: center;">
+                    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #34D399; margin: 0 auto 8px;"><i class="fa-solid fa-book"></i></div>
+                    <div class="stat-value" id="stat-total-reads">0</div>
+                    <div class="stat-label">总阅读次数</div>
                 </div>
-                <div class="stat-card text-center">
-                    <i class="fas fa-file-pdf text-3xl mb-2" style="color: #8b5cf6;"></i>
-                    <div class="text-2xl font-bold" id="stat-pdf-count">0</div>
-                    <div class="text-sm" style="color: var(--text-secondary);">阅读PDF数量</div>
+                <div class="stat-card" style="text-align: center;">
+                    <div class="stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #A78BFA; margin: 0 auto 8px;"><i class="fa-solid fa-file-pdf"></i></div>
+                    <div class="stat-value" id="stat-pdf-count">0</div>
+                    <div class="stat-label">阅读PDF数量</div>
                 </div>
             </div>
             
             <div class="stat-card">
-                <h3 class="font-bold mb-4"><i class="fas fa-list mr-2"></i>各PDF阅读详情</h3>
-                <div class="table-responsive">
-                    <table id="stats-table">
-                        <thead>
-                            <tr>
-                                <th>PDF文件</th>
-                                <th>阅读时长</th>
-                                <th>阅读次数</th>
-                                <th>最后阅读</th>
-                            </tr>
-                        </thead>
+                <h3 style="font-weight: 700; margin-bottom: 16px;"><i class="fa-solid fa-list mr-2"></i>各PDF阅读详情</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead><tr><th>PDF文件</th><th>阅读时长</th><th>阅读次数</th><th>最后阅读</th></tr></thead>
                         <tbody id="stats-body">
                             <tr><td colspan="4" class="empty-state">暂无阅读记录</td></tr>
                         </tbody>
@@ -463,557 +374,238 @@
                 </div>
             </div>
         </div>
-    </main>
-    
-    <!-- Toast通知 -->
-    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
-        <div id="toast-content" class="px-6 py-3 rounded-lg shadow-lg flex items-center gap-2"></div>
     </div>
-    
+
+    <!-- Toast -->
+    <div id="toast" style="position: fixed; top: 20px; right: 20px; z-index: 9999; display:none">
+        <div id="toast-content" style="padding: 12px 24px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 8px;"></div>
+    </div>
+
     <!-- 脚本 -->
-    <script src="js/supabase-config.js"></script>
-    <script src="js/supabase-service.js"></script>
-    <script src="js/pdf-reading-service.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js?v=8"></script>
+    <script src="js/supabase-service.js?v=8"></script>
+    <script src="js/pdf-reading-service.js?v=1"></script>
     <script>
-        const IDLE_TIMEOUT = 60; // 1分钟
+        const IDLE_TIMEOUT = 60;
         let userSessionId = null;
         let readingState = {
-            pdfId: null,
-            pdfData: null,
-            sessionId: null,
-            isReading: false,
-            isPaused: false,
-            startTime: null,
-            lastActivity: null,
-            accumulatedTime: 0,
-            timerInterval: null,
-            idleInterval: null
+            pdfId: null, pdfData: null, sessionId: null,
+            isReading: false, isPaused: false,
+            startTime: null, lastActivity: null,
+            accumulatedTime: 0, timerInterval: null
         };
         let currentTab = 'read';
-        
-        // 初始化
+
         async function init() {
             await SupabaseService.init();
-            
-            // 获取或创建用户session_id
             userSessionId = localStorage.getItem('user_session_id');
-            if (!userSessionId) {
-                userSessionId = 'user_' + Math.random().toString(36).substring(2, 15);
-                localStorage.setItem('user_session_id', userSessionId);
-            }
+            if (!userSessionId) { userSessionId = 'user_' + Math.random().toString(36).substring(2, 15); localStorage.setItem('user_session_id', userSessionId); }
             document.getElementById('user-id').textContent = userSessionId;
-            
-            // 加载数据
             await loadPdfList();
             await loadStats();
-            
-            // 设置活动检测
             setupActivityDetection();
         }
-        
-        // Tab切换
+
         function switchTab(tab) {
             currentTab = tab;
-            
             ['read', 'stats'].forEach(t => {
                 const btn = document.getElementById('tab-' + t);
                 const content = document.getElementById('content-' + t);
-                if (t === tab) {
-                    btn.classList.add('tab-active');
-                    content.classList.remove('hidden');
-                } else {
-                    btn.classList.remove('tab-active');
-                    content.classList.add('hidden');
-                }
+                if (t === tab) { btn.classList.add('tab-active'); content.style.display = 'block'; }
+                else { btn.classList.remove('tab-active'); content.style.display = 'none'; }
             });
-            
-            if (tab === 'stats') {
-                loadStats();
-            }
+            if (tab === 'stats') loadStats();
         }
-        
-        // 活动检测（重置闲置计时器）
+
         function setupActivityDetection() {
-            const resetActivity = () => {
-                if (readingState.isReading && !readingState.isPaused) {
-                    readingState.lastActivity = Date.now();
-                }
-            };
-            
-            // 监听各种活动事件
-            ['click', 'scroll', 'mousemove', 'keydown', 'touchstart', 'wheel'].forEach(event => {
-                document.addEventListener(event, resetActivity, { passive: true });
-            });
+            const resetActivity = () => { if (readingState.isReading && !readingState.isPaused) { readingState.lastActivity = Date.now(); } };
+            ['click', 'scroll', 'mousemove', 'keydown', 'touchstart', 'wheel'].forEach(e => document.addEventListener(e, resetActivity, { passive: true }));
         }
-        
-        // 加载PDF列表
+
         async function loadPdfList() {
             try {
                 const permissions = await PDFReadingService.getUserPermissions(userSessionId);
-                
                 const container = document.getElementById('pdf-list-container');
-                
                 if (permissions.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-lock text-4xl mb-4" style="color: var(--text-secondary);"></i>
-                            <p class="text-lg mb-2">您暂无权限阅读任何PDF</p>
-                            <p>请联系管理员授权您阅读PDF文件</p>
-                        </div>
-                    `;
-                    document.getElementById('pdf-select-section').classList.remove('hidden');
+                    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-lock" style="font-size: 48px; margin-bottom: 16px; color: var(--text-muted);"></i><p style="font-size: 18px; margin-bottom: 8px;">您暂无权限阅读任何PDF</p><p style="color: var(--text-muted);">请联系管理员授权您阅读PDF文件</p></div>';
                     return;
                 }
-                
-                // 获取每个PDF的详情
                 const pdfList = [];
-                for (const perm of permissions) {
-                    try {
-                        const pdf = await PDFReadingService.getPdfById(perm.pdf_id);
-                        if (pdf) {
-                            pdfList.push(pdf);
-                        }
-                    } catch (e) {
-                        console.error('加载PDF失败:', perm.pdf_id, e);
-                    }
-                }
-                
-                if (pdfList.length === 0) {
-                    container.innerHTML = '<p class="empty-state">加载PDF失败</p>';
-                    return;
-                }
-                
-                // 渲染PDF卡片列表
-                container.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        ${pdfList.map(pdf => `
-                            <div class="p-4 rounded-lg cursor-pointer transition-all hover:scale-105" 
-                                 style="background: var(--bg-tertiary);" 
-                                 onclick="selectPdf(${pdf.id})">
-                                <div class="flex items-start">
-                                    <i class="fas fa-file-pdf text-3xl mr-3 mt-1" style="color: #ef4444;"></i>
-                                    <div class="flex-1 min-w-0">
-                                        <h4 class="font-bold truncate">${escapeHtml(pdf.file_name)}</h4>
-                                        <p class="text-sm" style="color: var(--text-secondary);">
-                                            ${(pdf.file_size / 1024).toFixed(1)} KB
-                                        </p>
-                                        <p class="text-xs mt-1" style="color: var(--text-secondary);">
-                                            点击阅读 →
-                                        </p>
-                                    </div>
-                                </div>
+                for (const perm of permissions) { try { const pdf = await PDFReadingService.getPdfById(perm.pdf_id); if (pdf) pdfList.push(pdf); } catch (e) {} }
+                if (pdfList.length === 0) { container.innerHTML = '<p class="empty-state">加载PDF失败</p>'; return; }
+                container.innerHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">' +
+                    pdfList.map(pdf => `<div class="pdf-card" onclick="selectPdf(${pdf.id})">
+                        <div style="display: flex; align-items: flex-start;">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 32px; margin-right: 12px; margin-top: 4px; color: #EF4444;"></i>
+                            <div style="flex: 1; min-width: 0;">
+                                <h4 style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(pdf.file_name)}</h4>
+                                <p style="font-size: 14px; color: var(--text-muted);">${(pdf.file_size/1024).toFixed(1)} KB</p>
+                                <p style="font-size: 12px; color: var(--primary-light); margin-top: 4px;">点击阅读 →</p>
                             </div>
-                        `).join('')}
-                    </div>
-                `;
-                
-                // 填充下拉选择
+                        </div>
+                    </div>`).join('') + '</div>';
                 const select = document.getElementById('pdf-select');
                 select.innerHTML = '<option value="">-- 切换PDF --</option>';
-                pdfList.forEach(pdf => {
-                    const option = document.createElement('option');
-                    option.value = pdf.id;
-                    option.textContent = pdf.file_name;
-                    select.appendChild(option);
-                });
-                
-                // 存储PDF数据
+                pdfList.forEach(pdf => { const opt = document.createElement('option'); opt.value = pdf.id; opt.textContent = pdf.file_name; select.appendChild(opt); });
                 window.pdfCache = pdfList;
-                
-            } catch (error) {
-                console.error(error);
-                document.getElementById('pdf-list-container').innerHTML = 
-                    '<p class="empty-state">加载PDF列表失败</p>';
-            }
+            } catch (e) { document.getElementById('pdf-list-container').innerHTML = '<p class="empty-state">加载PDF列表失败</p>'; }
         }
-        
-        // 选择PDF
+
         async function selectPdf(pdfId) {
             try {
                 const pdf = await PDFReadingService.getPdfById(pdfId);
-                if (!pdf) {
-                    showToast('PDF加载失败', 'error');
-                    return;
-                }
-                
-                readingState.pdfId = pdfId;
-                readingState.pdfData = pdf;
-                
-                // 显示阅读区
-                document.getElementById('pdf-select-section').classList.add('hidden');
-                document.getElementById('reading-section').classList.remove('hidden');
-                
-                // 更新标题
+                if (!pdf) { showToast('PDF加载失败', 'error'); return; }
+                readingState.pdfId = pdfId; readingState.pdfData = pdf;
+                document.getElementById('pdf-select-section').style.display = 'none';
+                document.getElementById('reading-section').style.display = 'block';
                 document.getElementById('pdf-title').textContent = pdf.file_name;
-                document.getElementById('pdf-info').textContent = 
-                    `文件大小: ${(pdf.file_size / 1024).toFixed(1)} KB | 点击"开始阅读"启动计时器`;
-                
-                // 显示PDF内容
+                document.getElementById('pdf-info').textContent = `文件大小: ${(pdf.file_size/1024).toFixed(1)} KB | 点击"开始阅读"启动计时器`;
                 displayPdfContent(pdf);
-                
-                // 重置阅读状态
                 resetReadingState();
-                
-                showToast('✅ PDF已加载，点击"开始阅读"开始计时', 'success');
-                
-            } catch (error) {
-                console.error(error);
-                showToast('加载PDF失败', 'error');
-            }
+                showToast('PDF已加载，点击"开始阅读"开始计时', 'success');
+            } catch (e) { showToast('加载PDF失败', 'error'); }
         }
-        
-        // 切换PDF（下拉框）
+
         async function switchPdf() {
-            const select = document.getElementById('pdf-select');
-            const pdfId = parseInt(select.value);
-            if (pdfId) {
-                // 如果正在阅读，先结束当前阅读
-                if (readingState.isReading) {
-                    await stopReading();
-                }
-                await selectPdf(pdfId);
-            }
+            const pdfId = parseInt(document.getElementById('pdf-select').value);
+            if (pdfId) { if (readingState.isReading) await stopReading(); await selectPdf(pdfId); }
         }
-        
-        // 显示PDF内容
+
         function displayPdfContent(pdf) {
             const content = document.getElementById('pdf-content');
-            
             try {
                 const pdfBuffer = PDFReadingService._base64ToArrayBuffer(pdf.file_data);
                 const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
                 const url = URL.createObjectURL(blob);
-                
-                content.innerHTML = `
-                    <iframe src="${url}" style="width: 100%; height: 100%; min-height: 500px; border: none;" title="PDF预览"></iframe>
-                `;
-            } catch (error) {
-                console.error(error);
-                content.innerHTML = `
-                    <div class="text-center py-12">
-                        <i class="fas fa-file-pdf text-6xl mb-4" style="color: var(--text-secondary);"></i>
-                        <p class="mb-4">PDF预览加载失败</p>
-                        <button onclick="downloadPdf()" class="btn-primary">下载PDF查看</button>
-                    </div>
-                `;
+                content.innerHTML = `<iframe src="${url}" style="width: 100%; height: 500px; border: none;"></iframe>`;
+            } catch (e) {
+                content.innerHTML = `<div class="empty-state"><i class="fa-solid fa-file-pdf" style="font-size: 64px; margin-bottom: 16px; color: var(--text-muted);"></i><p style="margin-bottom: 16px;">PDF预览加载失败</p><button onclick="downloadPdf()" class="btn-primary">下载PDF查看</button></div>`;
             }
         }
-        
-        // 下载PDF
+
         function downloadPdf() {
             if (!readingState.pdfData) return;
-            
             const pdf = readingState.pdfData;
             const pdfBuffer = PDFReadingService._base64ToArrayBuffer(pdf.file_data);
             const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
-            a.href = url;
-            a.download = pdf.file_name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            a.href = url; a.download = pdf.file_name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
-        
-        // 重置阅读状态
+
         function resetReadingState() {
             stopTimer();
-            readingState.sessionId = null;
-            readingState.isReading = false;
-            readingState.isPaused = false;
-            readingState.startTime = null;
-            readingState.lastActivity = null;
-            readingState.accumulatedTime = 0;
-            
+            readingState.sessionId = null; readingState.isReading = false; readingState.isPaused = false;
+            readingState.startTime = null; readingState.lastActivity = null; readingState.accumulatedTime = 0;
             updateUI();
         }
-        
-        // 开始阅读
+
         async function startReading() {
-            if (!readingState.pdfId) {
-                showToast('请先选择一个PDF', 'error');
-                return;
-            }
-            
+            if (!readingState.pdfId) { showToast('请先选择一个PDF', 'error'); return; }
             try {
-                // 创建阅读会话
-                const session = await PDFReadingService.startReadingSession(
-                    readingState.pdfId,
-                    userSessionId
-                );
-                
-                readingState.sessionId = session.id;
-                readingState.isReading = true;
-                readingState.isPaused = false;
-                readingState.startTime = Date.now();
-                readingState.lastActivity = Date.now();
-                readingState.accumulatedTime = 0;
-                
-                startTimer();
-                showToast('✅ 阅读已开始，计时器已启动', 'success');
-                
-            } catch (error) {
-                console.error(error);
-                showToast('开始阅读失败', 'error');
-            }
+                const session = await PDFReadingService.startReadingSession(readingState.pdfId, userSessionId);
+                readingState.sessionId = session.id; readingState.isReading = true; readingState.isPaused = false;
+                readingState.startTime = Date.now(); readingState.lastActivity = Date.now(); readingState.accumulatedTime = 0;
+                startTimer(); showToast('阅读已开始，计时器已启动', 'success');
+            } catch (e) { showToast('开始阅读失败', 'error'); }
         }
-        
-        // 暂停阅读
+
         async function pauseReading() {
             if (!readingState.isReading) return;
-            
             const elapsed = Math.floor((Date.now() - readingState.lastActivity) / 1000);
-            readingState.accumulatedTime += elapsed;
-            readingState.isPaused = true;
-            
-            if (readingState.sessionId) {
-                try {
-                    await PDFReadingService.pauseReadingSession(
-                        readingState.sessionId,
-                        readingState.accumulatedTime
-                    );
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-            
-            stopTimer();
-            showToast('⏸️ 已暂停，继续阅读时恢复计时', 'info');
+            readingState.accumulatedTime += elapsed; readingState.isPaused = true;
+            if (readingState.sessionId) { try { await PDFReadingService.pauseReadingSession(readingState.sessionId, readingState.accumulatedTime); } catch (e) {} }
+            stopTimer(); showToast('已暂停，继续阅读时恢复计时', 'info');
         }
-        
-        // 继续阅读
+
         function resumeReading() {
             if (!readingState.isPaused) return;
-            
-            readingState.isPaused = false;
-            readingState.lastActivity = Date.now();
-            
-            startTimer();
-            showToast('✅ 计时已恢复', 'success');
+            readingState.isPaused = false; readingState.lastActivity = Date.now();
+            startTimer(); showToast('计时已恢复', 'success');
         }
-        
-        // 结束阅读
+
         async function stopReading() {
             if (!readingState.isReading) return;
-            
             const elapsed = Math.floor((Date.now() - readingState.lastActivity) / 1000);
             readingState.accumulatedTime += elapsed;
-            
-            if (readingState.sessionId) {
-                try {
-                    await PDFReadingService.stopReadingSession(
-                        readingState.sessionId,
-                        readingState.accumulatedTime
-                    );
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-            
-            // 更新阅读统计
-            try {
-                await PDFReadingService.updateReadingStats(
-                    userSessionId,
-                    readingState.pdfId,
-                    readingState.accumulatedTime
-                );
-            } catch (e) {
-                console.error(e);
-            }
-            
+            if (readingState.sessionId) { try { await PDFReadingService.stopReadingSession(readingState.sessionId, readingState.accumulatedTime); } catch (e) {} }
+            try { await PDFReadingService.updateReadingStats(userSessionId, readingState.pdfId, readingState.accumulatedTime); } catch (e) {}
             const duration = readingState.accumulatedTime;
             resetReadingState();
-            
-            showToast(`✅ 阅读已结束，本次时长: ${PDFReadingService.formatDuration(duration)}`, 'success');
-            
-            // 更新统计
-            if (currentTab === 'stats') {
-                await loadStats();
-            }
+            showToast(`阅读已结束，本次时长: ${PDFReadingService.formatDuration(duration)}`, 'success');
+            if (currentTab === 'stats') await loadStats();
         }
-        
-        // 计时器开始
+
         function startTimer() {
-            stopTimer(); // 清除旧计时器
-            
-            readingState.timerInterval = setInterval(() => {
-                if (!readingState.isPaused) {
-                    updateTimerDisplay();
-                    checkIdle();
-                }
-            }, 1000);
+            stopTimer();
+            readingState.timerInterval = setInterval(() => { if (!readingState.isPaused) { updateTimerDisplay(); checkIdle(); } }, 1000);
         }
-        
-        // 计时器停止
-        function stopTimer() {
-            if (readingState.timerInterval) {
-                clearInterval(readingState.timerInterval);
-                readingState.timerInterval = null;
-            }
-        }
-        
-        // 更新计时器显示
+
+        function stopTimer() { if (readingState.timerInterval) { clearInterval(readingState.timerInterval); readingState.timerInterval = null; } }
+
         function updateTimerDisplay() {
             if (!readingState.isReading) return;
-            
             const elapsed = Math.floor((Date.now() - readingState.lastActivity) / 1000);
-            const totalSeconds = readingState.accumulatedTime + elapsed;
-            
-            document.getElementById('current-time').textContent = 
-                PDFReadingService.formatDuration(totalSeconds);
-            
+            const total = readingState.accumulatedTime + elapsed;
+            document.getElementById('current-time').textContent = PDFReadingService.formatDuration(total);
             document.getElementById('current-time').className = 'timer-display timer-active';
         }
-        
-        // 检查闲置
+
         function checkIdle() {
             if (!readingState.isReading || readingState.isPaused) return;
-            
-            const idleSeconds = Math.floor((Date.now() - readingState.lastActivity) / 1000);
-            
-            document.getElementById('idle-time').textContent = idleSeconds + 's';
-            
-            if (idleSeconds >= IDLE_TIMEOUT) {
-                // 自动暂停
+            const idle = Math.floor((Date.now() - readingState.lastActivity) / 1000);
+            document.getElementById('idle-time').textContent = idle + 's';
+            if (idle >= IDLE_TIMEOUT) {
                 pauseReading();
-                document.getElementById('idle-warning').classList.remove('hidden');
-                
-                setTimeout(() => {
-                    if (readingState.isPaused) {
-                        document.getElementById('idle-warning').classList.add('hidden');
-                    }
-                }, 5000);
+                document.getElementById('idle-warning').style.display = 'block';
+                setTimeout(() => { if (readingState.isPaused) document.getElementById('idle-warning').style.display = 'none'; }, 5000);
             }
         }
-        
-        // 更新UI状态
+
         function updateUI() {
-            const stateIdle = document.getElementById('state-idle');
-            const stateReading = document.getElementById('state-reading');
-            const statePaused = document.getElementById('state-paused');
-            const statusDot = document.getElementById('status-dot');
-            const statusText = document.getElementById('status-text');
-            const currentTime = document.getElementById('current-time');
-            const idleTime = document.getElementById('idle-time');
-            
-            // 重置
-            stateIdle.classList.add('hidden');
-            stateReading.classList.add('hidden');
-            statePaused.classList.add('hidden');
-            
-            if (!readingState.isReading) {
-                stateIdle.classList.remove('hidden');
-                statusDot.className = 'status-dot status-idle';
-                statusText.textContent = '未开始';
-                currentTime.className = 'timer-display timer-idle';
-                idleTime.className = 'timer-display timer-idle';
-            } else if (readingState.isPaused) {
-                statePaused.classList.remove('hidden');
-                statusDot.className = 'status-dot status-paused';
-                statusText.textContent = '已暂停';
-                currentTime.className = 'timer-display timer-paused';
-                idleTime.className = 'timer-display timer-idle';
-            } else {
-                stateReading.classList.remove('hidden');
-                statusDot.className = 'status-dot status-active';
-                statusText.textContent = '阅读中';
-                currentTime.className = 'timer-display timer-active';
-                idleTime.className = 'timer-display timer-idle';
-            }
-            
+            const sIdle = document.getElementById('state-idle');
+            const sReading = document.getElementById('state-reading');
+            const sPaused = document.getElementById('state-paused');
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            const cur = document.getElementById('current-time');
+            const idle = document.getElementById('idle-time');
+            sIdle.style.display = 'none'; sReading.style.display = 'none'; sPaused.style.display = 'none';
+            if (!readingState.isReading) { sIdle.style.display = 'block'; dot.className = 'status-dot status-idle'; text.textContent = '未开始'; cur.className = 'timer-display timer-idle'; idle.className = 'timer-display timer-idle'; }
+            else if (readingState.isPaused) { sPaused.style.display = 'flex'; dot.className = 'status-dot status-paused'; text.textContent = '已暂停'; cur.className = 'timer-display timer-paused'; idle.className = 'timer-display timer-idle'; }
+            else { sReading.style.display = 'flex'; dot.className = 'status-dot status-active'; text.textContent = '阅读中'; cur.className = 'timer-display timer-active'; idle.className = 'timer-display timer-idle'; }
             document.getElementById('idle-time').textContent = '0s';
         }
-        
-        // 加载统计
+
         async function loadStats() {
             try {
                 const stats = await PDFReadingService.getUserReadingStats(userSessionId);
-                
-                const totalTime = stats.reduce((sum, s) => sum + (s.total_reading_seconds || 0), 0);
-                const totalReads = stats.reduce((sum, s) => sum + (s.read_count || 0), 0);
-                
-                document.getElementById('stat-total-time').textContent = 
-                    PDFReadingService.formatDuration(totalTime);
+                const totalTime = stats.reduce((s, x) => s + (x.total_reading_seconds || 0), 0);
+                const totalReads = stats.reduce((s, x) => s + (x.read_count || 0), 0);
+                document.getElementById('stat-total-time').textContent = PDFReadingService.formatDuration(totalTime);
                 document.getElementById('stat-total-reads').textContent = totalReads;
                 document.getElementById('stat-pdf-count').textContent = stats.length;
-                
                 const tbody = document.getElementById('stats-body');
-                if (stats.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无阅读记录，快去阅读吧！</td></tr>';
-                } else {
-                    tbody.innerHTML = '';
-                    for (const stat of stats) {
-                        const pdfName = stat.pdf_files?.file_name || '未知PDF';
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${escapeHtml(pdfName)}</td>
-                            <td>${PDFReadingService.formatDuration(stat.total_reading_seconds || 0)}</td>
-                            <td>${stat.read_count || 0}</td>
-                            <td>${formatDate(stat.last_read_at)}</td>
-                        `;
-                        tbody.appendChild(row);
-                    }
-                }
-                
-            } catch (error) {
-                console.error(error);
-            }
+                if (stats.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无阅读记录，快去阅读吧！</td></tr>'; }
+                else { tbody.innerHTML = ''; stats.forEach(stat => { const name = stat.pdf_files?.file_name || '未知PDF'; const row = document.createElement('tr'); row.innerHTML = `<td>${escapeHtml(name)}</td><td>${PDFReadingService.formatDuration(stat.total_reading_seconds||0)}</td><td>${stat.read_count||0}</td><td>${formatDate(stat.last_read_at)}</td>`; tbody.appendChild(row); }); }
+            } catch (e) {}
         }
-        
-        // 工具函数
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
+
+        function showToast(msg, type = 'info') {
+            const colors = { success: '#10B981', error: '#EF4444', info: '#3B82F6' };
+            const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
             const content = document.getElementById('toast-content');
-            
-            const colors = {
-                success: '#10b981',
-                error: '#ef4444',
-                info: '#3b82f6'
-            };
-            
-            const icons = {
-                success: 'fa-check-circle',
-                error: 'fa-exclamation-circle',
-                info: 'fa-info-circle'
-            };
-            
             content.style.background = colors[type] || colors.info;
-            content.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
-            toast.classList.remove('hidden');
-            
-            setTimeout(() => {
-                toast.classList.add('hidden');
-            }, 3000);
+            content.innerHTML = `<i class="fa-solid ${icons[type]}"></i> ${msg}`;
+            document.getElementById('toast').style.display = 'block';
+            setTimeout(() => { document.getElementById('toast').style.display = 'none'; }, 3000);
         }
-        
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-        }
-        
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleString('zh-CN', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        // 页面关闭前保存
-        window.addEventListener('beforeunload', async () => {
-            if (readingState.isReading && !readingState.isPaused) {
-                await stopReading();
-            }
-        });
-        
-        // 启动
+        function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text || ''; return div.innerHTML; }
+        function formatDate(dateStr) { if (!dateStr) return '-'; return new Date(dateStr).toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }); }
+
+        window.addEventListener('beforeunload', async () => { if (readingState.isReading && !readingState.isPaused) { await stopReading(); } });
         init();
     </script>
 </body>
