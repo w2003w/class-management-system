@@ -38,13 +38,6 @@ def show_user_page():
 
     st.sidebar.markdown("---")
 
-    page = st.sidebar.radio("功能模块", ["数学建模", "📚 PDF阅读"], key="user_page_select")
-
-    if page == "📚 PDF阅读":
-        import pdf_reader
-        pdf_reader.pdf_reader_page()
-        return
-
     if current_mode == "mode1":
         import streamlit_app
         streamlit_app.main()
@@ -63,13 +56,6 @@ def show_admin_console():
         st.rerun()
 
     st.sidebar.markdown("---")
-
-    page = st.sidebar.radio("管理模块", ["系统管理", "📚 PDF阅读管理"], key="admin_page_select")
-
-    if page == "📚 PDF阅读管理":
-        import pdf_admin
-        pdf_admin.pdf_admin_page()
-        return
 
     import admin_page
     admin_page.main()
