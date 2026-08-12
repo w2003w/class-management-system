@@ -4,34 +4,47 @@ import db
 
 st.set_page_config(page_title="数学建模智能体", layout="wide", initial_sidebar_state="expanded")
 
+
 def get_current_mode():
     return db.get_current_mode()
+
 
 def set_current_mode(mode):
     db.set_current_mode(mode)
 
+
 def main():
     from auth import check_login, show_login_page, logout
-    
+
     if check_login():
         show_admin_console()
         return
-    
+
     if st.session_state.get('show_login'):
         show_login_page()
         return
-    
+
     show_user_page()
+
 
 def show_user_page():
     current_mode = get_current_mode()
-    
+
     st.sidebar.title("数学建模助手")
-    
+
     if st.sidebar.button("管理员入口", key="admin_login_btn"):
         st.session_state['show_login'] = True
         st.rerun()
-    
+
+    st.sidebar.markdown("---")
+
+    page = st.sidebar.radio("功能模块", ["数学建模", "📚 PDF阅读"], key="user_page_select")
+
+    if page == "📚 PDF阅读":
+        import pdf_reader
+        pdf_reader.pdf_reader_page()
+        return
+
     if current_mode == "mode1":
         import streamlit_app
         streamlit_app.main()
@@ -39,17 +52,28 @@ def show_user_page():
         import user_mode2
         user_mode2.main()
 
+
 def show_admin_console():
     from auth import logout
-    
+
     st.sidebar.title("管理员控制台")
-    
+
     if st.sidebar.button("退出登录", key="logout_btn"):
         logout()
         st.rerun()
-    
+
+    st.sidebar.markdown("---")
+
+    page = st.sidebar.radio("管理模块", ["系统管理", "📚 PDF阅读管理"], key="admin_page_select")
+
+    if page == "📚 PDF阅读管理":
+        import pdf_admin
+        pdf_admin.pdf_admin_page()
+        return
+
     import admin_page
     admin_page.main()
+
 
 if __name__ == "__main__":
     main()

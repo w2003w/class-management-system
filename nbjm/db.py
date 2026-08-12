@@ -678,3 +678,256 @@ def get_tokens_usage_count():
         return total_calls, retrieval_used
     except Exception:
         return 0, 0
+
+
+# ============================================================
+# PDF 阅读追踪系统
+# ============================================================
+
+def upload_pdf(file_name, file_data, file_size, uploaded_by):
+    """管理员上传PDF文件"""
+    client = get_client()
+    result = client.table('pdf_files').insert({
+        'file_name': file_name,
+        'file_data': file_data,
+        'file_size': file_size,
+        'uploaded_by': uploaded_by
+    }).execute()
+    return result.data[0] if result.data else None
+
+
+def get_all_pdfs():
+    """获取所有PDF文件列表"""
+    client = get_client()
+    result = client.table('pdf_files').select('id, file_name, file_size, uploaded_by, created_at, updated_at').order('created_at', desc=True).execute()
+    return result.data or []
+
+
+def get_pdf_by_id(pdf_id):
+    """根据ID获取PDF详情"""
+    client = get_client()
+    result = client.table('pdf_files').select('*').eq('id', pdf_id).execute()
+    return result.data[0] if result.data else None
+
+
+def delete_pdf(pdf_id):
+    """删除PDF文件"""
+    client = get_client()
+    client.table('pdf_files').delete().eq('id', pdf_id).execute()
+
+
+def grant_pdf_permission(pdf_id, user_session_id, user_name=None):
+    """授权用户阅读PDF"""
+    client = get_client()
+    result = client.table('pdf_permissions').upsert({
+        'pdf_id': pdf_id,
+        'user_session_id': user_session_id,
+        'user_name': user_name,
+        'can_read': True
+    }, on_conflict='pdf_id,user_session_id').execute()
+    return result.data
+
+
+def revoke_pdf_permission(pdf_id, user_session_id):
+    """撤销用户阅读权限"""
+    client = get_client()
+    client.table('pdf_permissions').update({'can_read': False}).eq('pdf_id', pdf_id).eq('user_session_id', user_session_id).execute()
+
+
+def get_pdf_permissions(pdf_id):
+    """获取PDF的授权列表"""
+    client = get_client()
+    result = client.table('pdf_permissions').select('*').eq('pdf_id', pdf_id).execute()
+    return result.data or []
+
+
+def get_user_pdf_permissions(user_session_id):
+    """获取用户被授权的PDF列表"""
+    client = get_client()
+    result = client.table('pdf_permissions').select('pdf_id, user_name, can_read').eq('user_session_id', user_session_id).eq('can_read', True).execute()
+    return result.data or []
+
+
+def check_pdf_permission(pdf_id, user_session_id):
+    """检查用户是否有权阅读PDF"""
+    client = get_client()
+    result = client.table('pdf_permissions').select('id').eq('pdf_id', pdf_id).eq('user_session_id', user_session_id).eq('can_read', True).execute()
+    return len(result.data or []) > 0
+
+
+def start_reading_session(pdf_id, user_session_id, user_name=None):
+    """开始阅读会话"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    result = client.table('pdf_reading_sessions').insert({
+        'pdf_id': pdf_id,
+        'user_session_id': user_session_id,
+        'user_name': user_name,
+        'start_time': now,
+        'status': 'active'
+    }).execute()
+    session = result.data[0] if result.data else None
+    
+    if session:
+        client.table('pdf_reading_logs').insert({
+            'session_id': session['id'],
+            'action': 'start',
+            'duration_seconds': 0
+        }).execute()
+    
+    return session
+
+
+def pause_reading_session(session_id, duration_seconds=0):
+    """暂停阅读会话"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    client.table('pdf_reading_sessions').update({
+        'end_time': now,
+        'duration_seconds': duration_seconds,
+        'status': 'paused'
+    }).eq('id', session_id).execute()
+    
+    client.table('pdf_reading_logs').insert({
+        'session_id': session_id,
+        'action': 'pause',
+        'duration_seconds': duration_seconds
+    }).execute()
+
+
+def resume_reading_session(pdf_id, user_session_id, user_name=None):
+    """恢复阅读会话"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    result = client.table('pdf_reading_sessions').insert({
+        'pdf_id': pdf_id,
+        'user_session_id': user_session_id,
+        'user_name': user_name,
+        'start_time': now,
+        'status': 'active'
+    }).execute()
+    session = result.data[0] if result.data else None
+    
+    if session:
+        client.table('pdf_reading_logs').insert({
+            'session_id': session['id'],
+            'action': 'resume',
+            'duration_seconds': 0
+        }).execute()
+    
+    return session
+
+
+def stop_reading_session(session_id, duration_seconds=0):
+    """停止阅读会话"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    client.table('pdf_reading_sessions').update({
+        'end_time': now,
+        'duration_seconds': duration_seconds,
+        'status': 'completed'
+    }).eq('id', session_id).execute()
+    
+    client.table('pdf_reading_logs').insert({
+        'session_id': session_id,
+        'action': 'stop',
+        'duration_seconds': duration_seconds
+    }).execute()
+
+
+def abandon_reading_session(session_id, duration_seconds=0):
+    """放弃阅读会话（超时）"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    client.table('pdf_reading_sessions').update({
+        'end_time': now,
+        'duration_seconds': duration_seconds,
+        'status': 'abandoned'
+    }).eq('id', session_id).execute()
+    
+    client.table('pdf_reading_logs').insert({
+        'session_id': session_id,
+        'action': 'abandon',
+        'duration_seconds': duration_seconds
+    }).execute()
+
+
+def get_user_reading_sessions(user_session_id, pdf_id=None):
+    """获取用户的阅读会话列表"""
+    client = get_client()
+    query = client.table('pdf_reading_sessions').select('*').eq('user_session_id', user_session_id)
+    if pdf_id:
+        query = query.eq('pdf_id', pdf_id)
+    result = query.order('start_time', desc=True).execute()
+    return result.data or []
+
+
+def get_active_reading_session(user_session_id, pdf_id):
+    """获取用户当前活跃的阅读会话"""
+    client = get_client()
+    result = client.table('pdf_reading_sessions').select('*').eq('user_session_id', user_session_id).eq('pdf_id', pdf_id).eq('status', 'active').execute()
+    return result.data[0] if result.data else None
+
+
+def update_reading_stats(user_session_id, pdf_id, duration_seconds):
+    """更新用户阅读统计"""
+    client = get_client()
+    now = beijing_now().isoformat()
+    
+    existing = client.table('pdf_reading_stats').select('*').eq('user_session_id', user_session_id).eq('pdf_id', pdf_id).execute()
+    
+    if existing.data:
+        current = existing.data[0]
+        new_total = current.get('total_reading_seconds', 0) + duration_seconds
+        new_count = current.get('read_count', 0) + 1
+        client.table('pdf_reading_stats').update({
+            'total_reading_seconds': new_total,
+            'last_read_at': now,
+            'read_count': new_count
+        }).eq('id', current['id']).execute()
+    else:
+        client.table('pdf_reading_stats').insert({
+            'user_session_id': user_session_id,
+            'pdf_id': pdf_id,
+            'total_reading_seconds': duration_seconds,
+            'last_read_at': now,
+            'read_count': 1
+        }).execute()
+
+
+def get_user_reading_stats(user_session_id):
+    """获取用户的阅读统计"""
+    client = get_client()
+    result = client.table('pdf_reading_stats').select('*,pdf_files(file_name)').eq('user_session_id', user_session_id).order('last_read_at', desc=True).execute()
+    return result.data or []
+
+
+def get_pdf_reading_stats(pdf_id):
+    """获取PDF的阅读统计"""
+    client = get_client()
+    result = client.table('pdf_reading_stats').select('*,user_session_id,user_name').eq('pdf_id', pdf_id).order('total_reading_seconds', desc=True).execute()
+    return result.data or []
+
+
+def get_all_reading_stats():
+    """获取所有PDF的阅读统计（管理员）"""
+    client = get_client()
+    result = client.table('pdf_reading_stats').select('*,pdf_files(file_name)').order('last_read_at', desc=True).execute()
+    return result.data or []
+
+
+def get_user_list_for_pdf(pdf_id):
+    """获取PDF授权用户的列表（去重）"""
+    client = get_client()
+    result = client.table('pdf_permissions').select('user_session_id, user_name').eq('pdf_id', pdf_id).eq('can_read', True).execute()
+    seen = set()
+    unique_users = []
+    for row in result.data or []:
+        uid = row['user_session_id']
+        if uid not in seen:
+            seen.add(uid)
+            unique_users.append({
+                'user_session_id': uid,
+                'user_name': row.get('user_name', uid[:8])
+            })
+    return unique_users
